@@ -91,7 +91,7 @@
             puts(ctime(&sb.st_ctime));
             
     d) Assume: filename is a directory. 
-               Write C code to print all of the file names under this Dir.
+       Write C code to print all of the file names under this Dir.
 
             struct dirent *ep;
             DIR *dp = opendir(filename);
@@ -127,7 +127,7 @@
             int i;
 
             for(i = 0; i < 100; i++)
-                read(fd, buf, 1);
+                read(fd, buf + i, 1);
 
     e) Write C code to READ 100 times from F2, each time read 1 byte.
     
@@ -165,11 +165,13 @@
     c) As specified, the program is run as: a.out 360 is fun > Outfile
        Draw a diagram to show exactly what is argv.
 
-            argv[0]     argv[1]     argv[2]     argv[3]
-             &char       &char       &char       &char
-               |           |           |           |
-               v           v           v           v
-              "a.out"     "360"       "is"        "fun"
+           argv
+            |
+            v
+            | &char | &char | &char | &char |
+              |       |       |       |
+              v       v       v       v
+             "a.out" "360"   "is"    "fun"
 
     d) How does it do the > symbol?
 
@@ -180,11 +182,11 @@
     e) After S1, there may be more than one process. If so, which process
        executes S2 AND what does it do?
 
-            sh child executes: a.out 360 is fun
+            sh child child executes: a.out 360 is fun
 
     f) Which process executes S3 AND what does it do?
 
-            sh child child: waits for sh child to die
+            sh child : waits for sh child child to die 
 
     g) Explain: What would happen if this program were run?
 
@@ -192,16 +194,21 @@
         sh child replaces stdout with Outfile
 
         At S1 sh child forks a child
-            For sh child the if(fork()==0) is true, so it goes to S2.
-                At S2 sh child executes: a.out 360 is fun
-            For sh child child if(fork()==0) is false, so it goes to S3.
-                At S3 sh child child waits for sh child to die
-                sh child dies
-                argc contains sh child's exit status
+            For sh child the if(fork()==0) is false, so it goes to S3.
+                At S3 sh child waits for sh child child to die
+                This never happens
+            For sh child child if(fork()==0) is true, so it goes to S2.
+                At S2 sh child child executes: a.out 360 is fun 
+                    It then waits for its child to die
+                    It's child executes: a.out 360 is fun
+                        INFINITE RECURSIVE LOOP
 
-        sh child dies
-        Output contains  a.out 360 is fun  output directed at stdout
-        sh waits next command
+        Output is empty, nothing is ever printed.
+
+        So basically, this program spawns infinity immortal children and nothing else.
+        Parents wait forever for immortal children to die.
+        Mean while, for every time an immportal child is born, the newborn creates an immortal child.
+        No process ends until their universe gets destroyed.
 
 6) Write C code to execute the pipe command: ls | more
 
@@ -209,20 +216,20 @@
     b) int pid;    Write C code to create a child: pid = fork();
     c) Write C code for the parent to Read from the pipe.
 
-        if(pid == 0)
+        if(pid != 0)
         {
-            close(pd[1])
-            close(0);
-            dup(pd[0]);
+            close(pd[1])    // close pipe in
+            close(0);       // close stdin
+            dup(pd[0]);     // dup pipe out
         }
 
     e) Write C code for the child to Write to the pipe.
 
-        if(pid != 0)
+        if(pid == 0)
         {
-            close(pd[0])
-            close(1);
-            dup(pd[1]);
+            close(pd[0])    // close pipe out
+            close(1);       // close stdout
+            dup(pd[1]);     // dup pipe in
         }
 
     f) Parent executes: more   Child executes: ls 
@@ -245,7 +252,8 @@
 
            scp newpic.png james_jessen@cs360.eecs.wsu.edu:~/public_html/newpic.png
            
-           index.html:  <img src="newpic.png">
+           index.html:  
+                        <img src="newpic.png">
 
     c) The web page you got contains a FORM with INPUT boxes and a SUBMIT button.
        When you enter the inputs, e.g. mkdir; dirname; then SUBMIT;
@@ -275,7 +283,7 @@
     f) After submitting a request, you get another web page back containing the results.
        Why?
        
-            Submitting the form triggers the action:
+            Submitting the form triggers the ACTION:
                 http://cs360.eecs.wsu.edu/~james_jessen/cgi-bin/mycgi
 
             This runs another instance of mycgi, which uses printf(<html code>)
@@ -311,17 +319,15 @@
        (a) get file Size                |
        (b) send "put filename Size" ====|====> (c) recieve "put filename Size"
                                         |
-        (Complete remaining actions):   |       (Complete remaining actions):
-                                        |
         int n;                          |   int n;
         int fd;                         |   int fd;
                                         |   int count = 0;
                                         |
-        fd = open("filename", O_RDONLY);|   fd = open(path, O_WRONLY | O_CREAT, 0644);
+        fd = open(filename, O_RDONLY);  |   fd = open(filename, O_WRONLY | O_CREAT, 0644);
                                         |
         while(n = read(fd, cbuf, 256))  |   while(count < Size)
         {                               |   {
-            write(socket, cbuf, n);     |       n = read(socket, sbuf, MAX);
+            write(socket, cbuf, n);     |       n = read(socket, sbuf, 256);
         }                               |       count += n;
                                         |       write(fd, sbuf, n);
                                         |   }

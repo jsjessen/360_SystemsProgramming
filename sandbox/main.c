@@ -1,20 +1,19 @@
 #include <stdio.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <unistd.h>
 
 int main(int argc, char* argv[], char* env[])
 {
-    char cmd[256];
-    char filename[256];
-    int size;
-    int i = 0;
-
-    while(argv[i])
+    fprintf(stderr,"Just before fork\n");
+    if(fork() == 0)
     {
-        printf("argv[%d] = %s\n", i, argv[i]);
-        i++;
+        fprintf(stderr,"exe\n");
+        execve(argv[0], argv, env);
+        perror("exe");
     }
-
-    scanf("%s %s %d", cmd, filename, &size);
-    printf("%s %s %d\n", cmd, filename, size);
-
-    return 0;
+    fprintf(stderr,"Just before wait\n");
+    wait(&argc);
+    perror("wait");
+    fprintf(stderr,"argc=%d\n", argc);
 }
