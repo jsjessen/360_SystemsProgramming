@@ -1,0 +1,7 @@
+   text	   data	    bss	    dec	    hex	filename
+   1158	    276	      8	   1442	    5a2	t1.out
+   1158	    280	      4	   1442	    5a2	t2.out
+   1158	    276	  40032	  41466	   a1fa	t3.out
+   1158	  40304	      4	  41466	   a1fa	t4.out
+   1190	    276	      8	   1474	    5c2	t5.out
+   1174	    276	  40068	  41518	   a22e	t6.out

@@ -1,0 +1,8 @@
+#! /bin/bash
+
+make client
+
+echo -n "Enter Port: "
+read port 
+
+valgrind --leak-check=full myClient localhost $port

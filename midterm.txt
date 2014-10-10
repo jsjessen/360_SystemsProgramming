@@ -1,0 +1,329 @@
+1) A link list contains the following kind of nodes:
+
+    Next  : a pointer to the next node
+    Value : an integer
+    Name  : an array of 64 chars
+
+    a) Write C statements to define the node structure.
+
+            typedef struct node
+            {
+                struct node* next;
+                int value;
+                char name[64];
+            } Node;
+
+    b) A link list ends with a NULL pointer. 
+       Write a C function that returns the Sum of all the node values in a linked list.
+
+           int Sum(Node* root)
+           {
+               int sum = 0;
+               Node* n = root;
+
+               while(n)
+               {
+                   sum += n->value;
+                   n = n->next;
+               }
+               return sum;
+           }
+
+2) In Lab #2 you wrote a myprintf() function. Consider the following C program:
+
+        /********** main.c **********/      |   /********** myprint.c **********/
+                                            |
+        int f, g = 123;                     |   myprintf(char *fmt, ...)
+                                            |   {
+        main() { A(); }                     |       char* cp = 1234;
+        ------------------------------------|       int*  ip = 5678; 
+        int A()                             |   HERE:
+        {                                   |
+            int a=1, b=2, c=3;              |
+            myprintf("%d %d %d", a, b, c);  |
+        }                                   |   }
+
+    a) Your myprintf() function header is incomplete. Make it complete.
+
+    b) For the variables f,g,a,b,c,cp,ip which are in the a.out file? Why?
+        
+            The Assembler puts the global variables f,g into the DATA section
+            of main.o which the Linker combines with the DATA section from myprint.o
+            to create the DATA section of a.out. This happens because the values
+            are known at compile time.
+
+    c) Execution is at the labal HERE. Draw a diagram to show the stack contents
+       from when A() is entered all the way to HERE.
+
+    HighAddress        ----------------------------------------------->      LowAddress
+
+                    a   b   c           c   b   a    fmt               cp     ip
+    -----------------------------------------------------------------------------------
+    xxx | PC | FP | 1 | 2 | 3 | temps | 3 | 2 | 1 | &char | PC | FP | &int | &int | xxx
+    -----------------------------------------------------------------------------------
+                                                      |                 |      |
+                                                      v                 v      v
+                                                     "%d %d %d"         1234   5678
+
+    d) While at HERE, how does the CPU know the local variables?
+
+        cp: -4(%ebp)
+        ip: -8(%ebp)
+
+3) Consider the stat() system call.
+
+        struct stat sb;
+
+        int r = stat(filename, &sb);
+    
+    a) Write C code for the blank line in the above statement.
+
+    b) In the stat struct of a file, the 16 bits of st_mode=|TYPE|sss|rwxrwxrwx|
+       where TYPE=0100 if it's a Directory and  TYPE=1010 if it's a Link file.
+       Write a C statement to test whether a file is a
+
+            Directory: if(sb->st_mode & 0x4000)
+
+            Link file: if(sb->st_mode & 0xA000)
+
+    c) Write a C statement to print st_ctime in calendar form:
+
+            puts(ctime(&sb.st_ctime));
+            
+    d) Assume: filename is a directory. 
+               Write C code to print all of the file names under this Dir.
+
+            struct dirent *ep;
+            DIR *dp = opendir(filename);
+
+            while(ep = readdir(dp))
+                puts(ep->d_name);
+
+            closedir(dp);
+
+4) Assume: The following piece of C code opens the files f1, F2 for Read:
+
+        #include <stdio.h>
+        #include <fcntl.h>
+
+        S1:  int   fd =  open("f1", O_RDONLY);
+        S2:  FILE *fp = fopen("F2", "r");
+
+    a) Fill in the blank lines in the above C statements S1 and S2.
+
+    b) After executing S2, fp points at something.
+       What and where is that something?
+       
+           It points to a FILE structure that fopen dynamically 
+           allocated in the heap area of the UserImage process.
+
+    c) What's the relationship between fopen() and open()?
+
+            fopen() is a library function that uses the syscall open()
+
+    d) Write C code to READ 100 times from f1, each time read 1 byte.
+
+            char buf[100];
+            int i;
+
+            for(i = 0; i < 100; i++)
+                read(fd, buf, 1);
+
+    e) Write C code to READ 100 times from F2, each time read 1 byte.
+    
+            char buf[100];
+
+            fread(buf, 1, 100, fp);
+
+    f) Which C code of (d) and (e) will run faster? Why?
+
+        S2 because fread() is a library function that uses a buffer to limit 
+        syscalls to the kernel for data, it probably only used 1 syscall. 
+        Whereas, S1 used the syscall read() 100 times.
+
+        Syscalls cause the process to enter Kernel mode and then back to User mode.
+        Switching between Umode and Kmode takes a lot of actions (and time). 
+        Data transfer between Kmode and Umode is especially "expensive".  
+
+5) Assume: The following program is run as: a.out 360 is fun > Outfile
+
+        main(int argc, char* argv[], char* env[])
+        {
+            S1: if(fork() == 0)
+            S2:     execve(argv[0], argv, env);
+            S3: wait(&argc);
+        }
+
+    a) Start from the sh process, which process executes a.out?
+
+            sh child
+
+    b) How does sh find an executable file?
+
+            It searches for it in the directories listed in PATH, found in env.
+
+    c) As specified, the program is run as: a.out 360 is fun > Outfile
+       Draw a diagram to show exactly what is argv.
+
+            argv[0]     argv[1]     argv[2]     argv[3]
+             &char       &char       &char       &char
+               |           |           |           |
+               v           v           v           v
+              "a.out"     "360"       "is"        "fun"
+
+    d) How does it do the > symbol?
+
+            // Replace stdout with Outfile
+            close(1);
+            open("Outfile", O_WRONLY | O_CREAT, 0644);
+
+    e) After S1, there may be more than one process. If so, which process
+       executes S2 AND what does it do?
+
+            sh child executes: a.out 360 is fun
+
+    f) Which process executes S3 AND what does it do?
+
+            sh child child: waits for sh child to die
+
+    g) Explain: What would happen if this program were run?
+
+        sh forks a child to execute: a.out 360 is fun > Outfile
+        sh child replaces stdout with Outfile
+
+        At S1 sh child forks a child
+            For sh child the if(fork()==0) is true, so it goes to S2.
+                At S2 sh child executes: a.out 360 is fun
+            For sh child child if(fork()==0) is false, so it goes to S3.
+                At S3 sh child child waits for sh child to die
+                sh child dies
+                argc contains sh child's exit status
+
+        sh child dies
+        Output contains  a.out 360 is fun  output directed at stdout
+        sh waits next command
+
+6) Write C code to execute the pipe command: ls | more
+
+    a) int pd[2];  Write C code to create a pipe:  pipe(pd);
+    b) int pid;    Write C code to create a child: pid = fork();
+    c) Write C code for the parent to Read from the pipe.
+
+        if(pid == 0)
+        {
+            close(pd[1])
+            close(0);
+            dup(pd[0]);
+        }
+
+    e) Write C code for the child to Write to the pipe.
+
+        if(pid != 0)
+        {
+            close(pd[0])
+            close(1);
+            dup(pd[1]);
+        }
+
+    f) Parent executes: more   Child executes: ls 
+
+7) When you enter the URL http://cs360.wsu.edu/~james_jessen, you get
+   a web page from a file.
+       ----------------------------------
+       | Welcome to YOUR website        | 
+       |    your picture                |
+       | Input command   : BOX          |
+       | Input filename1 : BOX          |
+       | Input filename2 : BOX          |
+       | Submit command  : Submit Box   |
+       ----------------------------------
+
+    a) From which File in which Directory?  index.html  /  public_html
+
+    b) The web page you got contains an initial picture.
+       How did you change it to your own picture?
+
+           scp newpic.png james_jessen@cs360.eecs.wsu.edu:~/public_html/newpic.png
+           
+           index.html:  <img src="newpic.png">
+
+    c) The web page you got contains a FORM with INPUT boxes and a SUBMIT button.
+       When you enter the inputs, e.g. mkdir; dirname; then SUBMIT;
+       Where does it go to?
+
+            http://cs360.eecs.wsu.edu/~james_jessen/cgi-bin/mycgi
+
+            The inputs are retrieved by: getinputs()
+
+    d) YOUR CGI program, mycgi, is executed by a process on the server machine.
+
+       What's the USER ID of the process?   80
+
+       How can it write to your directory?  
+       
+            chmod u+s mycgi
+
+            This allows mycgi to temporarily assume my UID, 
+            which allows it to write to my directory.
+
+    e) YOUR CGI program performed the requested operations, e.g. mkdir, rm, etc.
+
+            Write C code for the "mkdir dirname" operation:   mkdir("dirname", 0775);
+
+            Write C code for the "rm filename" operation:     unlink("filename");
+
+    f) After submitting a request, you get another web page back containing the results.
+       Why?
+       
+            Submitting the form triggers the action:
+                http://cs360.eecs.wsu.edu/~james_jessen/cgi-bin/mycgi
+
+            This runs another instance of mycgi, which uses printf(<html code>)
+            to produce a webpage. I imagine the output is being redirected.
+
+8) In a "put filename" operation, the client sends a file to the server.
+
+    a) The client must get the file Size first. How?
+
+           int Size;
+           struct stat sb;
+
+           stat("filename", &sb);
+           Size = (int)sb.st_size;
+
+    b) Write C code to put "put filename Size" into  char cbuf[256];
+
+            sprintf(cbuf, "put filename %d", Size);
+
+    c) When the server recieves the request in its  char sbuf[256];
+       Write C code to let it get the strings "put", "filename" and the value of Size.
+
+            char cmd[256];
+            char filename[256];
+            int Size;
+
+            sscanf(sbuf, "%s %s %d", cmd, filename, &Size);
+
+    d) Complete the actions of the client and server in a "put filename" operation:
+
+                CLIENT                  |               SERVER
+       --------------------------------------------------------------------------- 
+       (a) get file Size                |
+       (b) send "put filename Size" ====|====> (c) recieve "put filename Size"
+                                        |
+        (Complete remaining actions):   |       (Complete remaining actions):
+                                        |
+        int n;                          |   int n;
+        int fd;                         |   int fd;
+                                        |   int count = 0;
+                                        |
+        fd = open("filename", O_RDONLY);|   fd = open(path, O_WRONLY | O_CREAT, 0644);
+                                        |
+        while(n = read(fd, cbuf, 256))  |   while(count < Size)
+        {                               |   {
+            write(socket, cbuf, n);     |       n = read(socket, sbuf, MAX);
+        }                               |       count += n;
+                                        |       write(fd, sbuf, n);
+                                        |   }
+                                        |
+        close(fd);                      |   close(fd);

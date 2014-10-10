@@ -1,0 +1,6 @@
+-rwxrwxr-x. 1 jsjessen jsjessen  7313 Sep 13 16:05 t1.out
+-rwxrwxr-x. 1 jsjessen jsjessen  7317 Sep 13 16:05 t2.out
+-rwxrwxr-x. 1 jsjessen jsjessen  7313 Sep 13 16:05 t3.out
+-rwxrwxr-x. 1 jsjessen jsjessen 47349 Sep 13 16:05 t4.out
+-rwxrwxr-x. 1 jsjessen jsjessen  7313 Sep 13 16:05 t5.out
+-rwxrwxr-x. 1 jsjessen jsjessen  7405 Sep 13 16:06 t6.out

@@ -1,0 +1,7 @@
+   text	   data	    bss	    dec	    hex	filename
+ 649142	   4108	   5692	 658942	  a0dfe	static_t1.out
+ 649142	   4108	   5660	 658910	  a0dde	static_t2.out
+ 649142	   4108	  45660	 698910	  aaa1e	static_t3.out
+ 649142	  44140	   5660	 698942	  aaa3e	static_t4.out
+ 649174	   4108	   5692	 658974	  a0e1e	static_t5.out
+ 649158	   4108	  45724	 698990	  aaa6e	static_t6.out

@@ -1,0 +1,6 @@
+-rwxrwxr-x. 1 jsjessen jsjessen 721014 Sep 14 13:37 static_t1.out
+-rwxrwxr-x. 1 jsjessen jsjessen 721014 Sep 14 13:37 static_t2.out
+-rwxrwxr-x. 1 jsjessen jsjessen 721014 Sep 14 13:37 static_t3.out
+-rwxrwxr-x. 1 jsjessen jsjessen 761046 Sep 14 13:37 static_t4.out
+-rwxrwxr-x. 1 jsjessen jsjessen 721014 Sep 14 13:37 static_t5.out
+-rwxrwxr-x. 1 jsjessen jsjessen 721106 Sep 14 13:37 static_t6.out

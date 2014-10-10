@@ -1,0 +1,5 @@
+#! /bin/bash
+
+make server 
+
+valgrind --leak-check=full myServer
