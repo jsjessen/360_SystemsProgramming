@@ -1,0 +1,256 @@
+
+               LAB3 pre-work: DUE Sept. 22, 2014 in class
+
+1. Compile and run the following program, as in     cc t1.c
+
+   /***************** t1.c ******************************************/ 
+   #include <stdio.h>
+   #include <stdlib.h>
+   #include <string.h>
+
+   main()
+   {
+      int pid;
+      printf("THIS IS %d  MY PARENT=%d\n", 
+              // WRITE CODE TO PRINT process pid and its ppid ); 
+
+      pid = fork();   // fork syscall; parent returns child pid, 
+                      //               child returns 0
+      if (pid < 0){   // fork() may fail. e.g. no more PROC in Kernel
+          perror("fork faild");
+          exit(1);
+      }
+      if (pid){ // PARENT EXECUTES THIS PART 
+          printf("THIS IS %d  MY PARENT=%d\n", 
+              // WRITE CODE TO PRINT process pid and its ppid ); 
+      } 
+      else{ // child executes this part
+          printf("I am    %d  my parent=%d\n",
+               // WRITE CODE TO PRINT pid and ppid);
+      }
+   }
+
+  --------------------------------------------------------------------
+                         QUESTIONs: 
+    What are the pid and ppid of the process that executes a.out?_____, _______
+    What are the pid and ppid of the CHILD process?_______, ____________
+
+    Run a.out several times: which pid does NOT change and WHY?_______________
+ 
+ -----------------------------------------------------------------------------
+
+2. Compile and run t2.c: 
+
+/******************** t2.c *********************************/ 
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+int *p = 0;
+main()
+{
+   int pid, status;
+   int exitValue;
+
+   printf("PROC %d forks a child\n", getpid());
+
+   pid = fork();
+
+   if (pid){ // PARENT:
+       printf("\nPARENT %d WAITS FOR CHILD %d TO DIE\n", getpid(),pid);
+       pid=wait(&status);
+       printf("Parent %d: DEAD CHILD=%d, status=%04x\n", getpid(), pid, status);
+   }
+   else{// child:
+     printf("this is child proc %d, input a value (0-255) to die: ", getpid());
+     scanf("%d", &exitValue);     
+     printf("child %d dies by exit(%d)\n", getpid(), exitValue);
+HERE:
+     exit(exitValue); 
+   }
+}
+========================================================================
+                         QUESTIONS:
+(1). What's the value of status in pid=wait(&status)?_____________________
+     What's the relation between the exitValue in exit(exitValue) and status in
+                                                   wait(&status)?
+___________________________________________________________________________?
+
+(2). Insert *p = 1234; to HERE:
+     Run the program again, and answer (1) again:__________________________?
+
+(3). Insert { int a,b; a = 1; b = 0; a = a/ b; } to HERE:
+     Run the program again, and answer (1) again:__________________________?
+
+=============================================================================
+
+3. 
+(1). Compile b.c into b.out
+
+/***************** b.c file ************************/
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+main(int argc, char *argv[ ])
+{
+  printf("proc %d in b.out: argc=%d\n", getpid(), argc);
+
+  // WRITE YOUR CODE TO PRINT arv strings
+
+  printf("proc %d in b.out exit\n", getpid());
+}
+/************** end of b.c file ******************/
+
+
+(2). Modify a.c file as required. Compile it into a.out
+
+/*************** a.c file **************************/
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+int pid;
+
+char line[128];
+char token[32][64];
+char cwd[128], command[128];
+
+main(int argc, char *argv[ ])
+{
+  1. DRAW A DIAGRAM TO SHOW EXACTLY WHAT IS argv:
+
+
+     // DEFINE myargv as AN ARRAY OF 32 char pointers:
+      _____????_____ myargv___???____;
+
+  2. Write code to           |-------- n=5--------| 
+        input a line, e.g.    b.out this is a test
+        tokenize line into inidividual strings as 
+           token[0], token[1],....,token[n-1]
+        
+  3. // Write code to let myargv[i] point to token[i], (0 <= i < n)
+        myargv[n] = 0;
+  
+  pid = getpid();
+  printf("proc %d in a.out exec to b.out\n", pid);
+
+  getcwd(cwd,128);     // cwd contains the pathname of CWD  
+  printf("cwd = %s\n", cwd);
+
+  // WRITE CODE to let command = CWD/b.out
+
+  execve(command, &myargv);
+
+  printf("execve failed\n");
+}
+
+
+(3). Run a.out. 
+                   QUESTIONS:
+     Which process executes a.out?_________________________________________
+     which process executes b.out?_________________________________________
+ 
+     what are the argv[] strings in b.out? ______________________________
+
+     HOW TO PASS env[ ] strings 
+                 PATH=/a/b/c
+                 HOEM=/root
+                 TERM=console
+     to main(int argc, char *argv[ ], char *env[ ]);
+=============================================================================
+
+4. Compile and run io.c file:
+
+/************* io.c file ********************/
+#include <stdio.h>
+#include <stdlib.h>
+#include <fcntl.h>
+
+main()
+{
+     int fd;
+L1:  printf("this is PROC %d printing to stdout\n", getpid());
+
+     fd = open("myfile", O_WRONLY|O_CREAT, 0644);
+     printf("fd = %d\n", fd);
+
+     close(1);
+     dup(fd);
+
+     getchar();
+
+L2:  printf("where does this line go?\n");
+L3:  printf("and this line?\n");
+}
+/********************************************************************/
+
+     -------------------- QUESTION: ------------------------------
+ At L1:     the printed line will show up on the screen.
+ At L2, L3: where do the printed lines go?______________________________
+            WHY?________________________________________________________
+
+
+============================================================================
+
+
+5. Compile and run pipe.c
+
+/***************** pipe.c file ***********************/
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <string.h>
+
+int pd[2];
+char buf[128];
+
+main(int argc, char *argv[], char *env[])
+{
+   int r, n, pid;
+   int i; int c;
+
+   r = pipe(pd);  // system call to create a pipe' pd[0]=READ, pd[1]=WRITE
+   printf("pd=[%d, %d]\n", pd[0], pd[1]);
+ 
+   pid = fork();    // fork a child process, which has the SAME pd[ ]
+
+   if (pid){  // parent as pipe WRITER
+      printf("parent %d write to pipe\n", getpid());
+      close(pd[0]);// WRITER MUST close pd[0]
+      close(1);    // close 1
+      dup(pd[1]);  // replace 1 with pd[1]
+
+      printf("PARENT WRITES LINES TO PIPE\n");
+
+      for (i=0; i < 10; i++){
+          fprintf(stderr, "PARENT WRITES LINE %d TO STDOUT\n", i);
+	  printf("this is line %d from parent\n", i);
+      }
+   }
+   else{            // child as pipe READER
+      printf("child read from pipe\n", getpid());
+      close(pd[1]); // READER MUST close pd[1]
+      close(0);  
+      dup(pd[0]);   // replace 0 with pd[0]
+
+      while( (c = getc(stdin)) != EOF){
+	putchar(c);
+      }
+
+      printf("---------------------------------------\n");
+      printf("child: no more\n");
+  }
+}
+===========================================================================
+                         QUESTIONS:
+
+1. What's a pipe? _____________________________________________________
+
+2. The parent is the pipe WRITER. How does it replace its fd=1 with pd[1]?
+
+3. The child is the pipe READER. How does it replace its fd=0 with pd[0]?
+
+4. MODIFY the code to let the parent be the READER and the child the WRITER.
+   Test run the program again.
+    

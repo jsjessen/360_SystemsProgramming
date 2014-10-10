@@ -1,0 +1,197 @@
+
+             CS360 Lab Assignment #4 Pre-work
+             DUE: 10-1-2014: DEMO PART 1 to TA
+
+================= PART 1: CGI PROGRAMMING: ==============================
+
+1. YOUR WEBSITE at cs360.eecs.wsu.edu
+   Each of you has a user account on the Linux machine cs360.eecs.wsu.edu
+        login name = YOUR email name before @ (with any . replaced with _)
+        password   = YOUR WSU ID number
+
+2. Access YOUR website by
+
+        http://cs360.eecs.wsu.edu/~YOUR_NAME
+       
+        ------------------------------------
+        |    Welcome to YOUR Website       |
+        |       ------------------         |
+        |       | YOUR PICTURE   |         |
+        |       ------------------         |
+        | Input command  :  BOX            | 
+        | Input filename1:  BOX            |
+        | Input filename2:  BOX            | 
+        | Submit command :  Submit BOX     |
+        ------------------------------------
+
+3. You will NOT like your current picture. 
+   REQUIRED WORK: login to your account by
+                  ssh YOUR_NAME@cs360.eecs.wsu.edu
+                  Change it to YOUR pretty picture.
+
+4. When you click the Submit BOX, it submits the strings you entered to the
+   httpd (Apache) server on the cs360.eecs.wsu.edu machine, directing it to 
+   execute
+             ~kcw/cgi-bin/mycgi 
+ 
+  which echos YOUR inputs and shows another input-submit window again.
+
+5. login to your account. As of now, YOUR home directory contains:
+ 
+        public_html --- index.html 
+               |
+            cgi-bin ---- mycgi.c util.o
+
+5-1. Modify YOUR public_html/index.html file: CHANGE the line
+
+< FORM METHOD="POST" ACTION="http://cs360.eecs.wsu.edu/~kcw/cgi-bin/mycgi" >  TO
+
+< FORM METHOD="POST" ACTION="http://cs360.eecs.wsu.edu/~YOURname/cgi-bin/mycgi" >
+
+5-2. Go to YOUR cgi-bin/ directory. Change the line in mycgi.c file
+
+ printf("<FORM METHOD=\"POST\" ACTION=\"http://cs360.eecs.wsu.edu/~kcw/cgi-bin/mycgi\">"); TO
+
+ printf("<FORM METHOD=\"POST\" ACTION=\"http://cs360.eecs.wsu.edu/~YOURname/cgi-bin/mycgi\">");
+
+Then run   cc -o mycgi mycgi.c util.o   # generate YOUR OWN mycgi executable.
+           chmod u+s mycgi              # chmod mycgi to a SETUID executable
+
+6. Access YOUR webpage again. Enter command and filenames. Then, Submit.
+   It should execute YOUR mycgi program in YOUR cgi-bin/ directory.
+
+======================= THEN, DO THESE: ===================================================
+7. MODIFY mycgi.c to do the following commands:
+
+     mkdir dirname
+     rmdir dirname
+     rm    filename
+
+     cat   filename
+     cp    file1 file2
+     ls    [directory] <== if no directory, ls CWD
+
+NOTE: YOUR mycgi program is executed by an Apache process (uid=80). In order for
+      the Apache process to write to YOUR directories, you MUST change YOUR 
+      mycgi to a setuid program by
+            chmod u+s mycgi
+When a process executes a setuid program, it temporarily assumes the uid of the
+program owner, allowing it to write to the owner's directories.
+
+
+========================== PART 2  ====================================
+
+1. Download the server.c and client.c files from ~samples/LAB4.
+   cc and run the programs. Modify the programs to do the following:
+
+          client: sends 2 numbers to server, 
+          server: returns the SUM of the 2 numbers.
+
+2. Write a C program, mystat, which runs as 
+                      mystat filename
+   and prints the following information of filename:
+
+   (1). General infor: 
+
+         File_type     Permissions    Uid    Size     Creation Time
+       ------------   -------------   ----  -------  ----------------
+       [REG|DIR|LNK]   rwx r-x r--   (uid)   (u32)   (calendar form)
+
+   (2). If filename is a LNK, print  filename -> linked_name_string.
+
+   (3). If filename is a DIR, print the file names in the DIR.
+
+
+2. HELP INFO:
+   Use the stat system call to get file information (from Kernel):
+      
+       #include <sys/stat.h>
+
+       int  stat(const char *filename, struct stat *buf);
+       int lstat(const char *filename, struct stat *buf);
+
+   #typedef unsigned short u16;
+   #typedef unsigned long  u32;
+     
+   Both stat() and lstat() return the information of filename in a stat struct
+
+            struct stat {
+                u16        st_dev;      /* device */
+                u32        st_ino;      /* inode */
+                u16        st_mode;     /* protection */
+                u16        st_nlink;    /* number of hard links */
+                u16        st_uid;      /* user ID of owner */
+                u16        st_gid;      /* group ID of owner */
+                u16        st_rdev;     /* device type (if inode device) */
+                u32        st_size;     /* total size, in bytes */
+                u32        st_blksize;  /* blocksize for filesystem I/O */
+                u32        st_blocks;   /* number of blocks allocated */
+                u32        st_atime;    /* time of last access */
+                u32        st_mtime;    /* time of last modification */
+                u32        st_ctime;    /* time of last change */
+            };
+
+  
+      stat() FOLLOWs the link (to the actual file) if filename is a SYMLINK 
+     lstat() does NOT follow the link, so it works for SYMLINK files.
+
+  In the stat struct, the st_mode field is a u16 (2 bytes) containing
+     
+       |Type|   |permissions|
+       ----------------------
+       |tttt|fff|uuu|ggg|ooo| 
+       ----------------------
+
+    The leading 4 bits represent file types. For example:
+          4      st_mode
+         bits    (Octal)         Type
+        ------   =======  ==================
+         1000    0100000   REG: regular file
+         0100    0040000   DIR: directory
+         1010    0120000   LNK: symbolic link
+        ------   ======= 
+    The next 3 bits are flag bits, which indicate special usage of the file 
+
+    The remaining 9 bits are PERMISSION bits for file protection:
+
+        owner  group  other
+         rwx    rwx    rwx
+    
+    The bits can be tested by a technique known as BIT-MASKing:
+        if ( (  item  & (1 << j)  } ==> test the j_th bit (from LOW) of item   
+    Examples:
+        if ( (st_mode & (1 << 8)) ) ==> Owner can r
+        if ( (st_mode & (1 << 7)) ) ==> Owner can w
+        if ( (st_mode & (1 << 6)) ) ==> Owner can x
+    Simliarly,
+        if ( (st_mode & 0100000) == 0100000) ==> REG 
+        if ( (st_mode & 0040000) == 0040000) ==> DIR
+    -------------------------------------------------------------------------
+    In all Unix systems, ctime, atime, mtime are seconds since Jan 1, 1970.    
+    The library function char *ctime(&ctime) return a string in calendar form.
+    -------------------------------------------------------------------------
+        
+2-2. The system call   int readlink(char *filename, char *buf, int bufsize);
+     reads the contents of a LNK into buf[bufsize] and returns the number of
+     chars read.
+
+2-3. With  #include <dirent.h>   the system calls
+
+           DIR *dp = opendir("dirname");      opens a DIR (for R/W), and
+
+           struct dirent *ep = readdir(dp);   returns ep pointing at the
+                                              next entry of an opened DIR 
+
+           The dirent structure is declared as follows:
+
+           struct dirent
+           {
+             u32   d_ino;                /* inode number */
+             u32   d_off;                /* offset to this dirent */
+             u16   d_reclen;             /* length of this d_name */
+             char  d_name [NAME_MAX+1];  /* file name (null-terminated) */
+          }
+     
+      All you need is the d_name field.
+
+HAVE FUN !!

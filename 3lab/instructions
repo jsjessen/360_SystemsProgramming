@@ -1,0 +1,88 @@
+CS360 Lab Assignment #3 : sh Simulator
+
+
+                DUE & DEMO: OCT 2, 3, 2014
+
+A. OBJECTIVE:
+   Understand how Unix sh works by using fork/exec/wait/pipe.
+   String operations
+
+B. REQUIREMENTS:
+   Write a C program, mysh, which simulates the Unix sh for command processing.
+   Your mysh should run as follows:
+
+------------- PART 1: Single Command with I/O Redirection ---------------
+
+1. Prompt for an input line, which is of the form
+          cmd arg1 arg2 arg3 .... argn 
+   where cmd is a command.
+
+   For simplicity, do NOT consider sh scripts files.
+   Valid commands include only "cd", "exit", and ANY Unix binary executables, 
+   e.g. echo, ls, date, pwd, cat, cp, mv, cc ... you name it !!!
+
+
+2. Handle simple commands:
+     cmd = "cd"   :  chdir(arg1) OR chdir($HOME) if no arg1;
+     cmd = "exit" :  exit(1) to terminate;  
+
+   NOTE: chdir(pathname) is a syscall to change CWD.
+         $HOME is the home directory; YOU must find its value from *env[ ].
+
+3. For all other commands:
+      fork a child process;
+      wait for the child to terminate;
+      print child's exit status code
+      continue step 1;
+
+4. Child process: First, assume NO pipe in command line:
+   4-1. Handle I/O redirection:
+          cmd  arg1 arg2 ...  <  infile    // take inputs from infile
+          cmd  arg1 arg2 ...  >  outfile   // send outputs to outfile
+          cmd  arg1 arg2 ...  >> outfile   // APPEND outputs to outfile
+        For simplicity, you may assume at most ONE I/O redirection per line.
+
+   4-2. Execute cmd by execve(), passing parameters 
+                char *myargv[], char *env[]
+        to the cmd file, 
+        where myargv[0]->cmd, myargv[1]->arg1, ....., ending with NULL pointer
+
+   4-2. NOTE: your argv[] must be passed correctly, as in
+             cmd one two three
+        Then in the cmd program, argc=4, argv[0]="cmd", argv[1]="one", etc.
+
+
+------------------ PART 2: Commands with Pipes ---------------------------
+
+5. After YOUR mysh works for simple commands, extend it to handle PIPE.
+   If the command line has a | symbol:
+          divide it into head and tail: e.g.
+
+          cmd1 < infile | cmd 2 > outfile
+   
+   head = "cmd < infile";   tail = "cmd 2 > outfile"
+
+   Then consult the pipe example code in the class notes to see HOW TO 
+        create a pipe
+        fork a child process to share the pipe
+        arrange one process as the pipe writer, and
+          the other process as the pipe reader.
+        Then, let each process execve() to its command
+              (possibly with I/O redirection).
+ 
+
+6. ===================== BONUS ====================
+   If YOUR mysh can handle MULTIPLE pipes like
+
+           cat file | grep "test" | more
+           cat fle  | cat | grep "test" | more
+   etc.
+   ===============================================
+
+
+7. SAMPLE SOLUTION:
+   
+   ~samples/LAB3/lab3.bin          (down load and run under Linux)
+           OR 
+   ~samples/LAB3/lab3.static.bin   (statically linked binay executable) 
+
