@@ -85,13 +85,15 @@ int server_init(char *name)
 
 int main(int argc, char *argv[])
 {
-    char *hostname;
     char line[MAX];
-    char *tmp;
+    char* (*cmd_function)(char*); // Pointer to function associated with command
+    char** my_argv = NULL;
+    char *hostname;
 
     // Change root to cwd for security
-    tmp = my_pwd(NULL);
-    if (chroot(tmp) != 0)
+    char* tmp = my_pwd(NULL);
+    printf("pwd tmp =\"%s\"\n", tmp);
+    if(chroot(tmp) != 0)
     {
         perror("server: chroot");
         exit(1);
@@ -108,6 +110,8 @@ int main(int argc, char *argv[])
     // Try to accept a client request
     while(1)
     {
+        int pid;
+
         printf("server: accepting new connection ....\n"); 
 
         // Try to accept a client connection as descriptor newsock
@@ -124,30 +128,60 @@ int main(int argc, char *argv[])
                 ntohs(client_addr.sin_port));
         printf("-----------------------------------------------\n");
 
-        // FORK NEW PROCESS HERE
-        // Parent wait for new connection
-        // Child processing loop
+        // For multi-client capability
+        pid = fork();
+
+        if(pid != 0)
+            continue;
 
         // Processing loop
         while(1)
         {
+            int n;
+            char* cmd = NULL;
+            char* filename = NULL;
+            char* result = NULL;
+
+            free_array(my_argv);
+
             n = read(newsock, line, MAX);
-            if (n==0)
+            if (n == 0)
             {
                 printf("server: client died, server loops\n");
                 close(newsock);
                 break;
             }
 
-            // show the line string
-            printf("server: read  n=%d bytes; line=[%s]\n", n, line);
-            strcat(line, " ECHO");
+            // Parse line of input
+            my_argv = parse(line, " ");
+            cmd = my_argv[0];
+            filename = my_argv[1];
 
-            // send the echo line to client 
-            n = write(newsock, line, MAX);
+            if(strcmp(cmd, "put") == 0) // Put
+            {
+                receive_file(newsock, filename);
+            }
+            else if(strcmp(cmd, "get") == 0) // Get
+            {
+                send_file(newsock, filename); 
+            }
+            else if(cmd_function = get_cmd(cmd, "server")) // Server Command
+            {
+                if(result = cmd_function(filename))
+                {
+                    send_string(newsock, result);
+                    free(result);
+                }
+            }
+            else 
+            {
+                send_string(newsock, "Invalid Command");
+            }
 
             printf("server: ready for next request\n");
         }
     }
+
+    return 0;
 }
 

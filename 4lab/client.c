@@ -78,7 +78,8 @@ int main(int argc, char *argv[ ])
     char* (*cmd_function)(char*); // Pointer to function associated with command
     char** my_argv = NULL;
 
-    if (argc < 3){
+    if (argc < 3)
+    {
         printf("Usage : client ServerName SeverPort\n");
         exit(1);
     }
@@ -88,63 +89,50 @@ int main(int argc, char *argv[ ])
     while(1)
     {
         char* cmd = NULL;
+        char* result = NULL;
+        char* filename = NULL;
 
         free(line);
         free_array(my_argv);
 
-        // Get user input 
+        // Get input from user
         do { printf("Command : "); }
         while((line = get_input()) == NULL);
 
-        // Parse line
+        // Parse line of input
         my_argv = parse(line, " ");
         cmd = my_argv[0];
+        filename = my_argv[1];
 
-        // Put Command
-        if(strcmp(cmd, "put") == 0)
+        if(strcmp(cmd, "put") == 0) // Put
         {
-            printf("Executing: put\n");
-
-            continue;
+            write(sock, line, MAX);
+            send_file(sock, filename);
         }
-
-        // Get Command
-        if(strcmp(cmd, "get") == 0)
+        else if(strcmp(cmd, "get") == 0) // Get
         {
-            printf("Executing: get\n");
-
-            continue;
+            write(sock, line, MAX);
+            receive_file(sock, filename); 
         }
-
-        // Local Command
-        if(cmd_function = get_cmd(cmd, "client"))
+        else if(cmd_function = get_cmd(cmd, "client")) // Local Command
         {
-            printf("Executing: Local command\n");
-            char* result = NULL;
-
-            if(result = cmd_function(my_argv[1]))
+            if(result = cmd_function(filename))
             {
                 puts(result);
                 free(result);
             }
-            continue;
         }
-
-        if(1) // CHANGE
+        else // Server Command or Invalid Command 
         {
-            //if server accepts
+            write(sock, line, MAX);
 
-            printf("Sending line to server\n");
-
-            // Send ENTIRE line to server
-            n = write(sock, line, MAX);
-
-            // Send command to server to be processed
-
-            continue;
+            if(result = recieve_string(sock))
+            {
+                puts(result);
+                free(result);
+            }
         }
+    } //while
 
-        // Invalid Command
-        fprintf(stderr, "Invalid Command: %s\n", cmd);
-    }
+    return 0;
 }

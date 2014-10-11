@@ -6,8 +6,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-// DO WE REALLY NEED ALL OF THESE?
-// IF SO, WHAT FOR?
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <fcntl.h>
@@ -34,7 +32,9 @@ char* my_rmdir   (char* path); // Remove an existing directory
 char* my_rm      (char* path); // Remove an existing file
 char* my_quit    (char* path); // Quit
 
-int send_file    (int socket, char* path, char* message); // Send file
-int receive_file (int socket, char* path, int size);      // Recieve file
+char* recieve_string(int socket);                   // Recieve string
+int   send_string   (int socket, char* str);        // Send string
+int   send_file     (int socket, char* filename);   // Send file
+int   receive_file  (int socket, char* filename);   // Recieve file
 
 #endif

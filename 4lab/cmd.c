@@ -335,64 +335,96 @@ char* my_rm(char* path)
     return output;
 }
 
-int my_send(int socket, char* path, char* message)
+int send_string(int socket, char* str)
 {
-    int fd;
-    int n = 0;
-    char buf[MAX];
-    char* sizeStr = NULL;
-    struct stat sb;
-
-    // Check that file exists
-    if (stat(path, &sb) != 0)
-    {
-        // Notify reciever that no transfer will occur
-        write(socket, "BAD", MAX);
-        return -1;
-    }
+    int count = 0;
+    int size = strlen(str);
+    char buf[MAX] = {0};
 
     // Tell reciever how many bytes to expect during transfer
-    sprintf(sizeStr, "SIZE=%d", (int)sb.st_size);
-    write(socket, sizeStr, MAX);
+    sprintf(buf, "%d", size);
+    write(socket, buf, MAX);
+
+    // Send string
+    write(socket, str, size);
+
+    return 0;
+}
+
+char* recieve_string(int socket)
+{
+    int size, count, n;
+    char buf[MAX] = {0};
+    char* str;
+
+    // Get size of the transfer from sender 
+    read(socket, buf, MAX);
+    sscanf(buf, "%d", &size);
+
+    if(size <= 0)
+        return NULL;
+
+    str = (char*)malloc(size);
+
+    // Write data from sender into string
+    count = 0;
+    while(count < size)
+    {
+        n = read(socket, buf, MAX);
+        strcpy(str + count, buf);
+        count += n;
+    }
+    return str;
+}
+
+int send_file(int socket, char* filename)
+{
+    struct stat sb;
+    int size, fd, n;
+    char buf[MAX] = {0};
+
+    // Check that file exists
+    if (stat(filename, &sb) == 0)
+        size = sb.st_size;
+    else
+        size = 0;
+
+    // Tell reciever how many bytes to expect during transfer
+    sprintf(buf, "%d", size);
+    write(socket, buf, MAX);
+
+    if(size <= 0)
+        return -1;
 
     // Open and read from file, send to reciever
-    fd = open(path, O_RDONLY);
-    while (n = read(fd, buf, MAX))
+    fd = open(filename, O_RDONLY);
+    while(n = read(fd, buf, MAX))
         write(socket, buf, n);
 
     close(fd);
     return 0;
 }
 
-int my_receive(int socket, char* path, int size)
+int receive_file(int socket, char* filename)
 {
-    char* sizeStr = NULL;
-    char buf[MAX];
-    int count;
-    int fd;
-    int n = 0;
-
-    // Get information about transfer from sender
-    read(socket, sizeStr, MAX);
-
-    // Check that there will be a transfer
-    if (strcmp(sizeStr, "BAD") == 0) 
-    { 
-        //
-        return -1;
-    }
+    int size, count, fd, n;
+    char buf[MAX] = {0};
 
     // Get size of the transfer from sender 
-    sscanf(sizeStr, "SIZE=%d", &size);
+    read(socket, buf, MAX);
+    sscanf(buf, "%d", &size);
 
-    // Write data from sender into spcecified file
+    if(size <= 0)
+        return -1;
+
+    // Write data from sender into specified file
     count = 0;
-    fd = open(path, O_WRONLY | O_CREAT, FILE_PERM);
-    while (count < size)
+    fd = open(filename, O_WRONLY | O_CREAT, FILE_PERM);
+    while(count < size)
     {
         n = read(socket, buf, MAX);
-        count += n;
         write(fd, buf, n);
+        count += n;
     }
     close(fd);
     return 0;
