@@ -1,0 +1,26 @@
+FILES = super.c gd.c bmap.c imap.c inode.c dir.c \
+		util.c util.h
+
+OBJS = super.o gd.o bmap.o imap.o inode.o dir.o \
+	   util.o
+
+CC = gcc
+#DEBUG = -Wall -g -O0
+
+run : $(OBJS)
+	$(CC) -o super super.o 
+	$(CC) -o gd    gd.o 
+	$(CC) -o bmap  bmap.o 
+	$(CC) -o imap  imap.o 
+	$(CC) -o inode inode.o 
+	$(CC) -o dir   dir.o 
+
+super.o : util.h
+gd.o    : util.h
+bmap.o  : util.h
+imap.o  : util.h
+inode.o : util.h
+dir.o   : util.h
+
+clean :
+	-rm $(OBJS)
