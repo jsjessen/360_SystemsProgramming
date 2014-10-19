@@ -24,14 +24,13 @@ typedef struct ext2_group_desc  GD;
 typedef struct ext2_inode       INODE;
 typedef struct ext2_dir_entry_2 DIR; 
 
-u8*    get_block(int fd, int block);
-INODE* get_inode(int fd, int inode);
+u8*   get_block(int fd, int block);
+INODE get_inode(int fd, int inode_number);
 
 SUPER*  get_super       (int fd); 
 GD*     get_gd          (int fd);
 u8*     get_block_bitmap(int fd);
 u8*     get_inode_bitmap(int fd);
-INODE** get_inode_table (int fd);
 
 int ialloc(int fd, int inode); // Allocates a free Inode, returns inode #
 int balloc(int fd, int inode); // Allocates a free Block, returns block #

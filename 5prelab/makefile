@@ -14,7 +14,7 @@ CC = gcc
 FLAGS = -Wall -g -O0
 
 run : $(OBJS)
-	$(CC) -o print_disk main.o $(SHARED) $(FLAGS)
+	$(CC) -o demo  main.o  $(SHARED) $(FLAGS)
 	$(CC) -o super super.o $(SHARED) $(FLAGS)
 	$(CC) -o gd    gd.o    $(SHARED) $(FLAGS)
 	$(CC) -o bmap  bmap.o  $(SHARED) $(FLAGS)

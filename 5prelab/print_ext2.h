@@ -23,8 +23,8 @@
 
 void print_super(int fd);
 void print_gd   (int fd);
-void print_inode(int fd, int inode);
-void print_dir  (int fd);
+void print_inode(int fd, int inode_number);
+void print_dir  (int fd, int inode_number);
 void print_imap (int fd);
 void print_bmap (int fd);
 

@@ -20,13 +20,23 @@ u8* get_block(int fd, int block)
     return buf;
 }
 
-INODE* get_inode(int fd, int inode)
+INODE get_inode(int fd, int inode_number)
 {
+    SUPER* sp = get_super(fd);
     GD* gp = get_gd(fd);
-    INODE* ip = (INODE*)get_block(fd, gp->bg_inode_table);
 
+    int block_group = (inode_number - 1) / sp->s_inodes_per_group;
+    int local_index = (inode_number - 1) % sp->s_inodes_per_group;
+
+    int block = (block_group * sp->s_blocks_per_group) + gp->bg_inode_table;
+    
+    INODE* inode_table = (INODE*)get_block(fd, block);
+    INODE inode = inode_table[local_index];
+
+    free(sp);
     free(gp);
-    return ip + (inode - 1);
+    free(inode_table);
+    return inode;
 }
 
 SUPER* get_super(int fd) 
@@ -75,15 +85,6 @@ u8* get_inode_bitmap(int fd)
 
     free(gp);
     return imap;
-}
-
-INODE** get_inode_table(int fd)
-{
-    GD* gp = get_gd(fd);
-    INODE** inode_table = (INODE**)get_block(fd, gp->bg_inode_table);
-
-    free(gp);
-    return inode_table;
 }
 
 //-------------------------------------------------- 

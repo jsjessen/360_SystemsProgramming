@@ -37,6 +37,7 @@ int main(int argc, char *argv[])
     putchar('\n');
     print_bmap(fd);
     putchar('\n');
+    putchar('\n');
 
     return 0;
 }

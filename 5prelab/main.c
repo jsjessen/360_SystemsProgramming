@@ -11,6 +11,8 @@
 #include "util_ext2.h"
 #include "print_ext2.h"
 
+#define ROOT_INODE_NUMBER 2
+
 int main(int argc, char *argv[])
 { 
     int fd;
@@ -33,25 +35,17 @@ int main(int argc, char *argv[])
         exit(1);
     }
 
-    putchar('\n');
     print_super(fd);
-    getchar();
 
     print_gd(fd); 
-    getchar();
 
     print_bmap(fd);
-    getchar();
-    putchar('\n');
 
     print_imap(fd);
-    getchar();
-    putchar('\n');
 
-    print_inode(fd, 2);
-    getchar();
+    print_inode(fd, ROOT_INODE_NUMBER);
 
-    print_dir(fd);
+    print_dir(fd, ROOT_INODE_NUMBER);
 
     return 0;
 }
