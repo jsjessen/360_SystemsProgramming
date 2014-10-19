@@ -1,34 +1,42 @@
 /* James Jessen             
- * 10918967                
+ * 10918967                  
  *
  * CptS 360
  * PreLab #5
  */
 
-#include "util.h"
+#include <fcntl.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 
-int bmap(int fd)
-{
-    char buf[BLK_SIZE];
-    int i, j;
+#include "util_ext2.h"
+#include "print_ext2.h"
 
-    get_block(fd, BLOCK_BITMAP, buf);
+int main(int argc, char *argv[])
+{ 
+    int fd;
+    char *disk;
 
-    printf("********** Blocks Bitmap **********");
+    if (argc > 1)
+        disk = argv[1];
+    else
+        disk = "mydisk"; 
 
-    for (i = 0; i < (BLOCKS_COUNT / 8) + 1; i++) 
+    if((fd = open(disk, O_RDONLY)) < 0)
     {
-        if (i % 8 == 0)
-            putchar('\n');
-        else
-            putchar(' ');
-
-        for (j = 0; j < 8; j++)
-        {
-            if (buf[i] & (1 << j))
-                putchar('1');
-            else
-                putchar('0');
-        }
+        perror("Open disk");
+        exit(1);
     }
+
+    if(get_magic(fd) != 0xEF53)
+    {
+        printf("Not an ext2 file system\n");
+        exit(1);
+    }
+
+    putchar('\n');
+    print_bmap(fd);
+    putchar('\n');
+
+    return 0;
 }

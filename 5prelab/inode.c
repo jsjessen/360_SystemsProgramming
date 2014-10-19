@@ -1,26 +1,44 @@
-/* James Jessen 
- * 10918967    
+/* James Jessen             
+ * 10918967                  
  *
  * CptS 360
  * PreLab #5
  */
 
-#include "util.h"
+#include <fcntl.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 
-int inode(int fd)
-{
-    char buf[BLK_SIZE];
+#include "util_ext2.h"
+#include "print_ext2.h"
 
-    get_block(fd, INODE_TABLE, buf);
-    INODE* ip = (INODE *)buf + 1; //+1 to point to root
+#define ROOT_INODE 2
 
-    printf("********** Root Inode Info **********\n");
-    printf("inode_block  =  %u\n", 5);
-    printf("mode         =  %x\n", ip->i_mode);
-    printf("uid          =  %u\n", ip->i_uid);
-    printf("gid          =  %u\n", ip->i_gid);
-    printf("size         =  %u\n", ip->i_size);
-    printf("time         =  %s"  , ctime((time_t *)&ip->i_mtime));
-    printf("links_count  =  %u\n", ip->i_links_count);
-    printf("i_block[0]   =  %u\n", ip->i_block[0]);
+int main(int argc, char *argv[])
+{ 
+    int fd;
+    char *disk;
+
+    if (argc > 1)
+        disk = argv[1];
+    else
+        disk = "mydisk"; 
+
+    if((fd = open(disk, O_RDONLY)) < 0)
+    {
+        perror("Open disk");
+        exit(1);
+    }
+
+    if(get_magic(fd) != 0xEF53)
+    {
+        printf("Not an ext2 file system\n");
+        exit(1);
+    }
+
+    putchar('\n');
+    print_inode(fd, ROOT_INODE);
+    putchar('\n');
+
+    return 0;
 }

@@ -4,8 +4,12 @@
  * CptS 360
  * PreLab #5
  */
+#include <fcntl.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 
-#include "util.h"
+#include "util_ext2.h"
+#include "print_ext2.h"
 
 int main(int argc, char *argv[])
 { 
@@ -16,30 +20,38 @@ int main(int argc, char *argv[])
         disk = argv[1];
     else
         disk = "mydisk"; 
+
     if((fd = open(disk, O_RDONLY)) < 0)
     {
         perror("Open disk");
         exit(1);
     }
 
+    if(get_magic(fd) != 0xEF53)
+    {
+        printf("Not an ext2 file system\n");
+        exit(1);
+    }
+
+    putchar('\n');
+    print_super(fd);
+    getchar();
+
+    print_gd(fd); 
+    getchar();
+
+    print_bmap(fd);
+    getchar();
     putchar('\n');
 
-    super(fd);
+    print_imap(fd);
+    getchar();
+    putchar('\n');
+
+    print_inode(fd, 2);
     getchar();
 
-    gd(fd); 
-    getchar();
-
-    bmap(fd);
-    getchar();
-
-    imap(fd);
-    getchar();
-
-    inode(fd);
-    getchar();
-
-    dir(fd);
+    print_dir(fd);
 
     return 0;
 }

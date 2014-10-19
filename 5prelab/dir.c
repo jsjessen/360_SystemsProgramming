@@ -1,44 +1,42 @@
-/* James Jessen 
- * 10918967    
+/* James Jessen             
+ * 10918967                  
  *
  * CptS 360
  * PreLab #5
  */
 
-#include "util.h"
+#include <fcntl.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 
-int dir(int fd)
-{
-    char ibuf[BLK_SIZE];
-    char dbuf[BLK_SIZE];
-    int i, count;
+#include "util_ext2.h"
+#include "print_ext2.h"
 
-    get_block(fd, INODE_TABLE, ibuf);
-    INODE* ip = (INODE *)ibuf + 1; //+1 to point to root
+int main(int argc, char *argv[])
+{ 
+    int fd;
+    char *disk;
 
-    for(i = 0; i < 12; i++)
+    if (argc > 1)
+        disk = argv[1];
+    else
+        disk = "mydisk"; 
+
+    if((fd = open(disk, O_RDONLY)) < 0)
     {
-        get_block(fd, ip->i_block[i], dbuf);
-
-        if(!dbuf || dbuf[0] == 0)
-            break;
-
-        DIR* dp = (DIR *)dbuf;
-        char* cp = dbuf;
-
-        printf("****************************************\n");
-        printf("i_block[%d] = %d\n", i, ip->i_block[i]);
-
-        while (cp < (dbuf + BLK_SIZE))
-        {
-            printf(" %3u ", dp->inode);
-            printf(" %5u ", dp->rec_len);
-            printf(" %3u ", dp->name_len);
-            printf(" %s ", dp->name);
-            printf("\n");
-
-            cp += dp->rec_len;       // advance cp by rec_len BYTEs
-            dp = (DIR *)cp;          // pull dp along to the next record
-        }
+        perror("Open disk");
+        exit(1);
     }
+
+    if(get_magic(fd) != 0xEF53)
+    {
+        printf("Not an ext2 file system\n");
+        exit(1);
+    }
+
+    putchar('\n');
+    print_dir(fd);
+    putchar('\n');
+
+    return 0;
 }

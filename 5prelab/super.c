@@ -5,30 +5,38 @@
  * PreLab #5
  */
 
-#include "util.h"
+#include <fcntl.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 
-int super(int fd)
-{
-    char buf[BLK_SIZE];
+#include "util_ext2.h"
+#include "print_ext2.h"
 
-    get_block(fd, 1, buf);
-    SUPER* sp = (SUPER *)buf;
+int main(int argc, char *argv[])
+{ 
+    int fd;
+    char *disk;
 
-    MAGIC = sp->s_magic;
-    INODES_COUNT = sp->s_inodes_count;
-    BLOCKS_COUNT = sp->s_blocks_count;
+    if (argc > 1)
+        disk = argv[1];
+    else
+        disk = "mydisk"; 
 
-    printf("********** Super Block **********\n");
-    printf("inodes_count       =  %u\n", sp->s_inodes_count);
-    printf("blocks_count       =  %u\n", sp->s_blocks_count);
-    printf("free_inodes_count  =  %u\n", sp->s_free_inodes_count);
-    printf("free_blocks_count  =  %u\n", sp->s_free_blocks_count);
-    printf("log_block_size     =  %u\n", sp->s_log_block_size);
-    printf("blocks_per_group   =  %u\n", sp->s_blocks_per_group);
-    printf("inodes_per_group   =  %u\n", sp->s_inodes_per_group);
-    printf("mnt_count          =  %u\n", sp->s_mnt_count);
-    printf("max_mnt_count      =  %u\n", sp->s_max_mnt_count);
-    printf("magic              =  %x\n", sp->s_magic);
-    printf("mtime              =  %s"  , ctime((time_t *)&sp->s_mtime));
-    printf("inode_size         =  %u\n", sp->s_inode_size);
+    if((fd = open(disk, O_RDONLY)) < 0)
+    {
+        perror("Open disk");
+        exit(1);
+    }
+
+    if(get_magic(fd) != 0xEF53)
+    {
+        printf("Not an ext2 file system\n");
+        exit(1);
+    }
+
+    putchar('\n');
+    print_super(fd);
+    putchar('\n');
+
+    return 0;
 }

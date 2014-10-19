@@ -1,28 +1,42 @@
-/* James Jessen 
- * 10918967    
+/* James Jessen             
+ * 10918967                  
  *
  * CptS 360
  * PreLab #5
  */
 
-#include "util.h"
+#include <fcntl.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 
-int gd(int fd)
-{
-    char buf[BLK_SIZE];
+#include "util_ext2.h"
+#include "print_ext2.h"
 
-    get_block(fd, 2, buf);
-    GD* gp = (GD *)buf;
+int main(int argc, char *argv[])
+{ 
+    int fd;
+    char *disk;
 
-    BLOCK_BITMAP = gp->bg_block_bitmap;
-    INODE_BITMAP = gp->bg_inode_bitmap;
-    INODE_TABLE = gp->bg_inode_table;
+    if (argc > 1)
+        disk = argv[1];
+    else
+        disk = "mydisk"; 
 
-    printf("********** Group Descriptor Block **********\n");
-    printf("block_bitmap       =  %u\n", gp->bg_block_bitmap);
-    printf("inode_bitmap       =  %u\n", gp->bg_inode_bitmap);
-    printf("inode_table        =  %u\n", gp->bg_inode_table);
-    printf("free_blocks_count  =  %u\n", gp->bg_free_blocks_count);
-    printf("free_inodes_count  =  %u\n", gp->bg_free_inodes_count);
-    printf("used_dirs_count    =  %u\n", gp->bg_used_dirs_count);
+    if((fd = open(disk, O_RDONLY)) < 0)
+    {
+        perror("Open disk");
+        exit(1);
+    }
+
+    if(get_magic(fd) != 0xEF53)
+    {
+        printf("Not an ext2 file system\n");
+        exit(1);
+    }
+
+    putchar('\n');
+    print_gd(fd);
+    putchar('\n');
+
+    return 0;
 }

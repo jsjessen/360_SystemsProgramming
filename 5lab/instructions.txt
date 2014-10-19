@@ -1,0 +1,160 @@
+LAB Assignment #6
+
+
+/***************  DUE & DEMO : Week of OCT 21,2014 ********************
+ Write a C program, showblock, which displays the disk blocks of a file 
+ in an EXT2 file system. The program runs as follows
+
+       showblock   DEVICE    PATHNAME
+
+e.g.   showblock   mydisk    /a/b/c/d
+
+ It locates the file named PATHNAME and prints the disk blocks (direct, 
+ indirect, double-indirect) of the file.
+***********************************************************************/ 
+
+               HOW TO Traverse EXT2 File System Tree
+
+1. Traverse the EXT2 FS tree
+   Given a device, e.g. mydisk (a virtual FD image), containing an ext2 file
+   system, and a pathname, e.g. /cs360/is/fun of a file, find the file.
+
+   NOTE!!! To find a file amounts to finding its INODE. 
+           From the inode, you have ALL the information of a file.
+  
+2. ALGORITHM
+  
+(0). Read a disk block into a buffer: Write a get_block() function
+
+     #define BLKSIZE 1024
+
+     get_block(int fd, int blk, char buf[BLKSIZE])
+     {
+         lseek(fd, (long)(blk*BLKSIZE), 0);
+         read(fd, buf, BLKSIZE);
+     }
+
+
+(1). Open the device for READ: int fd = open(device, O_RDONLY);
+ 
+   Read in Superblock (blk #1) to verify it's indeed an ext2 FS. (HOW?)
+
+   (With the SuperBlock read in, you might as well print some of its important
+    fields, e.g. nblocks, ninodes, ngroups, inodes_per_group, number of free 
+    inodes and blocks, etc.
+   )
+
+(2). Read in the group descriptor block (block #2 for FD) and access Group0 
+   Descriptor. From its bg_inode_table entry, determine where INODEs begin on 
+   the disk. Call it the InodesBeginBlock.  
+
+(3). Read in InodeBeginBlock to get the inode of /, which is INODE #2.
+     NOTE: inode number counts from 1. Technique:
+
+         char buf[1024]; 
+         get_block(fd, inodeBeginBlock, buf)
+         INODE *ip = (INODE *)buf + 1;
+
+(4). Break up pathname into components and let the number of components be n,
+     Example:
+                            |<----- n = 3  ---->|
+         /cs360/is/fun  ==> cs360     is      fun 
+
+   Denote the token strings by name[0], name[1], ..., name[n-1]
+
+   YOU HAVE DONE THESE MANY TIMES BEFORE!!!
+
+(5). Start from the root INODE in (3), search for name[0] in its data block(s).
+   For DIR inodes, you may assume that (the number of entries is small so that)
+   it only has 12 DIRECT data blocks. Therefore, search only the direct blocks 
+   for name[0].
+
+   Each data block of a DIR inode contains DIR structures of the form 
+
+   BLOCK0: [ino 12 1 .   ] [ino 12 2 ..  ] [ino rlen nlen NAME ] ....
+  
+   BLOCK1: [ino rlen nlen NAME] [ino rlen nlen NAME] [ino rlen nlen NAME ] ....
+   etc.
+   
+   where each NAME is a seqeunce of nlen chars (without terminating NULL !!!) 
+   You may use nlen to extract the NAME string, and rlen to advance to the 
+   next DIR structure. The technique is
+
+        char buf[1024];
+        DIR  *dp = (DIR *dp)buf    // access buf[] as DIR entries
+        char *cp = buf;            // char pointer pointing at buf[ ]
+
+        read a block into buf[ ];
+        while(cp < buf + BLKSIZE){
+           if (name[0] matches dp->NAME)
+              return dp->ino;
+           cp += dp->rlen;         // advance cp by rlen in bytes
+           dp = (SHUT_UP)cp;       // pull dp to the next DIR entry
+        }
+
+   If name[0] exists. you can find its inode number.
+
+(6). Use the inode number, ino, to locate the corresponding INODE:
+     Recall that ino counts from 1.  Use the Mailman's algorithm
+
+               (ino - 1) / 8    and   InodeBeginBlock    
+               (ino - 1) % 8 
+               
+     to read in the INODE of /cs360
+
+   NOTE: the number 8 comes from: for FD, blockSize=1024 and inodeSize=128. 
+         If BlockSize != 1024, you must adjust the number 8 accordingly.
+
+   From the INODE of /cs360, you can easily determine whether it's a DIR.
+   (Remember S_ISDIR(), S_ISREG() ?)
+  
+   If it's not a DIR, there can't be anything like /cs360/is ...., so give up.
+
+   If it's a DIR and there are more components yet to search (BAD NEWS!)
+   you must go on.
+
+   The problem now becomes:
+       Search for name[1] in the INODE of /cs360
+   which is exactly the same as that of Step (5).
+
+(7). Since Steps (5)-(6) will be repeated n times, you should write a function
+ 
+     int search(INODE *inodePtr, char *name)
+         {
+           // search for name in the data blocks of this INODE
+           // if found, return name's ino;
+           // return 0
+         }
+
+
+(8). Then, all you have to do is call search() n times, as sketched below.
+
+     Assume:  n,  name[0], ...., name[n-1]   are globals
+
+     ip --> INODE of /
+
+     for (i= 0; i < n; i++){
+         inumber = search(ip, name[i])  
+         if (inumber == 0) : can't find name[i], BOMB OUT!
+         -------------------------------------------------------
+         use inumber to read in its INODE and let ip --> this INODE 
+     }
+  
+     // if you reach here, you must have ip --> the INODE of pathname.
+
+
+(9). Extract information from ip --> as required.
+     Pat yourself on the back and say: Good Job!
+
+**************************************************************************
+             Self Challenge and EXTRA CREDITS (50%):
+
+   Make your showblock work (CORRECTLY!) for EXT2/3 FS on hard disks.
+
+10. SAMPLES SOLUTION in samples/LAB6/:
+            showblock.bin, fdimage 
+    Run it under Linux as
+            showblock.bin DEVICE pathname 
+
+    e.g.    showblock fdimage /Z/hugefile
+
