@@ -10,8 +10,6 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-//#include <fcntl.h>
-//#include <unistd.h>
 #include <time.h>
 #include <ext2fs/ext2_fs.h>
 
@@ -21,12 +19,12 @@
 #define GROUP_SIZE 8
 #define GROUPS_PER_LINE 8
 
-void print_super(int fd);
-void print_gd   (int fd);
-void print_inode(int fd, int inode_number);
-void print_dir  (int fd, int inode_number);
-void print_imap (int fd);
-void print_bmap (int fd);
+void print_super(int dev);
+void print_gd   (int dev);
+void print_inode(int dev, int inode_number);
+void print_dir  (int dev, int inode_number);
+void print_imap (int dev);
+void print_bmap (int dev);
 
 
 #endif

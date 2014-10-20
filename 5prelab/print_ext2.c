@@ -8,34 +8,36 @@
 
 static const int ROOT_INODE_NUMBER = 2;
 
-void print_super(int fd)
+void print_super(int dev)
 {
-    SUPER* sp = get_super(fd); 
+    SUPER* sp = get_super(dev); 
 
     printf("\n********** SUPER **********\n");
     printf("inodes_count       =  %u\n", sp->s_inodes_count);
     printf("blocks_count       =  %u\n", sp->s_blocks_count);
     printf("free_inodes_count  =  %u\n", sp->s_free_inodes_count);
     printf("free_blocks_count  =  %u\n", sp->s_free_blocks_count);
-    printf("log_block_size     =  %u\n", sp->s_log_block_size);
+    printf("first_data_block   =  %u\n", sp->s_first_data_block);
+    printf("block_size         =  %u\n", 1024 << sp->s_log_block_size);
     printf("blocks_per_group   =  %u\n", sp->s_blocks_per_group);
     printf("inodes_per_group   =  %u\n", sp->s_inodes_per_group);
     printf("mnt_count          =  %u\n", sp->s_mnt_count);
     printf("max_mnt_count      =  %u\n", sp->s_max_mnt_count);
     printf("magic              =  %x\n", sp->s_magic);
-    printf("mtime              =  %s"  , ctime((time_t*)&sp->s_mtime));
+    printf("last mount         =  %s"  , ctime((time_t*)&sp->s_mtime));
+    printf("last write         =  %s"  , ctime((time_t*)&sp->s_wtime));
     printf("inode_size         =  %u\n", sp->s_inode_size);
 
     free(sp);
 }
 
-void print_gd(int fd)
+void print_gd(int dev)
 {
-    GD* gp = get_gd(fd);
+    GD* gp = get_gd(dev);
 
     printf("\n********** GROUP DESCRIPTOR **********\n");
-    printf("block_bitmap       =  %u\n", gp->bg_block_bitmap);
-    printf("inode_bitmap       =  %u\n", gp->bg_inode_bitmap);
+    printf("bmap       =  %u\n", gp->bg_block_bitmap);
+    printf("imap       =  %u\n", gp->bg_inode_bitmap);
     printf("inode_table        =  %u\n", gp->bg_inode_table);
     printf("free_blocks_count  =  %u\n", gp->bg_free_blocks_count);
     printf("free_inodes_count  =  %u\n", gp->bg_free_inodes_count);
@@ -44,10 +46,10 @@ void print_gd(int fd)
     free(gp);
 }
 
-void print_bmap(int fd)
+void print_bmap(int dev)
 {
-    u8* bmap = get_block_bitmap(fd);
-    int blocks_count = get_blocks_count(fd);
+    u8* bmap = get_bmap(dev);
+    int blocks_count = get_blocks_count(dev);
 
     int i;
     printf("\n********** BLOCK BITMAP **********\n");
@@ -65,10 +67,10 @@ void print_bmap(int fd)
     free(bmap);
 }
 
-void print_imap(int fd)
+void print_imap(int dev)
 {
-    u8* imap = get_inode_bitmap(fd);
-    int inode_count = get_inodes_count(fd);
+    u8* imap = get_imap(dev);
+    int inode_count = get_inodes_count(dev);
 
     int i;
     printf("\n********** INODE BITMAP **********\n");
@@ -86,9 +88,9 @@ void print_imap(int fd)
     free(imap);
 }
 
-void print_inode(int fd, int inode_number)
+void print_inode(int dev, int inode_number)
 {
-    INODE inode = get_inode(fd, inode_number);
+    INODE inode = get_inode(dev, inode_number);
 
     printf("\n********** INODE: %d **********\n", inode_number);
     printf("mode               =  %4x\n", inode.i_mode);
@@ -100,16 +102,16 @@ void print_inode(int fd, int inode_number)
     printf("i_block[0]         =  %u\n" , inode.i_block[0]);
 }
 
-void print_dir(int fd, int inode_number)
+void print_dir(int dev, int inode_number)
 {
-    INODE inode = get_inode(fd, inode_number);
-    int block_size = get_block_size(fd);
+    INODE inode = get_inode(dev, inode_number);
+    int block_size = get_block_size(dev);
 
     int i;
     printf("\n********** DIR OF INODE: %d **********\n", inode_number);
     for(i = 0; i < (inode.i_size / block_size); i++)
     {
-        u8* block = get_block(fd, inode.i_block[i]);
+        u8* block = get_block(dev, inode.i_block[i]);
         u8* cp = block; 
         DIR* dp = (DIR*)block;
 

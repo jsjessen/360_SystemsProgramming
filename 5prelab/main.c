@@ -36,15 +36,10 @@ int main(int argc, char *argv[])
     }
 
     print_super(fd);
-
     print_gd(fd); 
-
     print_bmap(fd);
-
     print_imap(fd);
-
     print_inode(fd, ROOT_INODE_NUMBER);
-
     print_dir(fd, ROOT_INODE_NUMBER);
 
     return 0;

@@ -24,25 +24,37 @@ typedef struct ext2_group_desc  GD;
 typedef struct ext2_inode       INODE;
 typedef struct ext2_dir_entry_2 DIR; 
 
-u8*   get_block(int fd, int block);
-INODE get_inode(int fd, int inode_number);
+void  put_block(int dev, int block, u8* buf);
+u8*   get_block(int dev, int block);
+INODE get_inode(int dev, int inode_number);
 
-SUPER*  get_super       (int fd); 
-GD*     get_gd          (int fd);
-u8*     get_block_bitmap(int fd);
-u8*     get_inode_bitmap(int fd);
+SUPER* get_super       (int dev); 
+void   put_super       (int dev, SUPER* buf); 
 
-int ialloc(int fd, int inode); // Allocates a free Inode, returns inode #
-int balloc(int fd, int inode); // Allocates a free Block, returns block #
+GD*    get_gd          (int dev);
+void   put_gd          (int dev, GD* buf);
 
-int get_magic       (int fd);
-int get_block_size  (int fd);
-int get_blocks_count(int fd);
-int get_inodes_count(int fd);
+u8*    get_bmap(int dev);
+void   put_bmap(int dev, u8* buf);
+
+u8*    get_imap(int dev);
+void   put_imap(int dev, u8* buf);
+
+void set_free_inodes(int dev, int change);
+void set_free_blocks(int dev, int change);
+int ialloc(int dev);
+int balloc(int dev);
+int ifree (int dev, int inode); 
+int bfree (int dev, int block); 
+
+int get_magic       (int dev);
+int get_block_size  (int dev);
+int get_blocks_count(int dev);
+int get_inodes_count(int dev);
 
 int  test_bit (u8* buf, int bit);
-void set_bit  (u8* buf, int bit);
-void clear_bit(u8* buf, int bit);
+void set_bit  (u8** buf, int bit);
+void clear_bit(u8** buf, int bit);
 
 
 #endif

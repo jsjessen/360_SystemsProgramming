@@ -1,0 +1,6 @@
+#! /bin/bash
+
+make 
+
+valgrind --leak-check=full $1 $2 
+
