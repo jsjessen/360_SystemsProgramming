@@ -1,0 +1,3 @@
+#!/bin/sh
+
+scp $1 james_jessen@cs360.eecs.wsu.edu:~/LAB5pre/$1
