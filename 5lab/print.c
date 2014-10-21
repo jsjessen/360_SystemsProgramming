@@ -97,7 +97,6 @@ void print_dir(int device, int inode_number)
     printf("\n********** DIR OF INODE: %d **********\n", inode_number);
     for(i = 0; i < (ip->i_size / block_size); i++)
     {
-
         if (ip->i_block[i] == 0)
             break;
 
@@ -122,7 +121,6 @@ void print_dir(int device, int inode_number)
             dp = (DIR*)cp;           // pull dp along to the next record
         } 
         putchar('\n');
-
         free(block);
     }
 }
@@ -171,6 +169,8 @@ void print_imap(int device)
 
 void print_indirect_block(int device, int block_size, int level, u8* buf)
 {
+    //block size might be different
+    
     int i;
 
     if(level)

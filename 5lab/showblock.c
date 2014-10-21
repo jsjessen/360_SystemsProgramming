@@ -2,121 +2,88 @@
 // 10918967          
 // 
 // CptS 360
-//
-// --------------------------------------------------------------
-// Displays the disk blocks of a file in an EXT2 file system.
-// The showblock program runs as follows:
-//
-//        showblock   DEVICE    PATHNAME
-//
-// e.g.   showblock   mydisk    /a/b/c/d
-//
-// It locates the file named PATHNAME and prints the 
-// disk blocks (direct, indirect, double-indirect) of the file.
-// --------------------------------------------------------------
 
-#include "util.h"
-#include "print.h"
-#include "parse.h"
+#include "search.h"
 
-int get_file_inode(int device, char* pathname)
+static const int ROOT_INODE = 2;
+
+// Searches through the device along pathname for target file 
+int search_fs(int device, char* pathname)
 {
     char** name = parse(pathname, "/");
+    int ino = search_dir(device, ROOT_INODE, name[0]);
 
-    // Follow user provided pathname 
-    int i = 0;
+    int i = 1;
     while(name[i])
     {
-        ino = search(ip, name[i]);
-        if (ino == 0)
+        if((ino = search_dir(device, ino, name[i])) < 0)
         {
-            printf("\n Failure: '%s' does not exist!\n\n", pathname);
-            exit(1);
+            printf("\n Failed to find: %s \n\n", pathname);
+            free_arr(name);
+            return -1;
         }
 
-        ip = iget(ino);
+        i++; // Next filename
 
-        if (S_ISDIR(ip->i_mode) && name[i + 1])
+        if (name[i])
         {
-            printDivider('=');
-            print(ip);
+            print_divider('=');
+            print_inode(device, ino);
         }
-        else
-            fprintf(stderr, "%s is not a directory\n", name[i + 1]);
-
-        i++
     }
     printDivider('-');
-    printf(" Success: '%s' has been found!\n", name[n-1]);
+    printf(" Success: '%s' has been found!\n", name[i - 1]);
 
-
+    free_arr(name);
+    return ino;
 }
 
-int search(INODE *ip, char *name)
+// Searches through the directory for the target file
+int search_dir(int device, int dir, char* target)
 {
     int i;
-    char *cp;
-    DIR *dp;
-    char buf[BLKSIZE];
-    char temp[256];
+    int block_size = get_block_size(device);
+    INODE* ip = get_inode(device, dir);
+
+    //Check that dir is a directory
+    if (!S_ISDIR(ip->i_mode))
+    {
+        fprintf(stderr, "%s is not a directory\n", name[i + 1]);
+        return -1;
+    }
 
     // For DIR inodes, assume that (the number of entries is small so that) only has
     // 12 DIRECT data blocks. Therefore, search only the direct blocks for name[0].
-    for (i = 0; i < 12; i++)
+    for(i = 0; i < (ip->i_size / block_size); i++)
     {
-        //printf("iblock[%d] = %d\n", i, ip->i_block[i]);
         if (ip->i_block[i] == 0)
             break;
 
-        get_block(fd, ip->i_block[i], buf);
-        dp = (DIR *)buf;
-        cp = buf;
+        u8* block = get_block(device, ip->i_block[i]);
+        u8* cp = block; 
+        DIR* dp = (DIR*)block;
 
-        while (cp < buf + BLKSIZE)
+        printf("i_block[%d]\n", i);
+        print_divider('-');
+        printf(" inode  rec_len  name_len  name\n");
+        print_divider('-');
+
+        while (cp < block + block_size)
         {
-            strncpy(temp, dp->name, dp->name_len);
-            temp[dp->name_len] = 0;
+            char name[256];
+            strncpy(name, dp->name, dp->name_len);
+            name[dp->name_len] = 0;
+            printf(" %4d          %4d          %4d        %s\n",
+                    dp->inode, dp->rec_len, dp->name_len, name);
 
-            if (strcmp(name, temp) == 0)
+            if (strcmp(name, target) == 0)
                 return dp->inode;
 
-            cp += dp->rec_len;
-            dp = (DIR *)cp;
-        }
+            cp += dp->rec_len;       // advance cp by rec_len BYTEs
+            dp = (DIR*)cp;           // pull dp along to the next record
+        } 
+        putchar('\n');
+        free(block);
     }
-
-    return 0;    
-}
-
-int main(int argc, char *argv[])
-{ 
-    char* dev;
-    char* pathname;
-
-    if (argc != 3)
-    {
-        printf("Usage:\n");
-        printf("         showblock   DEVICE    PATHNAME\n");
-        printf("  e.g.   showblock   mydisk    /a/b/c/d\n\n");
-        exit(1);
-    }
-
-    dev = argv[1];
-    pathname = argv[2];
-
-    if((fd = open(dev, O_RDONLY)) < 0)
-    {
-        perror("open device");
-        exit(1);
-    }
-
-    if(!isExt2(dev))
-    {
-        fprintf(stderr, "%s is not of the EXT2 format\n", dev);
-        exit(1);
-    }
-
-    print_inode_block(fd, find_file_inode(fd, pathname));
-
-    return 0;
+    return -1;    
 }
