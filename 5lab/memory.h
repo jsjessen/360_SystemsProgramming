@@ -5,11 +5,11 @@
 
 // ------------------------------------
 // Functions for allocating and freeing
-// memory primarialy an ext2 filesystem
+// memory primarily an ext2 filesystem
 // ------------------------------------
 
-#ifndef __ALLOC_FREE_H_
-#define __ALLOC_FREE_H_
+#ifndef __MEMORY_H_
+#define __MEMORY_H_
 
 
 #include <stdio.h>
@@ -17,6 +17,14 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <ext2fs/ext2_fs.h>
+
+#include "util.h"
+#include "transfer.h"
+
+// Input an array of pointers like char* argv[]
+// Goes through and frees each element
+// and then frees the array
+void free_array(char** array);
 
 void set_free_inodes(int device, int change);
 void set_free_blocks(int device, int change);

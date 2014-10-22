@@ -15,12 +15,15 @@
 // disk blocks (direct, indirect, double-indirect) of the file.
 // --------------------------------------------------------------
 
+#include <fcntl.h>
+
 #include "util.h"
 #include "search.h"
 #include "print.h"
 
 int main(int argc, char *argv[])
 { 
+    int   fd;
     char* device;
     char* pathname;
 
@@ -46,6 +49,10 @@ int main(int argc, char *argv[])
         fprintf(stderr, "%s does not use the ext2 filesystem\n", device);
         exit(1);
     }
+
+    print_super(fd);
+    print_gd(fd);
+    print_inode(fd, 2);
 
     print_file_blocks(fd, search_fs(fd, pathname));
 

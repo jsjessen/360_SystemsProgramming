@@ -1,8 +1,7 @@
-/* James Jessen             
- * 10918967                  
- *
- * CptS 360
- */
+// James Jessen
+// 10918967   
+// 
+// CptS 360
 
 #include "print.h"
 
@@ -177,6 +176,7 @@ void print_imap(int device)
 // Print the data blocks of a file/inode
 void print_file_blocks(int device, int inode_number)
 {
+    int i;
     int block_size = get_block_size(device);
     INODE *ip = get_inode(device, inode_number);
 
@@ -185,7 +185,7 @@ void print_file_blocks(int device, int inode_number)
     for (i = 0; i < 15 && ip->i_block[i] > 0; i++)
         printf("\nblock[%2d] = %d", i, ip->i_block[i]);
 
-    printTitle("Direct Blocks", '=');
+    print_title("Direct Blocks", '=');
     for (i = 0; i < 12; i++)
     {
         if (i % 10 == 0)
@@ -196,7 +196,7 @@ void print_file_blocks(int device, int inode_number)
         if (ip->i_block[i] == 0)
         {
             printf("\n\n");
-            return 0;
+            return;
         }
         else
             printf("%4d", ip->i_block[i]);
@@ -204,21 +204,21 @@ void print_file_blocks(int device, int inode_number)
 
     print_title("Indirect Blocks", '=');
     printf(" %d", ip->i_block[12]);
-    print_indirect_block(ip, get_block(device, ip->i_block[12]), 1);
+    print_indirect_block(device, block_size, get_block(device, ip->i_block[12]), 1);
 
     print_title("Double Indirect Blocks", '=');
     printf(" %d", ip->i_block[13]);
-    print_indirect_block(ip, get_block(device, ip->i_block[13]), 2);
+    print_indirect_block(device, block_size, get_block(device, ip->i_block[13]), 2);
 
     print_title("Triple Indirect Blocks", '=');
     printf(" %d", ip->i_block[14]);
-    print_indirect_block(ip, get_block(device, ip->i_block[14]), 3);
+    print_indirect_block(device, block_size, get_block(device, ip->i_block[14]), 3);
 
     free(ip);
 }
 
 // Recursive function for printing indirect data blocks
-void print_indirect_block(int device, int block_size, int level, u8* buf)
+void print_indirect_block(int device, int block_size, u8* buf, int level)
 {
     //block size might be different
     
@@ -230,7 +230,7 @@ void print_indirect_block(int device, int block_size, int level, u8* buf)
             printf(" -> %d", i);
 
         for(i = 0; i < block_size / sizeof(int); i++)
-            print_indirect_block(device, block_size, level - 1, get_block(device, i));
+            print_indirect_block(device, block_size, get_block(device, i), level - 1);
     }
     else
     {

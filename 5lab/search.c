@@ -7,6 +7,7 @@
 
 static const int ROOT_INODE = 2;
 
+
 // Searches through the device along pathname for target file 
 int search_fs(int device, char* pathname)
 {
@@ -19,7 +20,7 @@ int search_fs(int device, char* pathname)
         if((ino = search_dir(device, ino, name[i])) < 0)
         {
             printf("\n Failed to find: %s \n\n", pathname);
-            free_arr(name);
+            free_array(name);
             return -1;
         }
 
@@ -31,10 +32,10 @@ int search_fs(int device, char* pathname)
             print_inode(device, ino);
         }
     }
-    printDivider('-');
+    print_divider('-');
     printf(" Success: '%s' has been found!\n", name[i - 1]);
 
-    free_arr(name);
+    free_array(name);
     return ino;
 }
 
@@ -48,7 +49,7 @@ int search_dir(int device, int dir, char* target)
     //Check that dir is a directory
     if (!S_ISDIR(ip->i_mode))
     {
-        fprintf(stderr, "%s is not a directory\n", name[i + 1]);
+        fprintf(stderr, "Not a directory\n");
         return -1;
     }
 

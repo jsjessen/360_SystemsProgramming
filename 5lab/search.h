@@ -13,9 +13,13 @@
 
 
 #include <stdio.h>
+#include <sys/stat.h>
 
-#include "parse.h"
 #include "util.h"
+#include "input.h"
+#include "transfer.h"
+#include "memory.h"
+#include "print.h"
 
 // Assumes the device uses the ext2 filesystem 
 // Given the file descriptor of an open device and target file's pathname
@@ -26,7 +30,7 @@ int search_fs(int device, char* pathname);
 
 // Given a the inode number of a directory
 // Searches through the directory for the target file
-int search_dir(int dir, int target);
+int search_dir(int device, int dir, char* target);
 // Returns the target file's inode number if it exists
 // Returns -1 if the target file does not exist
 

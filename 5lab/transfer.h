@@ -3,13 +3,13 @@
 // 
 // CptS 360
 
-// ------------------------------------
-// Functions for getting data from and
-// putting data onto an ext2 filesystem
-// ------------------------------------
+// ------------------------------
+// Functions for transfering data
+// to and from an ext2 filesystem
+// ------------------------------
 
-#ifndef __GET_PUT_H_
-#define __GET_PUT_H_
+#ifndef __TRANSFER_H_
+#define __TRANSFER_H_
 
 
 #include <stdio.h>
@@ -17,6 +17,8 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <ext2fs/ext2_fs.h>
+
+#include "util.h"
 
 u8*    get_block(int device, int block);
 SUPER* get_super(int device); 
@@ -36,6 +38,8 @@ int get_magic       (int device);
 int get_block_size  (int device);
 int get_blocks_count(int device);
 int get_inodes_count(int device);
+
+bool isExt2(int device);
 
 
 #endif

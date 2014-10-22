@@ -1,42 +1,37 @@
-FILES = main.c ialloc.c balloc.c ifree.c bfree.c \
-		super.c gd.c bmap.c imap.c inode.c dir.c \
-		print_ext2.c print_ext2.h \
-		util_ext2.c util_ext2.h
+NAME = sb
 
-OBJS = main.o ialloc.o balloc.o ifree.o bfree.o \
-	   super.o gd.o bmap.o imap.o inode.o dir.o \
-	   print_ext2.o \
-	   util_ext2.o
+FILES = main.c \
+		input.c    input.h    \
+		util.c     util.h     \
+		print.c    print.h	  \
+		search.c   search.h   \
+		memory.c   memory.h   \
+		transfer.c transfer.h \
 
-SHARED = print_ext2.o util_ext2.o
+OBJS = main.o \
+	   input.o util.o print.o \
+	   search.o memory.o transfer.o 
 
 CC = gcc
-FLAGS = -Wall -g -O0
+DEBUG = -Wall -g -O0
+FLAGS = $(DEBUG)
 
 run : $(OBJS)
-	$(CC) -o demo   main.o   $(SHARED) $(FLAGS)
-	$(CC) -o ialloc ialloc.o $(SHARED) $(FLAGS)
-	$(CC) -o balloc balloc.o $(SHARED) $(FLAGS)
-	$(CC) -o ifree  ifree.o  $(SHARED) $(FLAGS)
-	$(CC) -o bfree  bfree.o  $(SHARED) $(FLAGS)
-	$(CC) -o super  super.o  $(SHARED) $(FLAGS)
-	$(CC) -o gd     gd.o     $(SHARED) $(FLAGS)
-	$(CC) -o bmap   bmap.o   $(SHARED) $(FLAGS)
-	$(CC) -o imap   imap.o   $(SHARED) $(FLAGS)
-	$(CC) -o inode  inode.o  $(SHARED) $(FLAGS)
-	$(CC) -o dir    dir.o    $(SHARED) $(FLAGS)
+	$(CC) -o $(NAME) $(OBJS) $(FLAGS)
 
-main.o   : print_ext2.h util_ext2.h
-ialloc.o : print_ext2.h util_ext2.h
-balloc.o : print_ext2.h util_ext2.h
-ifree.o  : print_ext2.h util_ext2.h
-bfree.o  : print_ext2.h util_ext2.h
-super.o  : print_ext2.h util_ext2.h
-gd.o     : print_ext2.h util_ext2.h
-bmap.o   : print_ext2.h util_ext2.h
-imap.o   : print_ext2.h util_ext2.h
-inode.o  : print_ext2.h util_ext2.h
-dir.o    : print_ext2.h util_ext2.h
+check_mem : run
+	valgrind --leak-check=full $(NAME) 
+
+main.o     : input.h search.h
+print.o    : util.h transfer.h
+search.o   : util.h input.h transfer.h memory.h print.h
+memory.o   : util.h transfer.h
+transfer.o : util.h
+
+shiny : run clean
 
 clean :
 	-rm $(OBJS)
+
+tar :
+	tar cfv $(NAME).tar $(FILES)

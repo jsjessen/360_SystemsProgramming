@@ -23,6 +23,8 @@ typedef unsigned short u16;
 typedef unsigned int   u32;
 typedef unsigned long  u64;
 
+typedef enum { false, true } bool;
+
 typedef struct ext2_super_block SUPER;
 typedef struct ext2_group_desc  GD;
 typedef struct ext2_inode       INODE;
