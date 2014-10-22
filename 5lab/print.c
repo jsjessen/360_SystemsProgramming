@@ -6,10 +6,12 @@
 
 #include "print.h"
 
+
+// *************** Title ***************  
 void print_title(char* title, char symbol)
 {
     int i;
-    int length = strlen(title) + 2; // space before/after 
+    int length = strlen(title) + 2; // space before/after title
 
     printf("\n\n");
     for (i = 0; i < TITLE_WIDTH - length; i++)
@@ -22,17 +24,17 @@ void print_title(char* title, char symbol)
     putchar('\n');
 }
 
+// -------------------------------------
 void print_divider(char symbol)
 {
     int i;
-
     for (i = 0; i < TITLE_WIDTH - 1; i++)
         putchar(symbol);
 
     putchar('\n');
 }
 
-
+// Print the relevant properties of the Super block in group 0
 void print_super(int device)
 {
     SUPER* sp = get_super(device); 
@@ -42,7 +44,7 @@ void print_super(int device)
     printf("blocks_count            =                    %4u\n", sp->s_blocks_count);
     printf("free_inodes_count       =                    %4u\n", sp->s_free_inodes_count);
     printf("free_blocks_count       =                    %4u\n", sp->s_free_blocks_count);
-    printf("first_data_block        =                    %4u\n" , sp->s_first_data_block);
+    printf("first_data_block        =                    %4u\n", sp->s_first_data_block);
     printf("log_block_size          =                    %4u\n", sp->s_log_block_size);
     printf("blocks_per_group        =                    %4u\n", sp->s_blocks_per_group);
     printf("inodes_per_group        =                    %4u\n", sp->s_inodes_per_group);
@@ -55,6 +57,7 @@ void print_super(int device)
     free(sp);
 }
 
+// Print the relevant properties of the Group Descriptor block in group 0
 void print_gd(int device)
 {
     GD* gp = get_gd(device);
@@ -71,6 +74,7 @@ void print_gd(int device)
     free(gp);
 }
 
+// Print the relevant properties of a given inode 
 void print_inode(int device, int inode_number)
 {
     INODE *ip = get_inode(device, inode_number);
@@ -88,6 +92,7 @@ void print_inode(int device, int inode_number)
     free(ip);
 }
 
+// Print the contents of a directory
 void print_dir(int device, int inode_number)
 {
     int i;
@@ -125,6 +130,7 @@ void print_dir(int device, int inode_number)
     }
 }
 
+// Print the Block Bitmap of group 0
 void print_bmap(int device)
 {
     int i;
@@ -146,6 +152,7 @@ void print_bmap(int device)
     free(bmap);
 }
 
+// Print the Inode Bitmap of group 0
 void print_imap(int device)
 {
     int i;
@@ -167,46 +174,8 @@ void print_imap(int device)
     free(imap);
 }
 
-void print_indirect_block(int device, int block_size, int level, u8* buf)
-{
-    //block size might be different
-    
-    int i;
-
-    if(level)
-    {
-        if(level > 1)
-            printf(" -> %d", i);
-
-        for(i = 0; i < block_size / sizeof(int); i++)
-            print_indirect_block(device, block_size, level - 1, get_block(device, i));
-    }
-    else
-    {
-        printf(":\n");
-        print_divider('-');
-
-        for(i = 0; i < block_size / sizeof(int); i++)
-        {
-            if (i % GROUPS_PER_LINE == 0)
-                putchar('\n');
-            else   
-                putchar(' ');
-
-            if (buf[i] == 0)
-            {
-                printf("\n\n");
-                break;
-            }
-            else
-                printf("%4d", buf[i]);
-        }
-    }
-
-    free(buf);
-}
-
-void print_block(int device, int inode_number)
+// Print the data blocks of a file/inode
+void print_file_blocks(int device, int inode_number)
 {
     int block_size = get_block_size(device);
     INODE *ip = get_inode(device, inode_number);
@@ -246,4 +215,44 @@ void print_block(int device, int inode_number)
     print_indirect_block(ip, get_block(device, ip->i_block[14]), 3);
 
     free(ip);
+}
+
+// Recursive function for printing indirect data blocks
+void print_indirect_block(int device, int block_size, int level, u8* buf)
+{
+    //block size might be different
+    
+    int i;
+
+    if(level)
+    {
+        if(level > 1)
+            printf(" -> %d", i);
+
+        for(i = 0; i < block_size / sizeof(int); i++)
+            print_indirect_block(device, block_size, level - 1, get_block(device, i));
+    }
+    else
+    {
+        printf(":\n");
+        print_divider('-');
+
+        for(i = 0; i < block_size / sizeof(int); i++)
+        {
+            if (i % GROUPS_PER_LINE == 0)
+                putchar('\n');
+            else   
+                putchar(' ');
+
+            if (buf[i] == 0)
+            {
+                printf("\n\n");
+                break;
+            }
+            else
+                printf("%4d", buf[i]);
+        }
+    }
+
+    free(buf);
 }

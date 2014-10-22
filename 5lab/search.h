@@ -3,6 +3,11 @@
 // 
 // CptS 360
 
+// ----------------------------------
+// Functions for searching through an
+// ext2 filesystem and its components
+// ----------------------------------
+
 #ifndef __SEARCH_H_
 #define __SEARCH_H_
 
