@@ -1,4 +1,6 @@
-NAME = sb
+NAME = showblock
+DISK = fdimage
+FILE = /Z/hugefile
 
 FILES = main.c \
 		input.c    input.h    \
@@ -19,10 +21,7 @@ FLAGS = $(DEBUG)
 run : $(OBJS)
 	$(CC) -o $(NAME) $(OBJS) $(FLAGS)
 
-check_mem : run
-	valgrind --leak-check=full $(NAME) 
-
-main.o     : input.h search.h
+main.o     : util.h search.h print.h
 print.o    : util.h transfer.h
 search.o   : util.h input.h transfer.h memory.h print.h
 memory.o   : util.h transfer.h

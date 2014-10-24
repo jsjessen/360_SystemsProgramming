@@ -80,7 +80,7 @@ char** parse(char* input, char* delimiters)
     char* tok;
     char** buf;
 
-    if((copy = (char*)malloc(strlen(input) * sizeof(char))) == NULL)
+    if((copy = (char*)malloc((strlen(input) + 1) * sizeof(char))) == NULL)
     {
         perror("input.c: parse(): copy malloc");
         return NULL;
@@ -124,5 +124,6 @@ char** parse(char* input, char* delimiters)
     }
     buf[i] = NULL;
 
+    free(copy);
     return buf;
 }

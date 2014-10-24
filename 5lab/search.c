@@ -52,9 +52,9 @@ int search_dir(int device, int dir, char* target)
     //Check that dir is a directory
     if (!S_ISDIR(ip->i_mode))
     {
-        print_inode(device, dir);
-        //fprintf(stderr, "i_mode=%4x\n", ip->i_mode);
         fprintf(stderr, "Not a directory\n");
+
+        free(ip);
         return -1;
     }
 
@@ -95,5 +95,6 @@ int search_dir(int device, int dir, char* target)
         free(block);
     }
 
+    free(ip);
     return target_ino;    
 }
