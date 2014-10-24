@@ -11,29 +11,31 @@ static const int ROOT_INODE = 2;
 // Searches through the device along pathname for target file 
 int search_fs(int device, char* pathname)
 {
+    int i = 0;
     char** name = parse(pathname, "/");
-    int ino = search_dir(device, ROOT_INODE, name[0]);
+    int ino = ROOT_INODE;
 
-    int i = 1;
+    printf("\nSearching for %s\n", pathname);
+
     while(name[i])
     {
+        putchar('\n');
+        if(i)
+            printf("Find %s in %s\n", name[i], name[i - 1]);
+        else
+            printf("Find %s in / \n", name[i]);
+            
         if((ino = search_dir(device, ino, name[i])) < 0)
         {
-            printf("\n Failed to find: %s \n\n", pathname);
+            printf("\nCouldn't find: %s \n", name[i]);
             free_array(name);
             return -1;
         }
+        print_divider('-');
 
-        i++; // Next filename
-
-        if (name[i])
-        {
-            print_divider('=');
-            print_inode(device, ino);
-        }
+        i++;
     }
-    print_divider('-');
-    printf(" Success: '%s' has been found!\n", name[i - 1]);
+    printf("\nFound!\n");
 
     free_array(name);
     return ino;
@@ -43,12 +45,15 @@ int search_fs(int device, char* pathname)
 int search_dir(int device, int dir, char* target)
 {
     int i;
+    int target_ino= 0;
     int block_size = get_block_size(device);
     INODE* ip = get_inode(device, dir);
 
     //Check that dir is a directory
     if (!S_ISDIR(ip->i_mode))
     {
+        print_inode(device, dir);
+        //fprintf(stderr, "i_mode=%4x\n", ip->i_mode);
         fprintf(stderr, "Not a directory\n");
         return -1;
     }
@@ -64,9 +69,8 @@ int search_dir(int device, int dir, char* target)
         u8* cp = block; 
         DIR* dp = (DIR*)block;
 
-        printf("i_block[%d]\n", i);
         print_divider('-');
-        printf(" inode  rec_len  name_len  name\n");
+        printf(" Inode #   Record Length   Name Length   Name \n");
         print_divider('-');
 
         while (cp < block + block_size)
@@ -74,17 +78,22 @@ int search_dir(int device, int dir, char* target)
             char name[256];
             strncpy(name, dp->name, dp->name_len);
             name[dp->name_len] = 0;
-            printf(" %4d          %4d          %4d        %s\n",
+            printf(" %4d          %4d          %4d        %s",
                     dp->inode, dp->rec_len, dp->name_len, name);
 
             if (strcmp(name, target) == 0)
-                return dp->inode;
+            {
+                printf(" <%.*s here", 15 - dp->name_len, "---------------");
+                target_ino = dp->inode;
+            }
+            putchar('\n');
 
             cp += dp->rec_len;       // advance cp by rec_len BYTEs
             dp = (DIR*)cp;           // pull dp along to the next record
         } 
-        putchar('\n');
+
         free(block);
     }
-    return -1;    
+
+    return target_ino;    
 }

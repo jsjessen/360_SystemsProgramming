@@ -24,6 +24,7 @@
 int main(int argc, char *argv[])
 { 
     int   fd;
+    int   ino;
     char* device;
     char* pathname;
 
@@ -44,7 +45,7 @@ int main(int argc, char *argv[])
         exit(1);
     }
 
-    if(!isExt2(device))
+    if(!isExt2(fd))
     {
         fprintf(stderr, "%s does not use the ext2 filesystem\n", device);
         exit(1);
@@ -54,7 +55,13 @@ int main(int argc, char *argv[])
     print_gd(fd);
     print_inode(fd, 2);
 
-    print_file_blocks(fd, search_fs(fd, pathname));
+    getchar();
+
+    if((ino = search_fs(fd, pathname)) > 0)
+    {
+        getchar();
+        print_file_blocks(fd, ino);
+    }
 
     return 0;
 }

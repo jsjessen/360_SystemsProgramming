@@ -68,7 +68,7 @@ INODE *iget(int ino)
     // Inode count starts from 1 not 0, so need -1
     blk = (ino - 1) / inodesPerBlock + inodeBegin;
     offset = (ino - 1) % inodesPerBlock;
-    //printf("\nino=%d blk=%d offset=%d\n", ino, blk, offset);
+    printf("\niget(): ino=%d blk=%d offset=%d\n", ino, blk, offset);
 
     get_block(fd, blk, buf);
     ip = (INODE *)buf + offset;
@@ -124,7 +124,6 @@ int search(INODE *ip, char *name)
     // 12 DIRECT data blocks. Therefore, search only the direct blocks for name[0].
     for (i = 0; i < 12; i++)
     {
-        //printf("iblock[%d] = %d\n", i, ip->i_block[i]);
         if (ip->i_block[i] == 0)
             break;
 
@@ -294,6 +293,7 @@ int main(int argc, char *argv[])
             exit(1);
         }
 
+        printf("ino = %d\n", ino);
         ip = iget(ino);
 
         if (S_ISDIR(ip->i_mode) && i < n - 1)

@@ -17,7 +17,7 @@ char* get_input()
 
     if((buf = (char*)malloc(size)) == NULL)
     {
-        perror("input.c: initial buf malloc");
+        perror("input.c: get_input(): initial buf malloc");
         return NULL;
     }
     buf[0] = 0;
@@ -35,7 +35,7 @@ char* get_input()
             // Double Size
             if((buf = (char*)realloc(buf, size)) == NULL)
             {
-                perror("input.c: buf realloc");
+                perror("input.c: get_input(): buf realloc");
                 return NULL;
             }
         }
@@ -76,16 +76,24 @@ char** parse(char* input, char* delimiters)
 {
     int i = 0;
     int size = INITIAL_BUF_SIZE;
+    char* copy;
     char* tok;
     char** buf;
 
+    if((copy = (char*)malloc(strlen(input) * sizeof(char))) == NULL)
+    {
+        perror("input.c: parse(): copy malloc");
+        return NULL;
+    }
+    strcpy(copy, input);
+
     if((buf = (char**)malloc(size * sizeof(char*))) == NULL)
     {
-        perror("parse.c: initial ouput malloc");
+        perror("input.c: parse(): initial ouput malloc");
         return NULL;
     }
 
-    if((tok = strtok(input, delimiters)) == NULL)
+    if((tok = strtok(copy, delimiters)) == NULL)
         return NULL;
 
     while(tok)
@@ -93,7 +101,7 @@ char** parse(char* input, char* delimiters)
         int length = strlen(tok) + 1;
         if((buf[i] = (char*)malloc(length)) == NULL)
         {
-            perror("parse.c: buf malloc for tok");
+            perror("input.c: parse(): buf malloc for tok");
             return NULL;
         }
         strcpy(buf[i], tok);
@@ -106,7 +114,7 @@ char** parse(char* input, char* delimiters)
             // Double buffer size
             if((buf = (char**)realloc(buf, size * sizeof(char*))) == NULL)
             {
-                perror("parse.c: buf realloc");
+                perror("input.c: parse(): buf realloc");
                 return NULL;
             }
         }

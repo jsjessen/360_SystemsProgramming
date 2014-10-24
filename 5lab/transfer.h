@@ -34,10 +34,12 @@ void put_bmap (int device, u8* buf);
 void put_imap (int device, u8* buf);
 //void put_inode(int device, INODE* buf, int inode_number);
 
-int get_magic       (int device);
-int get_block_size  (int device);
-int get_blocks_count(int device);
-int get_inodes_count(int device);
+int get_magic           (int device);
+int get_block_size      (int device);
+int get_inode_size      (int devive);
+int get_blocks_count    (int device);
+int get_inodes_count    (int device);
+int get_inodes_per_block(int device);
 
 bool isExt2(int device);
 

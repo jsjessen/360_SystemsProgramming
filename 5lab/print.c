@@ -5,6 +5,8 @@
 
 #include "print.h"
 
+static int const ROOT_INODE = 2;
+
 
 // *************** Title ***************  
 void print_title(char* title, char symbol)
@@ -12,7 +14,7 @@ void print_title(char* title, char symbol)
     int i;
     int length = strlen(title) + 2; // space before/after title
 
-    printf("\n\n");
+    putchar('\n');
     for (i = 0; i < TITLE_WIDTH - length; i++)
     {
         if (i != (TITLE_WIDTH - length) / 2)
@@ -38,7 +40,7 @@ void print_super(int device)
 {
     SUPER* sp = get_super(device); 
 
-    print_title("Super Block", '*');
+    print_title("Super Block", '=');
     printf("inodes_count            =                    %4u\n", sp->s_inodes_count);
     printf("blocks_count            =                    %4u\n", sp->s_blocks_count);
     printf("free_inodes_count       =                    %4u\n", sp->s_free_inodes_count);
@@ -61,7 +63,7 @@ void print_gd(int device)
 {
     GD* gp = get_gd(device);
 
-    print_title("Group Descriptor", '*');
+    print_title("Group Descriptor", '=');
     printf("block_bitmap            =                    %4u\n", gp->bg_block_bitmap);
     printf("inode_bitmap            =                    %4u\n", gp->bg_inode_bitmap);
     printf("inode_table             =                    %4u\n", gp->bg_inode_table);
@@ -78,7 +80,11 @@ void print_inode(int device, int inode_number)
 {
     INODE *ip = get_inode(device, inode_number);
 
-    print_title("Inode", '*');
+    if(inode_number == ROOT_INODE)
+        print_title("Root Inode", '=');
+    else
+        print_title("Inode", '=');
+
     printf("inode                   =                    %4d\n", inode_number);
     printf("mode                    =                    %4x\n", ip->i_mode);
     printf("uid                     =                    %4u\n", ip->i_uid);
@@ -136,7 +142,7 @@ void print_bmap(int device)
     u8* bmap = get_bmap(device);
     int blocks_count = get_blocks_count(device);
 
-    print_title("Block Bitmap", '*');
+    print_title("Block Bitmap", '=');
     for(i = 0; i < blocks_count; i++)
     {
         if(i && (i % (GROUPS_PER_LINE * GROUP_SIZE)) == 0)
@@ -158,7 +164,7 @@ void print_imap(int device)
     u8* imap = get_imap(device);
     int inode_count = get_inodes_count(device);
 
-    print_title("Inode Bitmap", '*');
+    print_title("Inode Bitmap", '=');
     for(i = 0; i < inode_count; i++)
     {
         if(i && (i % (GROUPS_PER_LINE * GROUP_SIZE)) == 0)
@@ -181,16 +187,17 @@ void print_file_blocks(int device, int inode_number)
     INODE *ip = get_inode(device, inode_number);
 
     // Disk Blocks - list i_block[] non-zeroes
-    print_title("Inode Blocks", '*');
+    print_title("Inode Blocks", '=');
     for (i = 0; i < 15 && ip->i_block[i] > 0; i++)
-        printf("\nblock[%2d] = %d", i, ip->i_block[i]);
+        printf("block[%2d] = %d\n", i, ip->i_block[i]);
 
+    getchar();
     print_title("Direct Blocks", '=');
     for (i = 0; i < 12; i++)
     {
-        if (i % 10 == 0)
+        if (i && i % GROUPS_PER_LINE == 0)
             putchar('\n');
-        else   
+        else if(i)   
             putchar(' ');
 
         if (ip->i_block[i] == 0)
@@ -201,36 +208,61 @@ void print_file_blocks(int device, int inode_number)
         else
             printf("%4d", ip->i_block[i]);
     }
+    putchar('\n');
 
+    getchar();
     print_title("Indirect Blocks", '=');
     printf(" %d", ip->i_block[12]);
-    print_indirect_block(device, block_size, get_block(device, ip->i_block[12]), 1);
+    if(!print_indirect_block(device, block_size, 
+                (int*)get_block(device, ip->i_block[12]), 1))
+    {
+        free(ip);
+        return;
+    }
+    putchar('\n');
 
+    getchar();
     print_title("Double Indirect Blocks", '=');
     printf(" %d", ip->i_block[13]);
-    print_indirect_block(device, block_size, get_block(device, ip->i_block[13]), 2);
+    if(!print_indirect_block(device, block_size, 
+                (int*)get_block(device, ip->i_block[13]), 2))
+    {
+        free(ip);
+        return;
+    }
+    putchar('\n');
 
+    getchar();
     print_title("Triple Indirect Blocks", '=');
     printf(" %d", ip->i_block[14]);
-    print_indirect_block(device, block_size, get_block(device, ip->i_block[14]), 3);
-
-    free(ip);
+    if(!print_indirect_block(device, block_size, 
+                (int*)get_block(device, ip->i_block[14]), 3))
+    {
+        free(ip);
+        return;
+    }
+    putchar('\n');
 }
 
 // Recursive function for printing indirect data blocks
-void print_indirect_block(int device, int block_size, u8* buf, int level)
+int print_indirect_block(int device, int block_size, int* buf, int level)
 {
     //block size might be different
-    
+
     int i;
 
-    if(level)
+    if(level - 1)
     {
-        if(level > 1)
-            printf(" -> %d", i);
-
         for(i = 0; i < block_size / sizeof(int); i++)
-            print_indirect_block(device, block_size, get_block(device, i), level - 1);
+        {
+            printf(" -> %d", buf[i]);
+            if(!print_indirect_block(device, block_size, 
+                        (int*)get_block(device, buf[i]), level - 1))
+            {
+                free(buf);
+                return 0;
+            }
+        }
     }
     else
     {
@@ -239,15 +271,16 @@ void print_indirect_block(int device, int block_size, u8* buf, int level)
 
         for(i = 0; i < block_size / sizeof(int); i++)
         {
-            if (i % GROUPS_PER_LINE == 0)
+            if (i && i % GROUPS_PER_LINE == 0)
                 putchar('\n');
-            else   
+            else if(i)   
                 putchar(' ');
 
             if (buf[i] == 0)
             {
                 printf("\n\n");
-                break;
+                free(buf);
+                return 0;
             }
             else
                 printf("%4d", buf[i]);
@@ -255,4 +288,5 @@ void print_indirect_block(int device, int block_size, u8* buf, int level)
     }
 
     free(buf);
+    return 1;
 }

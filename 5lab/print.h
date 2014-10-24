@@ -30,7 +30,7 @@
 
 // Printing Bitmaps
 #define GROUP_SIZE 8
-#define GROUPS_PER_LINE 8
+#define GROUPS_PER_LINE 10 
 
 // Printing title/divider
 #define TITLE_WIDTH 50
@@ -47,7 +47,7 @@ void print_imap (int dev);
 void print_bmap (int dev);
 
 void print_file_blocks(int device, int inode_number);
-void print_indirect_block(int device, int block_size, u8* buf, int level);
+int  print_indirect_block(int device, int block_size, int* buf, int level);
 
 
 #endif
