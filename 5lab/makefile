@@ -1,6 +1,4 @@
 NAME = showblock
-DISK = fdimage
-FILE = /Z/hugefile
 
 FILES = main.c \
 		input.c    input.h    \
@@ -16,7 +14,7 @@ OBJS = main.o \
 
 CC = gcc
 DEBUG = -Wall -g -O0
-FLAGS = $(DEBUG)
+FLAGS = 
 
 run : $(OBJS)
 	$(CC) -o $(NAME) $(OBJS) $(FLAGS)
@@ -33,4 +31,4 @@ clean :
 	-rm $(OBJS)
 
 tar :
-	tar cfv $(NAME).tar $(FILES)
+	tar cfv $(NAME).tar $(FILES) makefile
