@@ -18,6 +18,7 @@
 #include <sys/types.h>
 #include <ext2fs/ext2_fs.h>
 
+#include "type.h"
 #include "util.h"
 
 u8*    get_block(int device, int block);

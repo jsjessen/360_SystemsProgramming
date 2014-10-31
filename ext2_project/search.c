@@ -7,6 +7,18 @@
 
 static const int ROOT_INODE = 2;
 
+int findmyname(MINODE *parent, int myino, char *myname) 
+{
+       // Given the parent DIR (MINODE pointer) and myino, this function finds 
+           // the name string of myino in the parent's data block. This is the SAME
+           // as SEARCH() by myino, then copy its name string into myname[ ].
+}
+
+int findino(MINODE *mip; int *myino, *parentino)
+{
+      // For a DIR Minode, extract the inumbers of . and .. 
+          // Read in 0th data block. The inumbers are in the first two dir entries.
+}
 
 // Searches through the device along pathname for target file 
 int search_fs(int device, char* pathname)
@@ -24,7 +36,7 @@ int search_fs(int device, char* pathname)
             printf("Find %s in %s\n", name[i], name[i - 1]);
         else
             printf("Find %s in / \n", name[i]);
-            
+
         if((ino = search_dir(device, ino, name[i])) < 0)
         {
             printf("\nCouldn't find: %s \n", name[i]);

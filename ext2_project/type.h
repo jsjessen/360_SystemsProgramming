@@ -1,22 +1,9 @@
-/* type.h file for CS360 FS */
-
 #include <stdio.h>
 #include <fcntl.h>
-#include <ext2fs/ext2_fs.h>   // MAY NEED "ext2_fs.h"
+#include <ext2fs/ext2_fs.h>
 #include <libgen.h>
 #include <string.h>
 #include <sys/stat.h>
-
-// define shorter TYPES, save typing efforts
-typedef struct ext2_group_desc  GD;
-typedef struct ext2_super_block SUPER;
-typedef struct ext2_inode       INODE;
-typedef struct ext2_dir_entry_2 DIR;    // need this for new version of e2fs
-
-GD    *gp;
-SUPER *sp;
-INODE *ip;
-DIR   *dp; 
 
 #define BLOCK_SIZE     1024
 
@@ -43,40 +30,61 @@ DIR   *dp;
 #define NFD              10
 #define NOFT            100
 
+typedef unsigned char  u8;
+typedef unsigned short u16; 
+typedef unsigned int   u32;
+typedef unsigned long  u64;
+
+typedef struct ext2_super_block SUPER;
+typedef struct ext2_group_desc  GD;
+typedef struct ext2_inode       INODE;
+typedef struct ext2_dir_entry_2 DIR; 
+
+typedef enum { false, true } bool;
+
 // Open File Table
-typedef struct oft{
-  int   mode;
-  int   refCount;
-  struct minode *inodeptr;
-  int   offset;
+typedef struct oft
+{
+    int   mode;
+    int   refCount;
+    struct minode *inode_ptr;
+    int   offset;
 }OFT;
 
-// PROC structure
-typedef struct proc{
-  int   uid;
-  int   pid, gid;
-  int   status;
-  struct minode *cwd;
-  OFT   *fd[NFD];
+// Process structure
+typedef struct proc
+{
+    int   pid;      // Process ID
+    int   uid;      // User ID
+    int   gid;      // Group ID
+    int   status;
+    OFT   *fd[NFD];
+    struct minode *cwd; // Current working directory inode in memory
+    struct proc *next; // processes form circular linked list
 }PROC;
-      
-// In-memory inodes structure
-typedef struct minode{		
-  INODE INODE;               // disk inode
-  int   dev, ino;
-  int   refCount;
-  int   dirty;
-  int   mounted;
-  struct mount *mountptr;
+
+// In-memory Inodes structure
+typedef struct minode
+{
+    INODE inode;    // Disk inode
+    int   dev;      // Device
+    int   ino;      // Inode #
+    int   refCount; // # of references
+    int   dirty;    // different than disk copy
+    int   mounted;
+    struct mount *mount_ptr;
 }MINODE;
 
 // Mount Table structure
-typedef struct mount{
-        int    dev;
-        int    nblocks,ninodes;
-        int    bmap, imap, iblk;
-        MINODE *mounted_inode;
-        char   name[64]; 
-        char   mount_name[64];
+typedef struct mount
+{
+    int    dev;     // Device
+    int    nblocks; // # of blocks
+    int    ninodes; // # of inodes
+    int    bmap;    // Block bitmap
+    int    imap;    // Inode bitmap
+    int    iblk;
+    MINODE *mounted_inode;
+    char   name[64]; 
+    char   mount_name[64];
 }MOUNT;
-

@@ -18,6 +18,7 @@
 #include <sys/types.h>
 #include <ext2fs/ext2_fs.h>
 
+#include "type.h"
 #include "util.h"
 #include "transfer.h"
 

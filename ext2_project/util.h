@@ -18,21 +18,10 @@
 #include <sys/types.h>
 #include <ext2fs/ext2_fs.h>
 
-typedef unsigned char  u8;
-typedef unsigned short u16; 
-typedef unsigned int   u32;
-typedef unsigned long  u64;
-
-typedef enum { false, true } bool;
-
-typedef struct ext2_super_block SUPER;
-typedef struct ext2_group_desc  GD;
-typedef struct ext2_inode       INODE;
-typedef struct ext2_dir_entry_2 DIR; 
+#include "type.h"
 
 int  test_bit (u8*  buf, int bit);
 void set_bit  (u8** buf, int bit);
 void clear_bit(u8** buf, int bit);
-
 
 #endif
