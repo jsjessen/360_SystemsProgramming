@@ -1,0 +1,243 @@
+LAB Assignment #6
+                    DUE : Oct. 30, 2014
+       DEMO to TA, submit code to YOUR account by midnight
+
+                       REQUIREMENTS: 
+1. FS Data Structures
+------------------------------------------------------------------------------
+PROC *running           MINODE *root                          
+      |                          |              
+      |                          |               ||*********************
+      V                          |  MINODE       || 
+    PROC[0]                      V minode[100]   ||         Disk dev
+ =============  |-pointerToCWD-> ============    ||   ==================
+ |nextProcPtr|  |                |  INODE   |    ||   |     INODEs   
+ |pid = 1    |  |                | -------  |    ||   ================== 
+ |uid = 0    |  |                | (dev,2)  |    || 
+ |cwd --------->|                | refCount |    ||*********************
+ |           |                   | dirty    |
+ |fd[10]     |                   |          |         
+ | ------    |                   |          |
+ | - ALL 0 - |                   |==========|         
+ | ------    |                   |  INODE   |          
+ | ------    |                   | -------  |   
+ =============                   | (dev,ino)|   
+                                 |  refCount|  
+   PROC[1]                       |  dirty   |   
+    pid=2                        |          | 
+    uid=1                        |==========|  
+    cwd ----> root minode        
+-----------------------------------------------------------------------------
+
+DOWNLOAD samples/LAB6/mydisk, which is a VIRTUAL EXT2 FS containing
+        
+                        /
+           ---------------------------
+            |     |     |     |     |
+          cs260 cs360 cs460 cs560 cs660         
+                  |
+             -------------
+              was is willbe
+                  |
+                 .....
+
+2. init() // Initialize FS data structures:
+   {
+     (1). 2 PROCs, P0 with uid=0, P1 with uid=1, all PROC.cwd = 0, fd[]=0
+     (2). PROC *running -> P0 -> P1 -> P0; (i.e. a circular link list)
+     (3). MINODE minode[100]; all with refCount=0, dev=0, ino=0
+     (5). MINODE *root = 0;
+   }
+
+3..ASSUME YOUR ALREADY HAVE these functions in util.c file:
+   (1)   int ino     = getino(int dev, char *pathname)
+   (2)   MINODE *mip = iget(dev, ino)
+   (3)                 iput(MINDOE *mip)
+
+
+   int ninodes, nblocks, bmap, imap, inodes_start; // globals
+
+4. mount_root()  // mount root file system, establish / and CWDs
+   {
+      dev = fd = open device for RW
+
+      read SUPER block to verify it's an EXT2 FS;
+           get nblocks, ninodes; SAVE them AS GLOBALs
+ 
+      read GD to get block numbers of bmap,imap,inodes_start; save as globals
+ 
+      root = iget(dev, 2);    /* get root inode */
+
+      (OPTIONAL): initialize mount table[0] for the mounted root device.
+      Since we already saved ninode, nblocks, bmap, imap, inodes_start as 
+      globals, it is NOT necessary to repeat them in mount[0].
+    
+      Let cwd of both P0 and P1 point at the root minode (refCount=3)
+          P0.cwd = iget(dev, 2); 
+          P1.cwd = iget(dev, 2);
+    }
+
+================ WRITE C Code to do the following : =========================
+
+5. ================ General form of ls pathname ====================
+
+ls(char *pathname)
+{
+   int     ino = getino(dev, pathname);
+   MINODE *mip = iget(dev,ino);
+
+   if (mip->INODE is a file)
+      list_file(mip, basename(pathname));
+   else
+      list_dir(mip);
+
+   iput(mip);
+}
+
+int list_file(mip, name)
+{
+   INODE *ip = &mip->INODE;
+                             R L D
+   use ip->i_mode to print  [-|l|d] rwxrwxrwx 
+   use ip->OTHER FIELDs to print:  link  gid  uid  size  date  name
+
+   if ip->i_mode is a LNK file:
+      printf(" -> %s\n", (char *)ip->i_block);
+}
+
+int list_dir(mip)
+{
+   MINODE *cip;
+   INODE *ip = &mip->INODE;
+   for each DIR entry in (data blocks of) *ip do{
+       // print [ino rec_len name_len name]
+       cip = iget(dev, ino);
+
+       list_file(cip, name);
+
+       iput(cip);
+   }
+} 
+        
+6. cd [pathname]
+   {
+      if (no pathanme)
+         cd to root;
+
+      ino = getino(dev, pathname);
+      mip = iget(dev, ino);
+
+      VERIFY mip->INODE is a DIR;
+
+      iput(running PROC's cwd);
+      set running PROC's cwd to mip;
+   }
+
+7. pwd command: print the pathname of running PROC's CWD
+
+
+8. stat(){  // THIS IS TRIVIAL, hence no need to implement
+     ino = getino(dev, pathname);
+     mip = iget(dev, ino);
+     copy info from minode.INODE to a stat structure.
+   }        
+
+
+
+  char LINE[128], cmd[32], pathanme[64]
+
+9.int main()
+  {
+     init();   // initialize FS data structures
+
+     mount_root();
+
+     while(1){ 
+        // ask for a command LINE; extract cmd, pathname from line:
+
+        fgets(line, 128, stdin);
+        line[strlen(line)-1] = 0;  // kill the \n char at end
+
+        if (line[0]==0) continue;
+
+        if (!strcmp(cmd, "ls")
+            list_file(pathname);
+        if (!strcmp(cmd, "cd")
+            change_dir(pathname);
+        if (!strcmp(cmd, "pwd")
+            pwd(running->cwd);
+        if (!strcmp(cmd, "quit")
+            quit(); // write back any dirty in-memory INODE; exit(0);
+   }        
+                 
+
+/****************** FINAL FORM OF main() **************************/
+
+char line[128], pathname[64], parameter[64];
+
+int main(int argc, char *argv[ ]) 
+{
+  int  Index; 
+  char cmd[32];
+
+  init();
+
+  while(1){
+      printf("P%d running: ", running->pid);
+      printf("input command : ");
+      fgets(line, 128, stdin);
+      line[strlen(line)-1] = 0;  // kill the \n char at end
+      if (line[0]==0) continue;
+
+      sscanf(line, "%s %s %64c", cname, pathname, parameter);
+
+      Index = findCmd(cmd); // map cmd to an index
+
+      switch(Index){
+           ------------ LEVEL 1 -------------------
+           case 0 : menu();                   break;
+           case 1 : list_dir();               break;
+           case 2 : change_dir();             break;
+           case 3 : pwd(cwd);                 break;
+           case 4 : mkdir();                  break;
+           case 5 : rmdir();                  break;
+           case 6 : creat();                  break;
+           case 7 : link();                   break;
+           case 8 : unlink();                 break;
+           case 9 : symlink();                break;
+           case 10: rm();                     break;
+           case 11: chmod();                  break;
+           case 12: chown();                  break;
+           case 13: stat();                   break;
+           case 14: touch();                  break;
+
+           -------------- LEVEL 2 ------------------
+           case 20: open();                   break;
+           case 21: close();                  break;
+           case 22: pfd();                    break;
+           case 23: lseek();                  break;
+           case 24: access();                 break;
+           case 25: read();                   break;
+           case 26: write();                  break;
+           case 27: cat();                    break;
+           case 28: cp();                     break;
+           case 29: mv();                     break;
+
+           ------------- LEVEL 3 -------------------
+           case 30: mount();                  break;
+           case 31: umount();                 break;
+           case 32: cs();   //switch process  break;
+                 
+           case 40: sync(); //sync FS         break; 
+           case 41: quit();                   break; 
+           default: printf("invalid command\n");
+       }
+  }
+} /* end main */
+***************************************************************************
+
+ INSTEAD OF A switch-case table, you MUST use a Table of Function Pointers
+
+
+
+
