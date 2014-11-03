@@ -11,31 +11,21 @@
 #include "print.h"
 #include "cmd.h"
 
-MINODE minode[NMINODES];
-MINODE *root;
-
-int fd;
-char buf[1024];
-int dev;
-char *rootdev;
-char *pathname;
-char *parameter;
-
 MINODE *root;
 PROC *running; // Points at the PROC structure of the current running process
                // Every file operation is performed by the current running process
 
 MINODE    MemoryInodeTable[NMINODES];
 MOUNT     MountTable[NMOUNT];
-PROC      ProcessTable[NPROC]; //PROC P[NPROC];
+PROC      ProcessTable[NPROC]; 
 OPEN_FILE OpenFileTable[NOFT];
 
 // Initialize the data file system structures
-void fs_initialize(void)
+void initialize_fs()
 {
     int i = 0;
 
-    running = &ProcessTable[0];
+    printf("initialize_fs()\n");
 
     // Initialize all processes
     for(i = 0; i < NPROC; i++)
@@ -55,13 +45,6 @@ void fs_initialize(void)
             pp->fd[j] = NULL;
     }
 
-    ProcessTable[0].uid = 0; // Super-user
-    ProcessTable[1].uid = 1; // Ordinary-user
-
-    // Processes form a circularly linked list
-    ProcessTable[0].next = &ProcessTable[1];
-    ProcessTable[1].next = &ProcessTable[0];
-
     // Initialize all open files
     for(i = 0; i < NOFT; i++)
     {
@@ -71,7 +54,6 @@ void fs_initialize(void)
         ofp->refCount   = 0;
         ofp->offset     = 0;
         ofp->minode_ptr = NULL
-
     }
 
     // Initialize all memory-inodes
@@ -79,12 +61,12 @@ void fs_initialize(void)
     {
         MINODE* mip = &MemoryInodeTable[i];
 
-        mip->dev      = 0;
-        mip->ino      = 0;
-        mip->refCount = 0;
-        mip->dirty    = false;
-        mip->mounted  = false;
-        mip->mptr     = NULL;
+        mip->dev       = 0;
+        mip->ino       = 0;
+        mip->refCount  = 0;
+        mip->dirty     = false;
+        mip->mounted   = false;
+        mip->mount_ptr = NULL;
     }
 
     // Initialize all mounts
@@ -118,9 +100,11 @@ int mount_root(char* device_name)
 
     int dev = 0;
 
-    SUPER *sp = NULL
+    SUPER *sp = NULL;
     GD    *gp = NULL;
     MOUNT *mp = NULL;
+
+    printf("mount_root()\n");
 
     // Open device for read/write
     if((dev = open(device_name, O_RDWR)) < 0)
@@ -130,11 +114,13 @@ int mount_root(char* device_name)
     }
 
     // Verify device is an Ext2 Filesystem
+    printf("Checking that %s is an Ext2 File System...", device_name);
     if(!isExt2(dev))
     {
         fprintf(stderr, "%s does not use the ext2 filesystem\n", device);
         exit(1);
     }
+    printf("OK\n");
 
     sp = get_super(dev);
     gp = get_gd(dev);
@@ -142,9 +128,6 @@ int mount_root(char* device_name)
 
     // Get root inode
     root = iget(dev, 2); root->refCount++;
-    
-    ProcessTable[0].cwd = root; root->refCount++;
-    ProcessTable[1].cwd = root; root->refCount++;
 
     mp->dev = dev;
     mp->nblocks = sp->s_blocks_count;
@@ -155,14 +138,22 @@ int mount_root(char* device_name)
     mp->minode_ptr = root;          // Think about!
     mp->name = "root";              // CHANGE
     mp->mount_name = "sir mounty";  // CHANGE
+
+    printf("nblocks = %d\n", mp->nblocks);
+    printf("ninodes = %d\n", mp->ninodes);
+    printf("bmap    = %d\n", mp->bmap);
+    printf("imap    = %d\n", mp->imap);
+    printf("iblk    = %d\n", mp->iblk);
+
+    free(sp);
+    free(gp);
 }
 
 int main(int argc, char* argv[])
 {
-    int   fd = -1;
-    char* device = NULL;
+    char* device = "disk"; //default
 
-    if (argc != 2)
+    if (argc > 2)
     {
         printf("Usage:\n");
         printf("         myext2   DEVICE\n");
@@ -170,10 +161,19 @@ int main(int argc, char* argv[])
         exit(1);
     }
 
-    device = argv[1];
+    if(argc > 1)
+        device = argv[1];
 
-    fs_initialize(); 
+    initialize_fs(); 
     mount_root(device);
+    printf("root refCount = %d\n", root->refCount);
+
+    printf("creating P0 as running process\n");
+    running = &ProcessTable[0];
+    running->status = READY;
+    running->cwd = root; root->refCount++;
+    running->uid = SUPER_USER;
+    printf("root refCount = %d\n", root->refCount);
 
     while(true)
     {

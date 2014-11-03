@@ -19,7 +19,6 @@
 #define SUPER_USER        0
 
 // Process status
-
 #define FREE              0
 #define READY             1
 #define RUNNING           2
