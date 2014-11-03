@@ -12,13 +12,14 @@
 #define GDBLOCK           2
 #define ROOT_INODE        2
 
-// Default dir and regulsr file modes
+// Default dir and regular file modes
 #define DIR_MODE    0040777 
 #define FILE_MODE   0100644
 #define SUPER_MAGIC  0xEF53
 #define SUPER_USER        0
 
-// Proc status
+// Process status
+
 #define FREE              0
 #define READY             1
 #define RUNNING           2
@@ -30,6 +31,8 @@
 #define NFD              10
 #define NOFT            100
 
+typedef enum { false, true } bool;
+
 typedef unsigned char  u8;
 typedef unsigned short u16; 
 typedef unsigned int   u32;
@@ -40,51 +43,51 @@ typedef struct ext2_group_desc  GD;
 typedef struct ext2_inode       INODE;
 typedef struct ext2_dir_entry_2 DIR; 
 
-typedef enum { false, true } bool;
-
-// Open File Table
-typedef struct oft
-{
-    int   mode;
-    int   refCount;
-    struct minode *inode_ptr;
-    int   offset;
-}OFT;
-
-// Process structure
-typedef struct proc
-{
-    int   pid;      // Process ID
-    int   uid;      // User ID
-    int   gid;      // Group ID
-    int   status;
-    OFT   *fd[NFD];
-    struct minode *cwd; // Current working directory inode in memory
-    struct proc *next; // processes form circular linked list
-}PROC;
-
-// In-memory Inodes structure
+// In-Memory Inode 
 typedef struct minode
 {
-    INODE inode;    // Disk inode
-    int   dev;      // Device
-    int   ino;      // Inode #
-    int   refCount; // # of references
-    int   dirty;    // different than disk copy
-    int   mounted;
-    struct mount *mount_ptr;
+    INODE         inode;     // Inode structure on disk (data)
+    int           dev;       // The inode came from this device (for writing)
+    int           ino;       // The inode came from inode # (for writing)
+    int           refCount;  // # of processes using me
+    int           dirty;     // Has my inode been modified? (eventually write to disk)
+    int           mounted;   // Have I been mounted? (I should be a DIR)
+    struct mount *mount_ptr; // If mounted, points to the MountTable entry
 }MINODE;
 
-// Mount Table structure
+// Entry for MountTable
+// A device that has been mounted (on a DIR)
 typedef struct mount
 {
-    int    dev;     // Device
-    int    nblocks; // # of blocks
-    int    ninodes; // # of inodes
-    int    bmap;    // Block bitmap
-    int    imap;    // Inode bitmap
-    int    iblk;
-    MINODE *mounted_inode;
-    char   name[64]; 
-    char   mount_name[64];
+    int     dev;            // Which device am I?
+    int     nblocks;        // # of blocks   ----------|
+    int     ninodes;        // # of inodes             |   
+    int     bmap;           // Block bitmap block #    |--> Convenient quick ref
+    int     imap;           // Inode bitmap block #    |     
+    int     iblk;           // Inode block # ----------|
+    MINODE *minode_ptr;     // Points to the DIR I'm mounted on
+    char    name[64];       // What's the difference?
+    char    mount_name[64]; // What's the difference?
 }MOUNT;
+
+// Entry for OpenFileTable
+// An instance of an opened file
+typedef struct open_file 
+{
+    int     mode;
+    int     refCount;
+    int     offset;
+    MINODE *minode_ptr; // Whenever a file is ref, its inode must be brought into memory
+}OPEN_FILE;
+
+// A Process
+typedef struct proc
+{
+    int          pid;      // Process ID
+    int          uid;      // User ID (0 for superuser, non-zero for ordinary user)
+    int          gid;      // Group ID
+    int          status;   // Free, ready, or running
+    MINODE      *cwd;      // -> CurrentWorkingDirectory in memory (initialized to root)
+    OPEN_FILE   *fd[NFD];
+    struct proc *next;     // Added so processes can form a circular linked list
+}PROC;
