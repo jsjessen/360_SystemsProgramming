@@ -5,19 +5,22 @@
 
 #include "search.h"
 
-static const int ROOT_INODE = 2;
 
-int findmyname(MINODE *parent, int myino, char *myname) 
+int findmyname(MINODE *parent, int myino, char *myname)
 {
-       // Given the parent DIR (MINODE pointer) and myino, this function finds 
-           // the name string of myino in the parent's data block. This is the SAME
-           // as SEARCH() by myino, then copy its name string into myname[ ].
+    // Given the parent DIR (MINODE pointer) and myino, this function finds 
+    // the name string of myino in the parent's data block. This is the SAME
+    // as SEARCH() by myino, then copy its name string into myname[ ].
+    
+    return 0;
 }
 
-int findino(MINODE *mip; int *myino, *parentino)
+int findino(MINODE *mip, int *myino, MINODE *parentino)
 {
-      // For a DIR Minode, extract the inumbers of . and .. 
-          // Read in 0th data block. The inumbers are in the first two dir entries.
+    // For a DIR Minode, extract the inumbers of . and .. 
+    // Read in 0th data block. The inumbers are in the first two dir entries.
+    
+    return 0;
 }
 
 // Searches through the device along pathname for target file 

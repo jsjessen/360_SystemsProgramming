@@ -3,8 +3,8 @@
 echo
 echo "Uploading..."
 
-while [ $1 ]
+while [ $2 ]
 do
-    scp $1 james_jessen@cs360.eecs.wsu.edu:~/LAB5/$1
+    scp $2 james_jessen@cs360.eecs.wsu.edu:~/$1/$2
     shift
 done

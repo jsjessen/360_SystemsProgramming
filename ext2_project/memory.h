@@ -18,7 +18,7 @@
 #include <sys/types.h>
 #include <ext2fs/ext2_fs.h>
 
-#include "type.h"
+#include "global.h"
 #include "util.h"
 #include "transfer.h"
 
@@ -31,8 +31,8 @@ void set_free_inodes(int device, int change);
 void set_free_blocks(int device, int change);
 int ialloc(int device);
 int balloc(int device);
-int ifree (int device, int inode); 
-int bfree (int device, int block); 
+void ifree (int device, int inode); 
+void bfree (int device, int block); 
 
 
 #endif

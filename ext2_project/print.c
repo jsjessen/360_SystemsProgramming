@@ -5,8 +5,6 @@
 
 #include "print.h"
 
-static int const ROOT_INODE = 2;
-
 
 // *************** Title ***************  
 void print_title(char* title, char symbol)

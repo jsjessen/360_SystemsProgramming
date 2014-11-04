@@ -15,8 +15,7 @@
 #include <stdio.h>
 #include <sys/stat.h>
 
-#include "type.h"
-#include "util.h"
+#include "global.h"
 #include "input.h"
 #include "transfer.h"
 #include "memory.h"

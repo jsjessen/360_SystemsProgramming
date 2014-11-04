@@ -6,7 +6,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "type.h"
+#include "global.h"
 #include "print.h"
 
 int (*get_cmd(char* cmd_name))(int, char**);

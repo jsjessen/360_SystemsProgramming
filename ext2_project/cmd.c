@@ -47,11 +47,11 @@ static const COMMAND lookup[] =
     { "exit"    , &quit       }
 };
 
-static const int cmd_count = sizeof(lookup) / sizeof(lookup[0]);
-
 int (*get_cmd(char* cmd_name))(int, char**)
 {
-    int i;
+    int i = 0;
+    static int cmd_count = sizeof(lookup) / sizeof(lookup[0]);
+
     for(i = 0; i < cmd_count; i++)
     {
         if(strcmp(cmd_name, lookup[i].name) == 0)
@@ -77,174 +77,14 @@ int invalid(int argc, char* argv[])
 
 int quit(int argc, char* argv[])
 {
-    printf("This command is not yet implemented\n");
-    return 0;
-}
+    int i = 0;
 
-int my_ls(int argc, char* argv[])
-{
-    printf("This command is not yet implemented\n");
-    return 0;
-}
+    for(i = 0; i < NMINODES; i++)
+    {
+        MINODE* mip = &MemoryInodeTable[i];
 
-int my_cd(int argc, char* argv[])
-{
-    printf("This command is not yet implemented\n");
-    return 0;
-}
-
-int my_pwd(int argc, char* argv[])
-{
-    printf("This command is not yet implemented\n");
-    return 0;
-}
-
-int my_mkdir(int argc, char* argv[])
-{
-    printf("This command is not yet implemented\n");
-    return 0;
-}
-
-int my_rmdir(int argc, char* argv[])
-{
-    printf("This command is not yet implemented\n");
-    return 0;
-}
-
-int my_creat(int argc, char* argv[])
-{
-    printf("This command is not yet implemented\n");
-    return 0;
-}
-
-int my_link(int argc, char* argv[])
-{
-    printf("This command is not yet implemented\n");
-    return 0;
-}
-
-int my_unlink(int argc, char* argv[])
-{
-    printf("This command is not yet implemented\n");
-    return 0;
-}
-
-int my_symlink(int argc, char* argv[])
-{
-    printf("This command is not yet implemented\n");
-    return 0;
-}
-
-int my_rm(int argc, char* argv[])
-{
-    printf("This command is not yet implemented\n");
-    return 0;
-}
-
-int my_chmod(int argc, char* argv[])
-{
-    printf("This command is not yet implemented\n");
-    return 0;
-}
-
-int my_chown(int argc, char* argv[])
-{
-    printf("This command is not yet implemented\n");
-    return 0;
-}
-
-int my_stat(int argc, char* argv[])
-{
-    printf("This command is not yet implemented\n");
-    return 0;
-}
-
-int my_touch(int argc, char* argv[])
-{
-    printf("This command is not yet implemented\n");
-    return 0;
-}
-
-int my_open(int argc, char* argv[])
-{
-    printf("This command is not yet implemented\n");
-    return 0;
-}
-
-int my_close(int argc, char* argv[])
-{
-    printf("This command is not yet implemented\n");
-    return 0;
-}
-
-int my_pfd(int argc, char* argv[])
-{
-    printf("This command is not yet implemented\n");
-    return 0;
-}
-
-int my_lseek(int argc, char* argv[])
-{
-    printf("This command is not yet implemented\n");
-    return 0;
-}
-
-int my_access(int argc, char* argv[])
-{
-    printf("This command is not yet implemented\n");
-    return 0;
-}
-
-int my_read(int argc, char* argv[])
-{
-    printf("This command is not yet implemented\n");
-    return 0;
-}
-
-int my_write(int argc, char* argv[])
-{
-    printf("This command is not yet implemented\n");
-    return 0;
-}
-
-int my_cat(int argc, char* argv[])
-{
-    printf("This command is not yet implemented\n");
-    return 0;
-}
-
-int my_cp(int argc, char* argv[])
-{
-    printf("This command is not yet implemented\n");
-    return 0;
-}
-
-int my_mv(int argc, char* argv[])
-{
-    printf("This command is not yet implemented\n");
-    return 0;
-}
-
-int my_mount(int argc, char* argv[])
-{
-    printf("This command is not yet implemented\n");
-    return 0;
-}
-
-int my_umount(int argc, char* argv[])
-{
-    printf("This command is not yet implemented\n");
-    return 0;
-}
-
-int my_cs(int argc, char* argv[])
-{
-    printf("This command is not yet implemented\n");
-    return 0;
-}
-
-int my_sync(int argc, char* argv[])
-{
-    printf("This command is not yet implemented\n");
-    return 0;
+        mip->refCount = 1;
+        iput(mip);
+    }
+    exit(0);
 }

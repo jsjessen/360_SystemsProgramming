@@ -6,10 +6,11 @@
 
 #include <stdio.h>
 
-#include "type.h"
+#include "global.h"
 #include "input.h"
 #include "print.h"
 #include "cmd.h"
+#include "memory.h"
 
 MINODE *root;
 PROC *running; // Points at the PROC structure of the current running process
@@ -53,7 +54,7 @@ void initialize_fs()
         ofp->mode       = 0;
         ofp->refCount   = 0;
         ofp->offset     = 0;
-        ofp->minode_ptr = NULL
+        ofp->minode_ptr = NULL;
     }
 
     // Initialize all memory-inodes
@@ -81,8 +82,8 @@ void initialize_fs()
         mp->imap       = 0;
         mp->iblk       = 0;
         mp->minode_ptr = NULL;
-        mp->name       = "\0";
-        mp->mount_name = "\0";
+        strcpy(mp->name, "\0");
+        strcpy(mp->mount_name, "\0");
     }
 
     root = NULL;
@@ -91,7 +92,7 @@ void initialize_fs()
 // Mount a device containing a file system as the root device.
 // Mounting a root device amounts to loading the root INODE on that
 // device into memory and establishing it as the root directory /
-int mount_root(char* device_name)
+void mount_root(char* device_name)
 {
     // When a file system starts, it must mount a device on the Root DIR /
     // That device is called the root device.
@@ -117,10 +118,14 @@ int mount_root(char* device_name)
     printf("Checking that %s is an Ext2 File System...", device_name);
     if(!isExt2(dev))
     {
-        fprintf(stderr, "%s does not use the ext2 filesystem\n", device);
+        fprintf(stderr, "%s does not use the ext2 filesystem\n", device_name);
         exit(1);
     }
     printf("OK\n");
+
+    print_super(dev);
+    print_gd(dev);
+    print_inode(dev, ROOT_INODE);
 
     sp = get_super(dev);
     gp = get_gd(dev);
@@ -136,8 +141,8 @@ int mount_root(char* device_name)
     mp->imap = gp->bg_inode_bitmap;
     mp->iblk = gp->bg_inode_table;
     mp->minode_ptr = root;          // Think about!
-    mp->name = "root";              // CHANGE
-    mp->mount_name = "sir mounty";  // CHANGE
+    strcpy(mp->name, "root");               //CHANGE
+    strcpy(mp->mount_name, "sir mounty");   //CHANGE
 
     printf("nblocks = %d\n", mp->nblocks);
     printf("ninodes = %d\n", mp->ninodes);
@@ -180,7 +185,7 @@ int main(int argc, char* argv[])
         char*  input    = NULL;
         char** cmd_argv = NULL;
         int    cmd_argc = 0;
-        int  (*cmd_fptr = NULL)(int, char**); 
+        int  (*cmd_fptr)(int, char**) = NULL; 
 
         do { printf("command : "); }     // Prompt user for input
         while(!(input = get_input()));   // Get user input

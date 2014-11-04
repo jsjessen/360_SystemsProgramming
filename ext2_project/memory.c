@@ -82,7 +82,7 @@ int balloc(int dev)
     return -1;
 }
 
-int ifree(int dev, int inode)
+void ifree(int dev, int inode)
 {
     u8* imap = get_imap(dev);
 
@@ -92,7 +92,7 @@ int ifree(int dev, int inode)
     put_imap(dev, imap);
 }
 
-int bfree(int dev, int block)
+void bfree(int dev, int block)
 {
     u8* bmap = get_bmap(dev);
 
