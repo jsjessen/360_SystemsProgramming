@@ -211,8 +211,11 @@ void print_file_blocks(int device, int inode_number)
     putchar('\n');
 
     getchar();
+
     print_title("Indirect Blocks", '=');
-    printf(" %d", ip->i_block[12]);
+    //printf(" %d", ip->i_block[12]);
+    //putchar('\n');
+    //print_divider('-');
     if(!print_indirect_block(device, block_size, 
                 (int*)get_block(device, ip->i_block[12]), 1))
     {
@@ -222,8 +225,13 @@ void print_file_blocks(int device, int inode_number)
     putchar('\n');
 
     getchar();
+
     print_title("Double Indirect Blocks", '=');
-    printf(" %d", ip->i_block[13]);
+    print_indirect_block(device, block_size, 
+            (int*)get_block(device, ip->i_block[13]), 1);
+    putchar('\n');
+    print_divider('-');
+    //printf(" %d", ip->i_block[13]);
     if(!print_indirect_block(device, block_size, 
                 (int*)get_block(device, ip->i_block[13]), 2))
     {
@@ -233,8 +241,13 @@ void print_file_blocks(int device, int inode_number)
     putchar('\n');
 
     getchar();
+
     print_title("Triple Indirect Blocks", '=');
-    printf(" %d", ip->i_block[14]);
+    print_indirect_block(device, block_size, 
+            (int*)get_block(device, ip->i_block[14]), 3);
+    putchar('\n');
+    print_divider('-');
+    //printf(" %d", ip->i_block[14]);
     if(!print_indirect_block(device, block_size, 
                 (int*)get_block(device, ip->i_block[14]), 3))
     {
@@ -248,14 +261,13 @@ void print_file_blocks(int device, int inode_number)
 int print_indirect_block(int device, int block_size, int* buf, int level)
 {
     //block size might be different
-
     int i;
 
     if(level - 1)
     {
         for(i = 0; i < block_size / sizeof(int); i++)
         {
-            printf(" -> %d", buf[i]);
+            //printf(" -> %d", buf[i]);
             if(!print_indirect_block(device, block_size, 
                         (int*)get_block(device, buf[i]), level - 1))
             {
@@ -266,9 +278,7 @@ int print_indirect_block(int device, int block_size, int* buf, int level)
     }
     else
     {
-        printf(":\n");
-        print_divider('-');
-
+        //printf(":\n");
         for(i = 0; i < block_size / sizeof(int); i++)
         {
             if (i && i % GROUPS_PER_LINE == 0)
@@ -278,13 +288,15 @@ int print_indirect_block(int device, int block_size, int* buf, int level)
 
             if (buf[i] == 0)
             {
-                printf("\n\n");
+                //printf("\n\n");
                 free(buf);
                 return 0;
             }
             else
                 printf("%4d", buf[i]);
         }
+        putchar('\n');
+        print_divider('-');
     }
 
     free(buf);

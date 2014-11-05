@@ -28,7 +28,7 @@ transfer.o : util.h
 shiny : run clean
 
 clean :
-	-rm $(OBJS)
+	-rm -f $(OBJS)
 
-tar :
-	tar cfv $(NAME).tar $(FILES) makefile
+tar : clean
+	tar -zcf $(NAME).tar.gz $(FILES) makefile

@@ -7,6 +7,8 @@
 #include <sys/wait.h>
 #include <fcntl.h> 
 
+#include "compare.h"
+
 #define FILE_PERM 0644
 #define MAX_NUM_GETCHARS 100
 
@@ -60,12 +62,6 @@ int run_showblock(char* program, char* disk, char* pathname, char* outfile)
     } 
 }
 
-int compare_showblock(char* testing, char* correct)
-{
-    printf("Comparing: %s to %s\n", testing, correct);
-    return 0;
-}
-
 int main()
 {
     char* disk = "fdimage";
@@ -78,12 +74,12 @@ int main()
     char* pathname[] = 
     {
         "tiny",
+        "big.dat",
         "X/tiny",
         "Y/bigfile",
         "Z/hugefile",
         "dontExist",
-        "How do you fail?",
-        (char*)NULL
+         NULL
     };
 
     int i = 0;
@@ -93,6 +89,9 @@ int main()
         int pid; 
         int status;
         int result;
+
+        int* err_line1 = (int*)malloc(sizeof(int));
+        int* err_line2 = (int*)malloc(sizeof(int));
 
         printf("\n----------------------------------------------\n\n");
 
@@ -126,17 +125,25 @@ int main()
             putchar('\n');
         }
 
-        result = compare_showblock(outfile[0], outfile[1]);
+        result = file_compare(outfile[0], outfile[1], err_line1, err_line2);
 
         if(result > 0)
         {
             printf("\n*********************\n");
-            printf("FAILED \n");
+            printf("FAILED:\n");
             printf("Disk: %s\n", disk);
             printf("Pathname: %s\n", pathname[i]);
+            printf("Differences: %d\n", result);
+
+            printf("\nFirst Error\n");
+            printf("%s line %d\n", outfile[0], *err_line1);
+            printf("%s line %d\n", outfile[1], *err_line2);
         }
         else
             printf("PASSED\n");
+
+        free(err_line1);
+        free(err_line2);
 
         i++;
     }
