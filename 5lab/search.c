@@ -45,6 +45,7 @@ int search_fs(int device, char* pathname)
 int search_dir(int device, int dir, char* target)
 {
     int i;
+    int found = 0;
     int target_ino= 0;
     int block_size = get_block_size(device);
     INODE* ip = get_inode(device, dir);
@@ -83,6 +84,7 @@ int search_dir(int device, int dir, char* target)
 
             if (strcmp(name, target) == 0)
             {
+                found = 1;
                 printf(" <%.*s here", 15 - dp->name_len, "---------------");
                 target_ino = dp->inode;
             }
@@ -96,5 +98,9 @@ int search_dir(int device, int dir, char* target)
     }
 
     free(ip);
-    return target_ino;    
+
+    if(found)
+        return target_ino;    
+    else
+        return -1;
 }

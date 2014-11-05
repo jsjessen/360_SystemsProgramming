@@ -11,10 +11,10 @@ FLAGS = $(DEBUG)
 run : $(OBJS)
 	$(CC) -o $(NAME) $(OBJS) $(FLAGS)
 
-shiny : run clean
+shiny : run clean tar
 
 clean :
-	-rm $(OBJS)
+	-rm -f $(OBJS)
 
-tar :
-	tar cfv $(NAME).tar $(FILES) makefile
+tar : clean
+	tar -zcf showblock_test.tar.gz *
