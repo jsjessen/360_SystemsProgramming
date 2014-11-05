@@ -1,0 +1,54 @@
+n = 1  How do you fail?  
+************  super block info: *************
+inode_count                  184
+blocks_count                1440
+r_blocks_count                72
+free_blocks_count            957
+free_inodes_count            167
+log_blk_size                   0
+first_data_block               1
+magic number = ef53
+rev_level                      1
+inode_size                   128
+block_group_nr                 0
+blksize                     1024
+indoe_per_group              184
+---------------------------------------------
+desc_per_block                32
+inodes_per_block               8
+inode_size_ratio               1
+************  group 0 info ******************
+Blocks bitmap block            3
+Inodes bitmap block            4
+Inodes table block             5
+Free blocks count            957
+Free inodes count            167
+Directories count              2
+inodes_start                   5
+***********  root inode info ***************
+File mode                   41ed
+Size in bytes               1024
+Blocks count                   2
+hit a key to continue : block[0] = 28
+********* root dir entries ***********
+block = 28
+   i_number rec_len name_len   name
+       2      12       1       .
+       2      12       2       ..
+      13      24       1       Z
+      11      12       1       X
+      12      16       1       Y
+      21     948       4       tiny
+hit a key to continue : mode=41ed uid=0 gid=0
+===========================================
+i=0 name[0]=How do you fail?
+search for How do you fail? in 804c600
+i=0  i_block[0]=28
+   i_number rec_len name_len    name
+       2      12       1        .
+       2      12       2        ..
+      13      24       1        Z
+      11      12       1        X
+      12      16       1        Y
+      21     948       4        tiny
+name How do you fail? does not exist

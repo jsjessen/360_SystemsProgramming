@@ -5,21 +5,22 @@ LIBS   =
 CC     = gcc
 DEBUG  = -O0
 
-#OBJDIR = obj
+OBJDIR = obj
 INC1 = ../level_1
 INC2 = ../level_2
 INC3 = ../level_3
-INCDIRS = -I$(INC1) -I$(INC2) -I$(INC3)
+INCDIRS = -I$(INC1) -I$(INC2) -I$(INC3) -I..
 
 CFLAGS = -Wall -g $(INCDIRS) $(DEBUG)
 LFLAGS = 
 
 .PHONY : default all clean tar submit 
 
-OBJS = $(patsubst %.c,%.o,$(wildcard *.c)) \
-	   $(patsubst %.c,%.o,$(wildcard $(INC1)/*.c)) \
-	   $(patsubst %.c,%.o,$(wildcard $(INC2)/*.c)) \
-	   $(patsubst %.c,%.o,$(wildcard $(INC3)/*.c)) \
+OBJS = $(patsubst %.c,$(OBJDIR)/%.o,$(wildcard *.c)) \
+	   
+	   #$(patsubst $(INC1)/%.c,$(OBJDIR)/%.o,$(wildcard $(INC1)/*.c)) \
+	   $(patsubst $(INC2)/%.c,$(OBJDIR)/%.o,$(wildcard $(INC2)/*.c)) \
+	   $(patsubst $(INC3)/%.c,$(OBJDIR)/%.o,$(wildcard $(INC3)/*.c)) \
 
 #OBJS = $(patsubst %.c,$(OBJDIR)/%.o,$(wildcard *.c)) \
 #		  $(patsubst $(INC1)/%.c,$(OBJDIR)/%.o,$(wildcard $(INC1)/*.c)) \
@@ -29,15 +30,15 @@ OBJS = $(patsubst %.c,%.o,$(wildcard *.c)) \
 default: $(TARGET)
 all: default
 
-#$(OBJS): | $(OBJDIR)
+$(OBJS): | $(OBJDIR)
 
-#$(OBJDIR):
-#	mkdir $(OBJDIR)
+$(OBJDIR):
+	mkdir $(OBJDIR)
 
-HEADERS = $(wildcard *.h)
+HEADERS = $(wildcard *.h) global.h
 
-%.o: %.c $(HEADERS)
-	    $(CC) $(CFLAGS) -c $< -o $@
+$(OBJDIR)/%.o: %.c $(HEADERS)
+	    $(CC) $(CFLAGS) -c $< -o $(OBJDIR)/$@
 
 .PRECIOUS: $(TARGET) $(OBJS)
 
@@ -65,6 +66,7 @@ $(TARGET): $(OBJS)
 
 
 clean :
+	-rm -f $(OBJDIR)*.o
 	-rm -f *.o
 	-rm -f *~
 
