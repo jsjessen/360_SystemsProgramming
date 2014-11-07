@@ -1,5 +1,10 @@
-LAB Assignment #5
+<Title>360 PROJECT HELP</Title>
+<Body bgcolor="#00CCCC" text="#000000">
 
+<H1>LAB Assignment #6</H1>
+
+<Pre>
+             DUE: Sumbission Oct. 24, 2014 MIDNIGHT
 
 /***************  DUE & DEMO : Week of OCT 21,2014 ********************
  Write a C program, showblock, which displays the disk blocks of a file 
@@ -151,10 +156,20 @@ e.g.   showblock   mydisk    /a/b/c/d
 
    Make your showblock work (CORRECTLY!) for EXT2/3 FS on hard disks.
 
+NOTE: In order to adpat your showblock.c program for HDs, you must do some 
+RESEARCH about ext2/3 FS on large HD partitions. You can get the full extra 
+credit only if you can
+
+====================================================
+1. login to YOUR account on cs360.eecs.wsu.edu
+2  Run you showblock program as
+       sudo a.out /dev/sda1 /home/YOURACCOUNT/LAB5/a.out
+   AND it generates the right outputs.
+====================================================
+
 10. SAMPLES SOLUTION in samples/LAB6/:
             showblock.bin, fdimage 
     Run it under Linux as
             showblock.bin DEVICE pathname 
 
     e.g.    showblock fdimage /Z/hugefile
-

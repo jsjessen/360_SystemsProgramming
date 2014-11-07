@@ -1,0 +1,434 @@
+<Title>360 Notes</Title>
+<Body bgcolor="#00cccc" text="#000000">
+<H1>360 Notes #5</H1>
+<Pre>
+         360 Notes on Process Management in Unix/Linux
+
+1. Read Linux man pages on
+        fork, exec, wait, exit
+
+2. Process:
+   A process is the execution of an image. It is a sequence of executions 
+   regarded as a single entity by the Unix kernel. Each process has a unique pid
+   and a ppid, which identify the process and its parent process. Processes in 
+   Unix form a family tree. They compete for CPU time to run. 
+
+3. Process Origin:
+   How does a process begin? When Unix/Linux starts, it creates a process P0 by
+   brutle force. P0 creates a child process P1, which is the INIT process. P1 
+   forks many children processes, one on each terminal as the LOGIN process on 
+   that terminal. Each LOGIN process opens 3 stream FILEs,stdin, stdout, stderr,
+   and waits for a user to login. After a user login,the LOGIN process becomes 
+   the user process. Typically, the user process execute sh, so it's known as 
+   the sh process. When sh sees an a.out command, it forks a child process to 
+   execute a.out. The sh process "waits" until the child process dies. Then it 
+   prompts for another command.  
+
+4. Process Image:
+   In Unix, a process executes in two different modes; Kernel mode or User 
+   mode, denoted by Kmode or Umode, for short. In each mode, a process has
+   an "execution image", as shown by the following figure.
+
+                  Images of Process i:
+       ------------------------------------------ 
+       Kmode :    Kcode_i  Kdata_i   Kstack_i
+       ==========================================
+       Umode :    Ucode_i  Udata_i   Ustack_i
+       ------------------------------------------
+   The index i indicates these are the images of process i. In general, the 
+   Umode images of processes are all different. However, while in Kmode they 
+   share the same Kcode and Kdata, which are those of the Unix Kernel, but each
+   process has its own Kstack.
+    
+   A process migrates between Kmode and Umode many many times during its life
+   time.
+
+   Every process comes into existence and begins execution in Kmode. In fact,
+   it does everything of interest, including to die (or terminate), in Kmode. 
+   While in Kmode, it can come to Umode easily (by changing CPU's status from 
+   K to U mode) Once in Umode it cannot change CPU's status arbitrarily. A Umode
+   process can enter Kmode in only one of 3 ways:
+
+   (1). Interrupts : Interrupts are hardware signals to the CPU. When an
+                     interrupt occurs, CPU will enter Kmode to handle the 
+                     interrupt, which causes the process to enter Kmode. 
+   (2). Traps: Traps are error conditions, such as invalid address, illegal 
+               instruction, divide by 0, etc. recognized by the CPU, causing it
+               to enter Kmode to deal with the error. Since traps are caused by
+               the executing process on the CPU, the process typically dies
+               (with a dreadful message such as "Segmentation Fault").
+
+   (3). System Calls:
+        System call (or syscall for short) is a mechanism that allows a process
+        to enter Kmode to execute Kernel functions. When the Kernel function 
+        finishes, it comes back to Umode with a return value, which is normally
+        0 for success or -1 for error. In case of error, the global int 
+        variable errno (in errno.h) contains an ERROR code which further 
+        identifies the error.
+
+   In the following, we shall discuss these syscalls:
+      fork(), wait(), exec(), exit(), chdir(), open(), close() 
+
+5. Process Management in Unix:
+
+5-1. PROC structure in Kernel
+     Each process is represented by a PROC structure in the OS kernel. The PROC
+     is a data structure 
+
+     typedef  struct proc{
+              struct proc * next;
+              int pid;         // process pid
+              int ppid;        // parent pid
+              int status;      // FREE|READY|RUNNING|SLEEP|STOPPED|ZOMBIE, etc.
+           
+              (many other fileds)
+ 
+              OFT fd[NFD];     // opened file descriptors
+     }PROC;
+
+
+5-2. fork():  Usage:   int pid = fork();
+     fork() creates a child process and returns the child's pid or -1 if error.
+     The following diagram shows the actions of fork().
+
+
+               PROCi                      |      PROCj
+              --------                    |      -------
+    Kmode :    Kcodei   kfork(){....}     |                    ( When Pj runs:)
+               Kdatai        ^       |    |                          |
+               kstacki       |       |    |      Kstackj             V
+   ========================  |  ==== | ===========================   | =======
+    Umode :    Ucodei  pid=fork(); <-     |      Ucodej  pid=fork();<-
+               Udatai                     |      Udataj
+               Ustacki                    |      Ustackj
+
+
+   (1). The left-hand side shows the images of a process Pi, which issues
+        the syscall   pid=fork();    
+   (2). Pi goes to Kmode to execute the corresponding kfork() function in kernel
+        in which it creates a child process PROCj with Kstackj and Umode image 
+        of Pj, as shown in the right hand side of the diagram.
+ 
+        The Umode image of Pj is an IDENTICAL copy of Pi's Umode image.
+
+        Thus, Pj's Ucodej also has the statement
+                   pid=fork();
+
+   (3). After creating Pj, Pi returns to the statement  
+              pid = fork();
+        in Ucodei with the child's pid = j.
+
+   (4). When Pj begins to run, it exits Kmode and returns to the same statement
+              pid = fork();
+        with a 0 value in ITS OWN Umode image. 
+
+   Example 1: Consider the C program:
+
+        main()
+        {
+           int pid;
+           printf("THIS IS %d  MY PARENT=%d\n", getpid(), getppid()); 
+
+           pid = fork();   // fork syscall; parent returns child pid, 
+                           //               child returns 0
+
+           if (pid < 0){   // fork() may fail. e.g. no more PROC in Kernel
+               perror("fork faild");
+               exit(1);
+           }
+           
+           if (pid){ // PARENT EXECUTES THIS PART 
+                  printf("THIS IS %d  MY PARENT=%d\n", getpid(), getppid());
+           } 
+           else{ // child executes this part
+                  printf("I am    %d  my parent=%d\n", getpid(), getppid());
+           }
+        }
+
+                                                        
+5-3. pid = wait(int *status);  // int status in parent's image 
+                                                             HI   LOW
+     wait() returns a dead child's pid and its exit status=[exit#|sig#]
+            As usual, it returns -1 if error, e.g. caller has no child.
+
+     Note:  if caller has more than one child, wait() returns ANY dead child.
+               exit# is the exit(VALUE) used by child to die,
+               sig#  is the (signal) number that caused the child to die.
+            ONLY one of the numbers will be present, WHY?
+
+     main()
+     {
+       int pid, status;
+       pid = fork();
+       if (pid){ // PARENT:
+           printf("PARENT %d WAITS FOR CHILD %d TO DIE\n", getpid(),pid);
+           pid=wait(&status);
+           printf("DEAD CHILD=%d, HOW=%04x\n", pid, status);
+       }
+       else{// child:
+           printf("child %d dies by exit(VALUE)\n", getpid());
+           exit(100);  //OR {int a,b; a=b/0;} ==> see how does it die
+       }
+     }
+
+5-4. Execution Order:
+     After fork(), the child process competes with all other READY processes
+     for CPU time to run. Which process will run next depends on their 
+     scheduling prioirty, which changes dynamically.
+ 
+     main()
+     {
+        int pid;
+        pid=fork();
+        if (pid){ // PARENT
+           printf("PARENT %d DYING\n", getpid());
+        }
+        else{ // child
+               printf("child %d sleeps for 2 seconds\n");
+               sleep(2); // sleep for 2 seconds ==> PARENT DIES FIRST
+               printf("child %d my parent=%d\n", getpid(), getppid());
+        }
+     }
+
+5-5. Parent Process
+     When a process dies (in Kmode), it becomes a ZOMBIE, i.e. its PROC is 
+     marked as ZOMBIE and contains information, such as its exit value. When the
+     parent process finds a ZOMBIE child (by wait() syscall), it collects the 
+     needed information from the ZOMBIE PROC and finally lay the dead body to 
+     rest, i.e. set the ZOMBIE PROC to FREE for recycle again. Thus, a process
+     MUST have a parent at all times. However, because of the (independent) 
+     process execution order, a process with children may die first. Similar 
+     to humman society, such children are called orphans. The natural question
+     is: who should be the "parent" of such orphans? In humman society, they 
+     would be sent to grandma's house. But what if gradma also died? In Unix,
+     the parent of all orphans is P1. Thus, P1 wears many hats:
+    =================================================================
+         It's the grand dad of ALL user processes. 
+         It's the head of an orphange, 
+         It's the manager of a morgue (which buries DEAD bodies). 
+   ==================================================================
+                  
+5-5. nice(VALUE); 
+     Decrease caller's scheduling priority by VALUE, allowing other processes
+     to run first.
+
+6. Change Execution Image:
+
+   A process may use exec() to change its USER mode image to another 
+   (executable) file. The exec() library functions have several members:
+ 
+     int execl( const char *path, const char *arg, ...);
+     int execlp(const char *file, const char *arg, ...);
+     int execle(const char *path, const char *arg , ..., char *const envp[]);
+     int execv( const char *path, char *const argv[]);
+     int execvp(const char *file, char *const argv[]);
+
+   All of them eventually issue the syscall
+
+     int execve(const char *filename, char *const argv[], char *const envp[]);
+
+   where filename must be a complete pathname (not a name relative to CWD).
+
+   This is the basis of the C function
+
+         main(int argc, char *argv[], char *env[])
+
+
+   If successful, exec("filename",....) replaces the current Umode image with
+   a new image generated from the executable filename. It's the SAME process 
+   but with a new Umode image. The old Umode image is abandoned and therefore
+   never returned to, unless exec() fails, e.g. filename is non-executable.
+
+   This is similar to a person who goes to Heaven (Kernel) from where he/she
+   builds a new house on Earth (Umode), burns down the old house (IRS allows 
+   only one house per person?) and returns to the new house to begin a new life.
+   Naturally, the person must return to the same old house if the new house 
+   cannot be built, else he/she would be homeless and end up on the street.
+    
+Example #1 : Use execl(), which is of the form 
+                     
+             execl("a.out", "a.out", string1, string2, ..., 0);
+
+----------- cc to a.out ---------------------------------
+ main(int argc, char *argv[])
+{
+  printf("THIS IS %d IN %s\n", getpid(), argv[0]);
+  execl("b.out", "b.out", "hi", 0);
+  printf("SHOUDL NOT SEE THIS LINE\n");
+}  
+
+----------- cc to b.out ---------------------------------
+main(int argc, char *argv[])
+{
+  printf("this is %d in %s\n", getpid(), argv[0]);
+  while(1);
+}
+----------------------------------------------------------
+
+7. I/O Redirection:
+
+7-1. Stream FILEs and File Descriptors:
+   Recall that the sh process has 3 file streams: stdin, stdout, stderr.
+   Each file stream is a pointer to a FILE structure in the HEAP area.
+
+   FILE *stdin --->   FILE structure
+                    ----------------------------------
+                     char fbuf[   ]
+                     int counter,head, etc.
+                     int fd = 0; // file descriptor; fd[0] in PROC ==> KEYBOARD
+                    ----------------------------------
+
+   FILE *stdout --->  FILE structure
+                    ----------------------------------
+                     char fbuf[   ]
+                     int counter,head, etc.
+                     int fd = 1; // file descriptor; fd[1] in PROC ==> SCREEN
+                    ----------------------------------
+
+   FILE *stderr --->  FILE structure
+                    ----------------------------------
+                     char fbuf[   ]
+                     int counter,head, etc.
+                     int fd = 2; // file descriptor; fd[2] in PROC ==> SCREEN
+                    ----------------------------------
+
+   When sh forks a child, the child process also has the same FILE streams.
+   Each of the FILE streams corresponds to an opened file in the Unix kernel.
+   Each opened file has a unique file descriptor (number). The file descriptors
+   of stdin,stdout,stderr are 0,1,2, respectively.
+
+7-2. Stream I/O and System Call:
+
+   When a process executes        scanf("format", &item);
+   it tries to input an item from stdin, which points to a FILE struct. If the
+   FILE struct's fbuf[ ] is empty, it issues a system call to the Unix kernel,
+   to READ data from the file descriptor 0, which is mapped to the KEYBOARD of 
+   the terminal (/dev/ttyX) of the sh process.
+
+                      REDIRECT INPUT: 
+   The FILE struct of stdin contains a file descriptor 0. If we replace the 
+   file descriptor 0 with a newly opened file, inputs would come from that file
+   rather than from the original input file (the KBD). Thus, if we do 
+   
+           #include &lt;fcntl.h>  // contains O_RDONLY, O_WRONLY,O_APPEND, etc
+
+           close(0);    // system call to close file descriptor 0
+           open("filename", O_RDONLY);  // open filename for READ, which
+                                        // will replace fd 0
+   Then, every scanf() call will get inputs from the opened file.
+
+   Similarly, when a process executes      printf("format", items);
+   it tries to write to the fbuf[] in the stdout FILE structure. If fbuf[] is 
+   full, it issues system call to the Unix kernel to write data from fbuf[] to 
+   file descriptor 1, which is mapped to the terminal's screen.
+
+                       REDIRECT OUTPUT: 
+           close(1);
+           open("filename", O_WRONLY|O_CREAT, 0644); 
+   
+   which change file descriptor 1 to point to filename, then the outputs will 
+   go to that file instead of the screen. 
+  
+   When a process dies (in Kernel), it cloes all opened files, (causing
+   data to be written out to disk.
+
+7-3 Use man open to read more on how to issue syscalls 
+        open(), read(), write(), close(), 
+    and (I/O library functions)
+        fopen(), fclose()
+-----------------------------------------------------------------------------
+
+8. PIPEs:
+   In Unix/Linux, the command
+                  cmd1 | cmd2 
+   runs cmd1 by a process and cmd2 by another process, which are connected by a
+   PIPE, so that the outputs of cm1 becomes the inputs of cmd2.
+
+Examples:
+         cat filename | grep "test"   # show lines containing test
+         ps x | grep "httpd"          # show lines containing httpd
+
+      
+8-1. Pipe: 
+     A pipe has a read end and a write end.
+     A process writes to the pipe, and another process reads from the pipe.
+
+       Proc1:                                            Proc2:
+       write ===================>|PIPE| ===============> read 
+
+      -----------------------------------------------------------------    
+       while(1){                   |          while(1){
+         if (PIPE has NO READER)   |             if (no WRITER && no data)
+            exit(BORKEN_PIPE);     |                return 0;
+         wait for room in PIPE;    |             wait for data in PIPE; 
+         write to pipe;            |             return n=read from PIPE; 
+       }                           |          }
+      -----------------------------------------------------------------        
+
+8-2. Pipe Programming Example:
+
+     int pd[2];       // 2 integers
+     char buf[1024];
+
+     main()
+     {
+       int r, n, pid;
+  
+       r = pipe(pd);  // system call to create a pipe' pd[0]=READ, pd[1]=WRITE
+       printf("pd=[%d, %d]\n", pd[0], pd[1]);
+ 
+       pid = fork();    // fork a child process, which has the SAME pd[ ]
+       if (pid){        // parent as pipe WRITER
+	  close(pd[0]); // close its READ end
+          
+	 n = write(pd[1], "I AM YOUR PAPA", 16);
+	 printf("parent %d wrote %d bytes to pipe\n", getpid(), n);
+
+       }
+       else{            // child as pipe READER
+           close(pd[1]);
+           n = read(pd[0], buf, 1024);
+           printf("child  %d read  %d bytes from pipe: %s\n", getpid(), n, buf);
+       }
+     }
+
+--------------------- outputs of running a.out ---------------------
+     pd=[3, 4]
+     child  14923 read  16 bytes from pipe: I AM YOUR PAPA
+     parent 14922 wrote 16 bytes to pipe
+--------------------------------------------------------------------
+
+8-3. Connect PIPE writer to PIPE reader:
+
+Assume:  cmd1 | cmd2
+
+(1). When sh gets the command line  cmd1 | cmd2, it forks a child sh and waits 
+     for the child sh to die as usual.
+
+(2). Child sh: scan the command line for | symbol. In this case 
+                    cmd1 | cmd2 
+     has a pipe symbol |.  Divide the command line into head=cmd1, tail=cmd2
+
+(3). Then the Child sh :
+
+           int pd[2];
+
+           pipe(pd);       // creates a PIPE
+
+           pid = fork();   // fork a child (to share the PIPE)
+
+           if (pid){  // parent as pipe WRITER
+              close(pd[0]);// WRITER MUST close pd[0]
+
+              close(1);    // close 1
+              dup(pd[1]);  // replace 1 with pd[1]
+              exec(head);  // change image to cmd1
+           }
+           else{      // child as pipe READER
+              close(pd[1]); // READER MUST close pd[1]
+
+              close(0);  
+              dup(pd[0]);   // replace 0 with pd[0]
+              exec(tail);   // change image to cmd2
+           }
+ 

@@ -1,0 +1,378 @@
+<Title>360 class Notes</Title>
+<Body bgcolor="#00cccc" text="#000000">
+
+<H1>360 Notes #7</H1>
+
+<Pre>
+
+         360 Notes #7 System Calls for File Operations
+
+1. What are syscalls?
+
+   Syscall is a mechanism that allows a process to enter Kernel mode to 
+   perform operations not allowed in User mode. Operations such as open files,
+   read/write files, fork, exec, even termination, must all be done in Kernel.
+   In this set of notes, we shall focus on Unix syscalls for file operations.
+   
+2. Where to find these information:
+
+   Under Linux, the man pages of all syscalls are listed in /usr/man/man2/.
+   The Unix command man 2 NAME displays the man pages of NAME in man2/. 
+   Similarly, man 8 mkfs displays the man pages of mkfs in /usr/man/man8/. 
+
+   DO: practice using man to read Linux's man pages.
+ 
+3. How to use these functions?
+
+   Include them in your C program, just like ordinary function calls. A return 
+   value >=0 means OK, -1 means BAD. An implicitly defined global int variable,
+   errno, records the error code.  Each error code number has a corresponding
+   string description, as the following program shows.
+
+            #include &lterrno.h&gt
+            main()
+            {
+              if (mkdir("newdir", 0777) < 0){
+                 printf("errno=%d : %s\n", errno, strerror(errno));
+              }
+            }
+
+    If you run the program twice, the second time it will print
+                   errno=17 : File exists
+    as it should.
+    ************************************************************** 
+                         EXERCISES:
+       Write a C program to test :  
+               mkdir, rmdir, chdir, creat, unlink, rename, chmod
+    **************************************************************
+
+4. READ and LEARN how to use these syscalls on your own:
+
+   access : check user's permissions for a file : R_OK,W_OK,X_OK,F_OK. 
+            int access(const char *pathname, int mode);
+
+   chdir  : change directory
+            int chdir(const char *path);
+
+   chmod  : change permissions of a file
+            int chmod(const char *path, mode_t mode);
+
+   OTHERS : chown, chroot, setuid
+
+
+   mkdir  : create a directory
+            int mkdir(const char *pathname, mode_t mode);
+
+   rmdir  : remove a directory (must be empty)
+            int rmdir(const char *pathname);
+
+   link   : make a new name for a file
+            int link(const char *oldpath, const char *newpath);
+
+
+   unlink : delete a name and possibly the file it refers to
+            int unlink(const char *pathname);
+
+   symlink: create a symbolic link for a file
+            int symlink(const char *oldpath, const char *newpath);
+
+   rename : change the name of a file
+            int rename(const char *oldpath, const char *newpath);
+  
+                       SPECIAL ONES:
+
+   mount  : int  mount(const  char  *specialfile, const char * dir , 
+                       const char *filesystemtype, unsigned long mountflags , 
+                       const void * data);
+
+   umount : int umount(const char *dir);
+
+   mknod  : make special files, e.g.  mknod /dev/fd2 b 2 2
+
+
+5. To be covered in details in class:
+
+      open, creat, umask
+      read, write, lseek
+      close
+
+      opendir : DIR *opendir(const char *name);
+      readdir : int readdir(unsigned int fd, struct dirent *dirp, unsigned int count);
+      readlink: int readlink(const char *path, char *buf, size_t bufsiz);
+
+      stat :  int stat(const char *file_name, struct stat *buf);
+              int fstat(int filedes, struct stat *buf);
+              int lstat(const char *file_name, struct stat *buf);
+
+
+6. The stat Systen Call
+
+6-1. Link Files:
+   In Unix, every file has a pathname, such as /a/b/c. However, Unix allows 
+different pathnames to represent the same file. These are known as LINK files.
+There are two kinds of LINKs, HARD link and SOFT link. 
+
+HARD Links: 
+     The command    ln  oldpath  newpath 
+
+creates a HARD link from newpath to oldpath. The corresponding syscall is
+
+          link(char *oldpath, char *newpath)
+
+NOTE: Hard links can only be applied to non-DIR files. 
+      (What would happen if DIRs could be hard linked ?) 
+
+Hard linked files share the same inode, whose nlink field records the number of
+hard links to the inode. Converse to link, the syscall
+ 
+        unlink(char *pathname)
+
+finds the inode of pathname and decrements its nlink by 1. The file is truly 
+removed only if nlink becomes 0. This is what the rm command does.
+    
+SOFT Links:  
+     The command   ln -s  oldpath newpath  
+
+creates a SOFT or Symbolic link from newpath to oldpath. The corresponding
+syscall is 
+             symlink(char *oldpath, char *newpath)
+
+The newpath is (almost a regular) file, which contains the oldpath string. It
+acts like a detour road sign, which directs the traffic to the real destination
+(oldpath). Unlike hard links, soft links can be applied to any file, such as
+
+             ln -s   aVeryLongPathname                 a
+             ln -s   aFileWhichMayBeChangedOften       b
+
+One drawback of soft link is that the target file may NOT exist. If so, the
+detour would direct the poor driver to fall off a cliff. In Linux, such death
+traps are displayed in (the appropriate color of) RED under the ls -l command.
+
+Also, if foo -> /a/b/c is a soft link file, the open("foo", 0) syscall, as 
+implemented, will open the target file /a/b/c, not the link file foo itself. 
+So, the open()/read() syscalls would NOT read any soft link file. Instead, the
+syscall, readlink(), must be used to read the contents of a soft link file. 
+
+ 
+A Brief Summary about Links:
+           Command                               Syscall used
+  =======================================================================
+    ln     oldpath newpath             link(char *oldpath, char *newpath)
+    ln -s  oldpath newpath          symlink(char *oldpath, char *newpath)
+  =======================================================================
+
+6-2. File Status:
+   Every file has a UNIQUE inode, whcih contain ALL the information about the
+file. The syscalls, stat/lstat/fstat, return the info of a file. 
+
+9-2-1. INODE:
+     Every file is represented by a unique INODE data strucutre, which is shown
+here for reference.:
+
+struct ext2_inode {
+  unsigned short i_mode;
+  unsigned short i_uid;
+  unsigned long  i_size;
+  unsigned long  i_atime;
+  unsigned long  i_ctime;
+  unsigned long  i_mtime;
+  unsigned long  i_dtime;
+  unsigned short i_gid;
+  unsigned short i_links_count;
+  unsigned long  i_blocks;
+  unsigned long  i_flags;
+  unsigned long  i_reserved1;
+  unsigned long  i_block[15];
+  // several other unimportant fields
+};
+
+6-2.2  The man pages of stat:
+    Use  man stat  to read the man pages of the stat system call, which is 
+shown below.
+=============================================================================
+STAT(2)                    System calls                   STAT(2)
+
+NAME
+       stat, fstat, lstat - get file status
+
+SYNOPSIS
+       #include &lt;sys/types.h&gt;
+       #include &lt;sys/stat.h&gt;
+       #include &lt;unistd.h&gt;
+
+       int stat(const char *file_name, struct stat *buf);
+       int fstat(int filedes, struct stat *buf);
+       int lstat(const char *file_name, struct stat *buf);
+
+DESCRIPTION
+       These  functions  return  information  about the specified
+       file.  You do not need any access rights to  the  file  to
+       get  this  information  but  you need search rights to all
+       directories named in the path leading to the file.
+
+       stat stats the file pointed to by file_name and  fills  in
+       buf.
+
+       lstat  is  identical to stat, except in the case of a sym-
+       bolic link, where the link itself is stat-ed, not the file
+       that it refers to.
+
+       fstat  is identical to stat, only the open file pointed to
+       by filedes (as returned by open(2)) is stated in place  of
+       file_name.
+
+
+       They  all return a stat structure, which contains the fol-
+       lowing fields:
+
+            struct stat {
+                dev_t         st_dev;      /* device */
+                ino_t         st_ino;      /* inode */
+                mode_t        st_mode;     /* protection */
+                nlink_t       st_nlink;    /* number of hard links */
+                uid_t         st_uid;      /* user ID of owner */
+                gid_t         st_gid;      /* group ID of owner */
+                dev_t         st_rdev;     /* device type (if inode device) */
+                off_t         st_size;     /* total size, in bytes */
+                unsigned long st_blksize;  /* blocksize for filesystem I/O */
+                unsigned long st_blocks;   /* number of blocks allocated */
+                time_t        st_atime;    /* time of last access */
+                time_t        st_mtime;    /* time of last modification */
+                time_t        st_ctime;    /* time of last change */
+            };
+
+       The value st_size gives the size of the file (if it  is  a
+       regular file or a symlink) in bytes. The size of a symlink
+       is the length of the pathname it contains, without  trail-
+       ing NULL.
+
+       The value st_blocks gives the size of the file in 512-byte
+       blocks.  (This may be smaller than st_size/512  e.g.  when
+       the file has holes.)  The value st_blksize gives the "pre-
+       ferred" blocksize for efficient file system I/O.  (Writing
+       to a file in smaller chunks may cause an inefficient read-
+       modify-rewrite.)
+
+       Not all of the Linux filesystems implement all of the time
+       fields.   Some  file system types allow mounting in such a
+       way that file accesses do  not  cause  an  update  of  the
+       st_atime field. (See `noatime' in mount(8).)
+
+       The  field  st_atime  is changed by file accesses, e.g. by
+       exec(2), mknod(2), pipe(2), utime(2) and read(2) (of  more
+       than zero bytes). Other routines, like mmap(2), may or may
+       not update st_atime.
+
+       The field st_mtime is changed by file modifications,  e.g.
+       by  mknod(2),  truncate(2), utime(2) and write(2) (of more
+       than zero bytes).  Moreover, st_mtime of  a  directory  is
+       changed  by  the  creation  or  deletion  of files in that
+       directory.  The st_mtime field is not changed for  changes
+       in owner, group, hard link count, or mode.
+
+       The  field  st_ctime  is  changed by writing or by setting
+       inode information (i.e., owner, group, link  count,  mode,
+       etc.).
+
+       The  following  POSIX macros are defined to check the file
+       type:
+
+              S_ISREG(m)  is it a regular file?
+
+              S_ISDIR(m)  directory?
+
+              S_ISCHR(m)  character device?
+
+              S_ISBLK(m)  block device?
+
+              S_ISFIFO(m) fifo?
+
+              S_ISLNK(m)  symbolic link? (Not in POSIX.1-1996.)
+
+              S_ISSOCK(m) socket? (Not in POSIX.1-1996.)
+
+       The following flags are defined for the st_mode field:
+
+       S_IFMT     0170000   bitmask for the file type bitfields
+       S_IFSOCK   0140000   socket
+       S_IFLNK    0120000   symbolic link
+       S_IFREG    0100000   regular file
+       S_IFBLK    0060000   block device
+       S_IFDIR    0040000   directory
+       S_IFCHR    0020000   character device
+       S_IFIFO    0010000   fifo
+
+       S_ISUID    0004000   set UID bit
+       S_ISGID    0002000   set GID bit (see below)
+       S_ISVTX    0001000   sticky bit (see below)
+
+       S_IRWXU    00700     mask for file owner permissions
+       S_IRUSR    00400     owner has read permission
+       S_IWUSR    00200     owner has write permission
+       S_IXUSR    00100     owner has execute permission
+       S_IRWXG    00070     mask for group permissions
+       S_IRGRP    00040     group has read permission
+       S_IWGRP    00020     group has write permission
+       S_IXGRP    00010     group has execute permission
+       S_IRWXO    00007     mask for permissions for others (not in group)
+       S_IROTH    00004     others have read permission
+       S_IWOTH    00002     others have write permisson
+       S_IXOTH    00001     others have execute permission
+
+RETURN VALUE
+       On success, zero is returned.  On error, -1  is  returned,
+       and errno is set appropriately.
+
+
+SEE ALSO
+       chmod(2), chown(2), readlink(2), utime(2)
+=============================================================================
+
+6-2.3 File Type and Permissions:
+    Among the fileds of the stat structure, only the st_mode field needs
+    some explanation:
+
+       mode_t        st_mode;     /* copied from i_mode of INODE */
+
+    The TYPE of st_mode is unsigned short (2 bytes or 16 bits). 
+    The 16 bits have the following meaning:
+
+       |Type|   |permissions|
+       ----------------------
+       |tttt|fff|uuu|ggg|ooo| 
+       ----------------------
+
+    The leading 4 bits are file types, which can be interpreted as (Octals)
+
+       S_IFMT     0170000   bitmask for the file type bitfields
+       S_IFSOCK   0140000   socket
+       S_IFLNK    0120000   symbolic link
+       S_IFREG    0100000   regular file
+       S_IFBLK    0060000   block device
+       S_IFDIR    0040000   directory
+       S_IFCHR    0020000   character device
+       S_IFIFO    0010000   fifo
+ 
+    The next 3 bits are flags, which indicate special usage of the file 
+
+       S_ISUID    0004000   set UID bit
+       S_ISGID    0002000   set GID bit 
+       S_ISVTX    0001000   sticky bit 
+
+    The remaining 9 bits are PERMISSION bits for file protection:
+
+        owner  group  other
+         rwx    rwx    rwx
+    
+    By interpreting these bits, YOU may disaplay the st_mode field as
+       -rwxr-xr-x             (REG file) 
+       drwxr-xr-x             (DIR)
+       lrw-r--r--             (LNK file)
+
+==============================================================================
+6-3. HOW TO read DIR Entries:
+   Read the man pages of   
+            opendir, readdir, readlink  
+to learn how to use these syscalls to open a DIR file for read, and then read 
+the contents of a DIR file (as DIR entry strings). Alos, learn how to read the
+contents of a (soft) LNK file itself.

@@ -1,0 +1,278 @@
+<TITLE>CS360 NOTES#3</Title>
+<Body bgcolor="#00FFCC" text="#000000">
+
+<H1>360 NOTES #2 : PROGRAM DEVELOPMENT</H1>
+
+<Pre>
+
+1. OBJECTIVES
+   To understand the steps involved in program development.
+
+2. THE STEPS:
+
+(1). Source file : A text editor, such as vi or emacs, may be used to create
+     one or more source program files in some language(s). Typical languages
+     are C and Assembly.
+
+(2). Consider C programs first. Let the source of a C program be written as
+     two files, t1.c and t2.c,  as shown below:
+   
+    /********  t1.c file ***********************************************/
+     int g = 100;                       /* initialized global variable */
+     int h;                             /* un-initialized global variable */
+     static int s;                      /* static global variable */
+
+     main(int argc, char *argv[ ])      /* main function */
+     {
+       int a = 1; int b;                /* automatic local variables */
+       static int c = 3;                /* static local variable */
+       b = 2;
+       c = mysum(a,b);                  /* call mysum(), passing a,b */
+       printf("sum=%d g=%d\n",c, g);    /* call printf() */
+     }
+
+     /*******  t2.c file *******************************************/
+     extern int g;                      /* extern global variable  */
+     int mysum(int x, int y)            /* function heading */
+     {  
+        return x + y + g;                   
+     }              
+
+
+Variables in a C program can be classified as
+
+                           |-- non-static --|
+                |- global -|                |- initialized or uninitialized
+                |          |-- static ------|
+     Variables -|                          
+                |- local --|-- register-----|- in CPU register (if possible)
+                           |-- automatic ---|- allocated on stack
+                           |-- static ------|- initialized or uninitialized
+
+Global variables are defined outside of any function. Local variables are 
+defined inside a function. Usually, the term "static" means a permanent and 
+unique copy. So global variables are already static. Then why static globals? 
+In C programs, static global variables are visible only to the file in which 
+they are defined. Non-static globals are visible to all the files of the same 
+program. Global variables can be initialized or uninitialized. Initialized 
+globals are assigned values at compile time. Uninitialized globals are set to 0
+when the program execution starts. Local variables are visible only to the 
+function in which they are defined. By default, local variables are automatic;
+they come into existence when the function is entered and they logically 
+disappear when the function exits. For register variables, the compiler tries to
+allocate them in CPU registers. Since automatic local variables do not have any
+allocated memory space until the function is entered, they cannot be initialized
+at compile time. Static locals have only one copy and can be initialized. In 
+addition, C also supports volatile variables, which are used as memory-mapped 
+I/O locations or globals that are changed by interrupt handlers or by multiple 
+threads. The volatile keyword prevents the compiler from optimizing the source 
+code that operates on such variables.
+
+    For example, in the above t1.c file g is an initialized global, h is an 
+uninitialized global and s is a static global. Both g and h are visible to the
+entire program but s is visible only in t1.c. So t2.c can reference g by 
+declaring it as extern, but it cannot reference s because s is a static global,
+which is visible only in t1.c. In the main() function, the local variables a, b
+are automatic and c is static. Although a is defined as int a = 1, this is not 
+an initialization because a does not yet exist at compile time. Instead, the 
+generated code will assign 1 to the current copy of a when main() is actually 
+entered.
+
+
+(3). To convert these source files into an executable, we typically use the 
+     cc command (In Linux, cc is linked to gcc, so they are the same).
+
+        cc  t1.c t2.c       =====> this generates an executable file  a.out
+
+(4). WHAT'S cc or gcc?
+     cc is a program, which consists of 3 major steps:
+     
+     1. Convert C source files to Assembly code files:
+        The first step of cc is to invoke the C COMPILER, which translates
+        the .c files into .s files containing ASSEMBLY code for the 
+        target machine.  
+
+     2. Convert ASSEMBLY Code to OBJECT code:
+        Every machine has its own set of machine instructions. Users may 
+        write programs in an ASSEMBLY language for a specific machine.
+
+        An ASSEMBLER is a program, which translates assembly code into 
+        machine code in binary form. The resulting .o files are called 
+        OBJECT code. 
+
+        The second step of cc is to invoke the ASSEMBLER to translate the
+        .s files into .o files.
+
+        Each .o file consists of 3 parts:
+         
+              a CODE section consisting of machine instructions;
+              a DATA section consisting of all GLOBAL and static variables; 
+              a SymbolTable  containing all variable and function names
+                             and their attributes.
+
+     3. LINKING: 
+        A program may be composed of several pieces of .o files, which are 
+        usually dependent on one another.  In addition, the .o files may call
+        C library functions (e.g. printf), which are NOT present.
+
+        The last step of cc is to invoke the LINKER, which puts all the .o 
+        files and the needed library functions together into a single 
+        executable binary file, a.out. More specifically, the LINKER does the 
+        following:
+
+        .Combine all the code sections of the individual .o files into a
+         single CODE section,
+
+        .Combine all the data sections into a single DATA section,
+
+        .Use the SymbolTables to resolve the cross references among the
+         inidvidual .o files. 
+
+         For instance, when the compiler sees sum = mysum(a,b), it does NOT 
+         know where mysum is. So it leaves a blank in the .o file for the
+         entry address of mysum. When the linker puts t1.o t2.o together, it 
+         knows where mysum is since mysum is recorded in the SymbolTable
+         of t2.o. So the linker can replace the blank in t1.o with the address
+         of mysum. Similarly for other symbols that are cross referenced.
+
+        If everything goes well, the linker will write the resulting combined 
+        file as a.out, which is the executable binary.
+ 
+3. STATIC Vs. DYNAMIC Linking:
+   There are two ways to create a.out, known as static and dynamic linking.
+   In static linking, the linker includes every needed library function in 
+   a.out. This makes a.out self-sufficient but usually very large.
+     
+   In dynamic linking, the library functions are not included in a.out but 
+   calls to such functions are recorded in a.out as a directives to the LOADER.
+   When a.out is to be executed, the system LOADER will load both a.out and 
+   its needed libaray files into memory. 
+
+   The main advantages of dynamic linking are:
+       .The size of every a.out is reduced.
+       .Once loaded into memory, the library functions can be SHARED.
+      . Modifying library functions does not have to re-linking any a.out file.
+ 
+   This kind of libraries are known as Dynamic Linking Libraries (DLLs).
+
+4. WHAT's in a.out?
+   a.out is the executable binary file, which usually has the format:
+   ---------------------------------------------------------------------------
+     header      : The header of a.out contains its sizes in bytes: 
+                       tsize = size of Code section;
+                       dsize = size of Data section;
+                       bss_size=size of bss section;
+                       Needed library functions (if dynamic linked).
+
+     Code Section: this is the combined code area of a.out; it always begins
+                   with the standard C startup file crt0.o, which calls main. 
+
+     Data Section: The Data section contains INITIALIZED global and static data
+                   objects. Examples of static data are static variables and 
+                   format strings in printf(fmt, .....).
+
+     bss (Block Started by Symbol) Section: un-initialized statics and globals
+   ---------------------------------------------------------------------------
+   NOTE that the bss section is NOT included in a.out. However, its size
+   is recorded in the header of a.out as bss_size.
+
+5. Execution of a.out
+   The sh command
+       %  a.out ONE TWO THREE 
+   executes a.out with the strings ONE TWO THREE as command-line parameters.
+   As explained before, sh will create a child process to execute a.out.
+   
+   After creation, The child process does the following
+
+   (1). It reads the header of a.out to determine the Total memroy size needed:
+             TotalSize = tsize + dsize + bss_size + stackSize
+        where the stackSize is usually a default value of say, 4K bytes.
+
+   (2). It then allocates a memory area of TotalSize bytes. Conceptually, we
+        may assume that the allocated memory area is a single piece of
+        contiguous memory. It then loads a.out (without the header) into this 
+        memroy area, with the Code section at the Low address end. The High
+        address end will be the stack area. Thus, the stack grows downward.
+
+   (3). The main() function of  a.out  may be written as 
+              main(int argc, char *argv[ ], char *env[ ])
+        As will be shown later, parameters are passed through the stack. 
+
+   (4). It then starts to execute crt0.o, whcih calls main().
+  
+   (5). The execution image of a process is shown by the figure:
+
+                      |<-- a.out -->|bss  |
+                      ---------------------
+                      | Code  |Data |
+                      ---------------
+  
+          LowAddress  --------------|---------------------   HighAddress 
+                      | CODE  |Data |bss=0| HEAP | STACK |
+                      --------------------|---------------
+
+        where the HEAP is for dynamic memory allocations (by malloc() in C or
+        new() in C++) and STACK is the run-time stack.
+        Subject to a certain maximum size limit, both HEAP and STACK may be 
+        expanded automatically by the Unix operating system.
+
+   (6). Termination:
+        The process that executes a.out may terminate in ONE of 4 ways:
+
+        1. The process calls exit(bye_value), which does some clean-up work 
+           (such as flush stdout, close I/O stream FILEs) and then issues an 
+           _exit(value) system call, which causes the process to enter the Unix
+           Kernel to die. For instance, when the process return from main() to
+           crt0.o, it calls exit(0). Alternatively, the process may call
+           exit(byte_value) anywhere in a.out to terminate (without going back
+           to crt0.o). 
+
+        2. Inside a.out, the process may call _exit(value) anywhere to enter 
+           Kernel to die IMMEDIATELY. Reason: if you want to die in a such a 
+           hurry, why bother to clean up your room first?
+           
+           When a process dies, it records the byte_value in the _exit() call
+           as the "cause of death" on its body, notifies its parent that it is
+           dying and then becomes a ZOMBIE. The parent (either the original 
+           parent or P1) will find the ZOMBIE, get its pid and "cause of death"
+           value via the 
+                         dead_child_pid = wait(&cause_of_death);
+           system call, where cause_of_death has 2 bytes containing
+                              |exitValue|signal#|
+           Naturally, only one of the bytes would be non-zero, WHY?
+
+        3. While executing, the process encounters an error (in YOUR a.out of
+           course), which is recognized and "caught" by the CPU. The process is
+           forced into the Unix kernel by a "trap". Once in kernel, it converts
+           the trap error (type) into a magic number called a SIGNAL number and
+           delivers the signal to itself, causing it to die. In this case, the
+           ZOMBIE's "cause of death" is the signal number, and we may say that
+           the process has died abnormally. 
+
+           Examples: Try to run these C programs
+                      int *p;
+                      main(){   *p = 1;  }
+
+                      int a,b,c;
+                      main(){   c = a/b; }
+
+                      main(){   main();  }
+
+           What do you see and WHY?
+
+
+        4. Killed by a signal, which may originate from hardware (interrupts)
+           or sent by another process via the 
+                      kill pid 
+           command, which uses the kill(pid, singal#) system call.
+           Example:  If you run the C program:
+                        main()
+                        {
+                           while(1);
+                        }       
+           What would happen and how do you get out the mess?
+
+
+
+
+

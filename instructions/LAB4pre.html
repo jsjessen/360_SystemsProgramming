@@ -1,3 +1,6 @@
+<html>
+<Body bgcolor="#00CCCC" text="#000000">
+<pre>
 
              CS360 Lab Assignment #4 Pre-work
              DUE: 10-1-2014: DEMO PART 1 to TA
@@ -50,9 +53,9 @@
 
 5-2. Go to YOUR cgi-bin/ directory. Change the line in mycgi.c file
 
- printf("<FORM METHOD=\"POST\" ACTION=\"http://cs360.eecs.wsu.edu/~kcw/cgi-bin/mycgi\">"); TO
+ printf("&lt;FORM METHOD=\"POST\" ACTION=\"http://cs360.eecs.wsu.edu/~kcw/cgi-bin/mycgi\">"); TO
 
- printf("<FORM METHOD=\"POST\" ACTION=\"http://cs360.eecs.wsu.edu/~YOURname/cgi-bin/mycgi\">");
+ printf("&lt;FORM METHOD=\"POST\" ACTION=\"http://cs360.eecs.wsu.edu/~YOURname/cgi-bin/mycgi\">");
 
 Then run   cc -o mycgi mycgi.c util.o   # generate YOUR OWN mycgi executable.
            chmod u+s mycgi              # chmod mycgi to a SETUID executable
@@ -105,7 +108,7 @@ program owner, allowing it to write to the owner's directories.
 2. HELP INFO:
    Use the stat system call to get file information (from Kernel):
       
-       #include <sys/stat.h>
+       #include &lt;sys/stat.h&gt;
 
        int  stat(const char *filename, struct stat *buf);
        int lstat(const char *filename, struct stat *buf);
@@ -175,7 +178,7 @@ program owner, allowing it to write to the owner's directories.
      reads the contents of a LNK into buf[bufsize] and returns the number of
      chars read.
 
-2-3. With  #include <dirent.h>   the system calls
+2-3. With  #include &lt;dirent.h&gt;   the system calls
 
            DIR *dp = opendir("dirname");      opens a DIR (for R/W), and
 

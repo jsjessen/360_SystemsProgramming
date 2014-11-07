@@ -1,0 +1,379 @@
+<Title>360 Class Notes</Title>
+<Body bgcolor="#00cccc" text="#000000">
+
+<H1>360 Notes #8</H1>
+
+<Pre>
+           CS 360 NOTES on  Library I/O Functions
+
+1. WHY Library I/O functions?
+
+   Although system calls are the basis for read/write files, they are often
+   inconvenient to use. For examples, users may wish to read/write files in 
+   logical units most suited to the application, e.g. as lines, chars, etc. 
+
+   Library I/O functions are provided for this purpose. Although not 
+   absolutely essential, they provide added convenience and overall 
+   efficiency.
+
+2. What are Library I/O functions?
+
+   Almost every OS that supports C also provides Library functions for
+   file I/O.  In Unix, Library I/O functions are built on top of the 
+   syscall functions. In order to illustrate their intimate relationship, 
+   we first list a few of them:
+      
+    Syscall Functions:  open(),  read(),  write(), lseek(),  close();
+    Library Functions; fopen(), fread(), fwrite(), fseek(), fclose();
+
+   From their strong similrities, you can almost guess that every library 
+   I/O function has its root in a corresponding syscall function. This is
+   indeed the case as fopen() relies on open(), fread() makes use of read(),
+   etc. The following C programs illutrate their usage.
+
+             Example 1: Display the contents of a file
+
+        System Calls                      Library I/O Functions 
+-------------------------------------|----------------------------------------
+#include &lt;fcntl.h&gt;                   |     #include &lt;stdio.h&gt;
+
+main(int argc, char *argv[ ])        |  main(int argc, char *argv[ ])
+{                                    |  {
+  int fd;                            |     FILE *fp; 
+  int i, n;                          | 
+  char buf[1024];                    |     int c;
+                                     |  
+  if (argc < 2) exit(1);             |     if (argc < 2) exit(1);
+                                     |
+  fd = open(argv[1], O_RDONLY);      |     fp = fopen(argv[1], "r");
+                                     |
+  if (fd < 0) exit(2);               |     if (fp==0) exit(2);
+                                     |
+  while (n = read(fd, buf, 1024)){   |     while ((c = fgetc(fp)) != EOF){
+     for (i=0; i < n; i++)           |         
+          putchar(buf[i]);           |         putchar(c);  
+
+               // FOR cat: spit out \r to fd=2 OR stderr for each \n
+  }                                  |     }
+}                                    |   } 
+----------------------------------------------------------------------------
+           Both programs prints the contents of a file to stdout
+ SYSCALL: READ a bunch into a buf[ ] |  LIBIO: get a char from the buffer in 
+          then print each buf[i]     |         the FILE struct, print it.
+                                     |  The LIBIO function will "refill" the
+                                     |  buffer when it becomes empty.
+
+        
+                            Example 2: Copy files
+       
+        System Calls                      Library I/O Functions 
+  -----------------------------------|----------------------------------------
+ #include &lt;fcntl.h&gt;                  |     #include &lt;stdio.h&gt;
+
+ #define BLKSIZE 4096                |     #define BLKSIZE 4096
+ int fd, gd;                         |     FILE *fp, *gp;
+ char buf[4096];                     |     char buf[4096];
+                                     |
+ main(int argc, char *argv[ ])       |     main(int argc, char argv[ ])  
+ {                                   |     {
+   int n, total=0;                   |        int n, total=0;
+   if (argc < 3) exit(1);            |        if (argc < 3) exit(1);
+                                     |
+   fd = open(argv[1], O_RDONLY);     |        fp = fopen(argv[1], "r");
+   if (fd < 0) exit(2);              |        if (fp == NULL) exit(2); 
+   gd=open(argv[2],O_WRONLY|O_CREAT);|        gp = fopen(argv[2], "w");
+   if (gd < 0) exit(3);              |        if (gp == NULL) exit(3);
+                                     | 
+   while (n=read(fd, buf, BLKSIZE))  |        while (n=fread(buf,1,BLKSIZE,fp))
+   {                                 |        {
+      write(gd, buf, n);             |             fwrite(buf, 1, n, gp);
+      total += n;                    |             total += n;
+   }                                 |        }
+   printf("total=%d\n",total);       |        printf("total = %d\n", total);
+                                     |
+   close(fd); close(gd);             |        fclose(fp); fclose(gp);
+ }                                   |    }  
+ ----------------------------------------------------------------------------
+
+    Both programs copy file1 to file2. Since you already know how syscalls
+    work, we shall only discuss the program that uses Library I/O functions.
+
+    (1). fopen() uses a string for Mode, where "r" stands for READ, "w" for 
+         WRITE. It returns a pointer to a FILE structure. The FILE structure 
+         contains a buffer, whose size usually matches that of BLKSIZE. In 
+         addition, it also has pointers, counters and status variables for 
+         manipulating the buffer.
+
+         fopen() first allocates and initialize a FILE structure in (heap area
+         of) the UserImage. It then issues an open() syscall for the file. If 
+         the open() syscall succeeds, it records the returned fd in the FILE 
+         structure, and returns a pointer to the FILE structure. Otherwise, it
+         frees the FILE structure and returns a NULL pointer.
+
+         It is important to note that the FILE structure, which is allocated/
+         freed dynamically, is in the process' UserImage. This means that calls
+         to Library I/O functions are ordinary function calls, not syscalls.  
+         
+    (2). The programs terminates if any of the fopen() calls has failed. As 
+         mentioned above, fopen() returns a NULL pointer on failure.
+
+    (3). Then it uses a while loop to copy the file.  Each iteration of the
+         while loop tries to read BLKSIZE bytes from the source file, and 
+         write n bytes to the target file, where n is the returned value from 
+         fread().
+
+         The general forms of fread() and fwrite() are
+
+                 n = fread(buffer, size, nitems, FILEptr);
+                 n = fwrite(buffer,size, nitems, FILEptr);
+         
+         where size is the data object size in bytes,  nitems is the number of 
+         data objects to be READ or WRITTEN, and n is the actual number of 
+         objects read or written. These functions are intended for R/W 
+         structured data objects. For example, suppose that the buffer area 
+         contains data objects of the type
+                     struct OBJECT{.....}
+         We may use 
+                 n = fwrite(buffer, sizeof(struct OBJEC), M, FILEptr);
+         to wirte M objects to a file.  Similarly,
+                 n = fread(buffer, sizeof(struct OBJECT), N, FILEptr);
+         reads N such objects from a file.
+
+         The above program tries to read/write BLKSIZE bytes at a time. So, it
+         has size = 1 and nitems = BLKSIZE. As a matter of fact, any comination
+         of size and nitems such that size*nitems = BLKSIZE would also works. 
+         However, using a size > 1 may cause problem on the last fread() 
+         because the file may have fewer than size bytes left. In that case, 
+         the returned n is zero but there are still bytes remaining. To deal 
+         with the "tail" part of the surce file, we may add the following 
+         lines of code after the while loop:
+                 
+                 fseek(fp, (long)total, 0);
+                 n = fread(buf, 1, size, fp);
+                     fwrite(buf,1, n, gp);
+                 total += n;
+         
+         fseek() works in exactly the same way as lseek(). It positions the 
+         file's R/W pointer to the byte location total. From there, we read 
+         the file as 1-byte objects. This will read all the remaining bytes 
+         and write them to the target file.
+
+    (4). After the copying is done, both files are closed by calling fclose().
+
+
+3. Algorithms of fread(), fwrite() and fclose()
+
+3-1. The algorithm of fread() is as follows:
+
+     (1). On the first call to fread(), the FILE structure's buffer is empty.
+          fread() uses the saved file descriptor fd to issue a
+                  n = read(fd, fbuffer, BLKSIZE);
+          syscall to fill the local fbuffer. Then, it initializes fbuffer's 
+          pointers, counters and status variables to indicate that there is a 
+          block full of data in the local buffer.
+          It then tries to satisfy the fread() call from the local buffer by 
+          copying data to the program's buffer area. If the local buffer does 
+          not have enough data, it issues additional read() syscalls to fill 
+          the local buffer, until the needed number of bytes is satisfied (or 
+          end of file is reached). After copying data to the program's buffer 
+          area, it updates the local buffer's pointers, counters, etc. getting
+          ready for next fread() request.  It then returns the acutal number of
+          objects read to the calling place.
+
+     (2). On each subsequent call to fread(), it tries to satisfy the call from
+          the FILE structure's local buffer. It issues a read() syscall to 
+          refill the local buffer whenever the buffer becomes empty.
+
+          Thus, fopen() accepts calls from user program on one side and issues
+          read() syscalls to the Kenrel on the other. Except for the read() 
+          syscalls, all processing of fread() are performed in the User Mode. 
+          It enters the Kernel mode only when needed and it does so in a way 
+          that matches the Kernel's behavior for best efficiency. It provides 
+          automatic buffering mechanism so that user programs do not have to 
+          worry about such detailed operations.
+
+3-2 fwrite():
+ 
+     The algorithm of fwrite() is similar to that of fread() except for the 
+     data movement direction.  Initially the FILE structure's local buffer is 
+     empty. On each call to fwrite(), it writes data to the local buffer, and 
+     adjust the buffer's pointers, counters and status variable to keep track 
+     of the number of bytes in the buffer. If the buffer becomes full, it 
+     issues a write() syscall to write the entire buffer to Kernel. 
+     
+3-3. USE syscalls OR Library Functions?
+          
+     Based on the above discussion, we can now answer the question of whether 
+     to use syscalls or Libray functions to do file I/O?
+
+     fread() relies on read() to copy data from Kernel to the local buffer,
+     from which it copies data to the program's buf area. In contrast, read() 
+     copies data from Kernel directly to the program's buf area.  Thus, for 
+     read/write data in units of BLKSIZEs, read() is inherently more efficient
+     than fread() because it only needs one copying operation instead of two. 
+     Therefore, in the above C programs, the one that uses syscalls is actually
+     more efficient than the other that uses Library I/O functions.  However, 
+     if the read/write is not in units of BLKSIZE, fread() and fwrite() may be
+     far more efficient. For example, if we insists on R/W one byte at a time,
+     fread() and fwrite() would be far better because they enter Kernel Mode 
+     only to fill or flush the local buffer, not on every byte. Here, we have 
+     implicitly assumed that entering Kernel mode is more expensive than 
+     staying in User mode. This is indeed true. 
+
+3-4. Algorithm of fclose():
+
+     fclose() first flushes the local buffer if the file was opened for WRITE.
+     Then it issues a close() syscall to close the file descriptor.  Finally 
+     it frees the FILE structure and resets the FILE pointer to NULL.
+
+3-5. Other Modes for fopen():
+
+     The Mode parameter in fopen() may be specified as
+
+       "r", "w", "a" : for READ, WRITE, APPEND, or with a +, which means to 
+                       create the file if it does not exist.
+       "r+" : for R/W, without truncating the file.
+       "w+" : for R/W, but truncate the file first.
+       "a+" : for R/W by appending.
+
+     However, when a file is fopened for both R/W, there may be restrictions on
+     the use of mixed fread() and fwrite() calls. The specification requires 
+     that at least one fseek() or ftell() be used between every pair of fread()
+     and fwrite(). 
+
+     Example: This program yields different results when run under HP Unix and 
+              Linux.
+
+              #include &lt;stdio.h&gt;
+              FILE fp; char buf[1024]; 
+              main()
+              { 
+                  fp = fopen("t.c", "r+");   /* for both R/W */
+                  fread(buf, 1, 20, fp);     /* read 20 bytes */ 
+                  fwrite(buf,1, 20, fp);     /* write to the same file */
+              }
+
+
+     Linux gives the right result, which modifies the bytes from 20 to 39. But
+     HP Unix appends 40 bytes to the end of the original file.
+
+     The difference stems from the non-uniform treatment of R/W pointers in the
+     two systems.  Recall that fread()/fwrite() issue read()/write() syscalls
+     to fill/flush the local buffer.  While read()/write() use the R/W pointer 
+     in the file's OFTE, fread()/fwrite() use the local buffer's R/W pointer in
+     the FILE structure.  Without a fseek() to synchronize these two pointers,
+     the results depend on how are they used in the implementations. In order 
+     avoid any inconsistencies, follow the man pages. For the example program, 
+     the results become idnetical (and correct) if you insert a line
+
+                  fseek(fp, (long)20, 0);
+
+     between the fread() and fwrite().
+
+4. Additional Library I/O functions:
+
+4-1. Line mode I/O:
+          retString = fgets(buf,nchars,fp); 
+          retString = fputs(string,fp);
+     Examples:
+          #include &lt;stdio.h&gt;
+          FILE *fp,*gp;
+          char buf[256]; char *s="this is a string";
+          main()
+          {
+             fp = fopen("source", "r");
+             gp = fopen("target", "w");
+             fgets(buf, 256, fp);    /* read a line of upto 255 chars to buf */
+             fputs(buf, 256, gp);    /* write string to target file */
+
+          }
+    
+     When fp is stdin or stdout, fgets() and fputs() are shortened to
+             gets(buf);     /* assume char buf[] is big enough */
+             puts(string);  /* print string to stdout */
+
+4-2. Char Mode I/O:
+          int c;         /* NOTE the int type */       
+          c = getc(fp);  /* get a char from fp, return EOF on end of file */
+              ungetc(c, fp); /* push c back to stream */
+
+          putc(c, fp);   /* put a char to fp */
+     
+     The reason for the int type of c is that the EOF symbol is usually an int
+     value. 
+
+   For fp = stdin or stdout,  c = getchar();  putchar(c); may be used instead.
+   For run time efficiency, getchar() and putchar() are often NOT the shortened
+   versions of getc() and putc(). Instead, they may be implemented as Macros
+   in order to avoid an extra function call.
+   Examples:
+
+     (1). /* file copy using getc(), putc() */
+          #include &lt;stdio.h&gt;
+          FILE *fp,*gp;
+          main()
+          {
+            int c;  /* for testing EOF */
+            fp=fopen("source", "r");
+            gp=fopen("target", "w");
+            while ( (c=getc(fp)) != EOF )
+               putc(c,gp);
+            fclose(fp); fclose(gp);
+          }
+
+    (2). /* Linux's man pages contain lots of 0x08 code. It is used as follows:
+             0x08TT0x08HH0x08II0x08SS  high light the word THIS.
+             t_0x08h_0x08a_0x08t_0x08  display the _ under that.
+             However, a _ not immediately followed by 0x08 is part of the text.
+
+             The following program eliminates the 0x08 code from the outputs 
+             of man. EXPLAIN HOW DOES IT WORK ? */
+
+             #include &lt;stdio.h&gt;
+             main()
+             {  int c, nextc;
+                while ( (c=getchar()) != EOF ){
+                   if (c == 0x08){
+                       c = getchar();
+                       continue;
+                   }
+                   if (c == '_'){
+                       nextc=getchar();
+                       if (nextc == 0x08)
+                       continue;
+                       ungetc(nextc,stdin);
+                   }
+                   putchar(c); 
+                }
+             }
+
+
+4-3. FORMATTED I/O:
+     These are perhaps the most commonly used I/O functions.
+     Foratted Inputs: ( FMT=format string )
+                      scanf(FMT, &items);    /* from stdin */     
+                     fscanf(fp, FMT, &items);
+                     sscanf(buf,FMT, &items);  
+     Formatted Outputs:     
+                      printf(FMT, items);   /* to stdouot */
+                     fprintf(fp, FMT, items);
+                     sprintf(buf,FMT, items);
+     
+     Note that sscanf() and sprintf() are not really I/O functions but
+     string assemble/extraction funcions.
+      
+
+4-4. Other Functions:
+
+     fseek(), ftell(), rewind()
+     feof(), ferr(), fileno()
+
+     freopen(), fdopen()
+     setbuf(), setvbuf()
+     popen()
+   
+
+
+
+
+

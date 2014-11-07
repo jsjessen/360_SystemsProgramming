@@ -1,0 +1,203 @@
+<Title>360 Notes</Title>
+<Body bgcolor="#00cccc" text="#000000">
+
+<H1>360 Notes #3</H1>
+
+<Pre>
+            360 NOTES #3 Function Calls in C
+
+Consider the program:
+
+         main()
+         { int a,b,c;
+           a = 1; b = 2; c = 3;
+           c = mysub(a,b);
+           printf("c=%d\n", c); 
+         }
+
+         int mysub(int x, int y)
+         {
+           int u, v;
+           u = 4; v = 5;
+           return (x+y+u+v);
+         }
+
+The topics here are:
+     -------------------------------------------------------
+      Function call conventions in 32-bit C and stack usage.
+     -------------------------------------------------------
+
+**************************  NOTE !!! ************************************
+      If you are running Linux on 64-bit machines, use
+         gcc -m32 file.c 
+      to generate 32-bit code. 
+In 64-bit mode, which has more CPU registers, the GCC compiler generated code 
+passes parameters in function calls SLIGHTLY differently! It passes the first 6 
+parameters in CPU registers. It passes any additional parameters via the stack.
+The following discussions apply only to 32-bit or lower code. 
+
+The purpose here is to LEARN the principle of function calls and the stack usage
+during execution. It does NOT matter whether it's 64-bit or 32-bit environment.
+The principle is the SAME in any environment. 
+************************************************************************
+
+(1). When excuting a.out, a process image is created in memory, which looks 
+     (logically) like the following:
+   
+     lowAddress                      HighAddress
+          -----------------------------
+          | Code | Data |  stack      |
+          ----------------------------- 
+(2). CPU registers:
+
+     Every CPU has:
+
+        PC register, which points to the next instruction
+                     to be executed by the CPU.
+        SP register, which points to the current top of 
+                     the stack. (esp register)
+        FP register, which points to the stack Frame of the
+                     current active function (ebp register).
+        A register for return value (eax register).
+
+(3). Our main() is called by the C startup code, crt0.o. When crt0.o calls 
+     main(), it pushes the return address (its current PC contents) onto stack,
+     and enters main(). When main() is entered, the stack contains:
+
+     HighAddress      ---------->              LowAddress
+  
+       --------------------------------------------- 
+       XXXX|PC|
+       --------------------------------------------- 
+            ^ 
+            SP 
+
+     with SP pointing at the returnPC (where crt0.o called main().
+
+(4). Upon entry, every C function does the following
+     (4).1  push FP into stack;   this saves the FP register
+     (4).2  let  FP point at the stack top, i.e. point at the saved FP.
+     (4).3  shift SP downward to allocate space for local variables.
+     (4).4  The COMPILER MAY shift sp farther down to allocate some temps
+            on stack OR save some registers on stack.
+   
+     For this example, there are 3 local variables, a,b,c, each 4 bytes long. 
+     The stack becomes:
+
+     HighAddress      ---------->              LowAddress
+                  a  b  c 
+       --------------------------------------------- 
+       XXXX|PC|FP|  |  |  |temps|
+       --------------------------------------------- 
+               ^               ^ 
+               FP              SP 
+               
+(5). a=1; b=2; c=3;  The values 1,2,3 go to the locations of a,b,c, which are
+     at -4, -8, -12 bytes from where FP is pointing at, respectively. 
+     These are expressed as -4(FP), -8(FP), -12(FP) in assembly code.
+
+(6). main() calls mysub() by  c = mysub(a,b);
+
+     The compiled code for the function call consists of:
+
+         PUSH parameters in reverse order:
+              push b's value onto stack, push a's value onto stack,
+         CALL mysub
+              which pushes the current PC (contents) onto stack and replaces PC
+              with the address of mysub, causing the CPU to enter mysub().
+ 
+     When control just enters mysub(), the stack becomes
+
+     HighAddress        ---------->            LowAddress
+                  a  b  c 
+       --------------------------------------------- 
+       XXXX|PC|FP| 1| 2| 3|temps| 2| 1|PC|
+       --------------------------------------------- 
+                                       ^ 
+                                       SP 
+
+(7). mysub() is written in C.  Its actions are the same as those of main():
+        push FP; 
+        let FP point at the saved FP, and
+        shift SP downward to allocate locals u,v.
+        (sp may be shifted farther down for some temps on stack) 
+     Then the stack becomes
+         
+     HighAddress           ---------->              LowAddress
+                  a  b  c         y  x        u  v 
+       -------------------------------------------------------- 
+       XXXX|PC|FP| 1| 2| 3|temps| 2| 1|PC|FP|  |  |temps|
+       -------------------------------------------------------- 
+                                          ^            ^ 
+                                |<------  FP ---->|    SP
+                                stackFRAME of mysub 
+(8). While in mysub(), 
+ 
+               -----------------------------
+               WHERE ARE x,y? WHERE ARE u,v?
+               -----------------------------
+
+     For this example, the parameters a, b are at 8(FP) and 12(FP), i.e. at 
+     where FP points at + 8 bytes, + 12 bytes.  Local variables u, v are at 
+     -4(FP) and -8(FP).
+
+     The stack area visible to a function (parameters and locals) is called 
+     the stack FRAME (like a frame of movie) of the function. Thus, FP is 
+     called the stack FramePointer. As the above diagram shows,
+              
+               |parameters | retPC| savedFP| local variables |
+                                      ^
+                                      |
+               |<=== params|=======  CPU.FP|=== locals =====>|
+ 
+               |<-------- Stack Frame of Function ---------->|
+
+(9). Return from called function:
+
+     When mysub executes return (expression); it puts the value of the 
+     expression in the return value register (eax for 486/Pentinum CPUs).
+     Then, it deallocates the local variables by
+
+       .copy FP into SP;   stack top now contains the saved FP.
+       .pop stack into FP; this restores FP, leaving the return PC on top of 
+                           the stack.
+       .RET   RET pops the stack top into PC register, causing the CPU to 
+              execute from the "return address" saved earlier.
+
+(10). Upon return, the caller function copies the contents of the return value
+      register into c, then it pops the parameters a,b off the stack (by adding
+      8 to SP). This restores the stack to the same situation before the call.
+  
+      Then it continues to the next statement.
+
+===========================================================================
+NOTE: some C compilers allocate temp space and local variables as
+         -----------------------------------------------------
+          parms|retPC| FP |temps| locals
+         --------------|----------------|---------------------  
+                       FP               SP
+
+in which the locals may NOT be directly below FP, but they are still at
+             -offset(FP)
+So the principle is the same.
+
+Version 4 of gcc compiler allocates local variables in increasing address order.
+      int a,b,c;          means address of a < address of b, etc.
+
+      For the same C code shown above, the stack contents may look
+      like the following:
+
+     HighAddress            ------------->              LowAddress
+                  c  b  a         y  x       v  u 
+       -------------------------------------------------------- 
+       XXXX|PC|FP| 3| 2| 1|temps| 2| 1|PC|FP| 5| 4|temps|
+       -------------------------------------------------------- 
+                                          ^            ^ 
+                                |<------  FP ---->|    SP
+                                stackFRAME of mysub 
+
+     However, the concept and usage of the stack FRAME are the same for all
+     compiled C code.
+===========================================================================
+
+

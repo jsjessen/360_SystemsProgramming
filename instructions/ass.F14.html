@@ -1,0 +1,114 @@
+<Title>360 Week 2 Notes</Title>
+<Body bgcolor="#00cccc" text="#000000">
+
+<H1>360 Notes on Assembly Programming</H1>
+
+<Pre>
+
+1. Implement C functions in Assembly:
+
+Example 1: Functions for getting CPU registers
+
+#============== s.s file ===============
+	.global get_esp, get_ebp
+get_esp:
+         movl	%esp, %eax
+         ret
+get_ebp:
+	movl	%ebp, %eax
+	ret
+#======================================
+
+main()
+{
+   int ebp, esp;
+   ebp = get_ebp();
+   esp = get_esp();
+   printf("ebp=%8x   esp=%8x\n", ebp, esp);
+}
+
+EXERCISE: Write assembly functions for getting ebx, ecx, edx, esi and edi
+
+2. Write OUR OWN int mysum(int x, int y){ return x+y;} in ASSEMBLY:
+
+main()
+{ 
+  int a,b,c;
+  a = 123; b = 456;
+  c = mysum(a,b);
+  printf("c=%d\n", c);   // c should be 579
+}
+
+==================================================
+# int mysum(int x, int y)
+
+        .global mysum, printf
+mysum:
+
+# (1) Entry : (establish stack frame)
+
+        pushl %ebp
+        movl  %esp, %ebp
+
+#            12   8    4     0 
+#----------------------------------------------------
+#          |  y | x |retPC| ebp|
+#----------------------------|-----------------------
+#                           ebp
+
+#------ call printf() to print x and y -----------------
+#        pushl 12(%ebp)
+#        pushl  8(%ebp)
+#        pushl $fmt
+
+#        call  printf
+#        addl  $12, %esp
+#-------------------------------------------------------
+
+# (2):----- ACTUAL CODE -----------
+        movl  8(%ebp), %eax
+        addl 12(%ebp), %eax
+#----------------------------------     
+
+# (3) return to caller
+        movl  %ebp, %esp
+        pop   %ebp
+        ret
+
+        .data
+fmt:    .asciz "x=%d  y=%d\n"
+ 
+==================================================
+
+3. Call C functions from Assembly:
+
+Example 3: Access global variables AND call printf()
+ 
+int a, b;
+
+main()
+{
+   a = 100;  b = 200;
+   sub();
+}
+
+===================================
+
+        .global sub, a, b, printf
+sub:
+        pushl   %ebp
+        movl    %esp, %ebp
+
+        pushl   b
+        pushl   a
+        pushl   $fmt
+        call    printf
+        addl    $12, %esp
+        
+        movl    %ebp, %esp
+        popl    %ebp
+        ret
+
+        .data
+fmt:	.asciz	"a=%d  b=%d\n" 
+====================================

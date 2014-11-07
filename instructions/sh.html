@@ -1,0 +1,310 @@
+<Title>360 Class Notes</Title>
+<Body bgcolor="#00cccc" text="#000000">
+
+<H1>360 NOTES #10 Sh Programming</H1>
+
+<Pre>
+1. sh scripts:
+   A sh script is a text file containing sh statements for sh to execute.
+   Example: Text edit a file, mysh,  containing
+            -----------------------------------
+            #! /bin/bash
+            # comment line
+            echo hello
+            -----------------------------------
+   Use chmod +x mysh to make it executable. Then run mysh. It will print hello.
+
+2. sh Statements: 
+   sh statements include all Unix commands, with I/O re-directions.
+     Examples:    echo abc     ==> abc 
+                  ls           ;   ls > outfile 
+                  date         
+                  cp f1 f2
+                  mkdir new
+                  cat filename
+         
+3. Command-line parameters:
+   Similar to running C programs, sh scripts can be invoked with parameters, 
+   as in      mysh one two three
+
+   $# = the number of such parameters, which are known as $1 to $9. $0 is the
+        program name itself.
+   $* = ALL command-line parameter (strings) $1 $2 ....
+
+4. Sh Variables:
+   Sh has many built-in variables, e.g. PATH, HOME.
+   You may use any symbol as sh variable. No declaration is necessary.
+   sh variable values are STRINGs !!! If A is a variable, $A is its value.
+   Examples
+      echo A   ==>  A
+      echo $A  ==>        (null string if A is not set)
+      A="this is fun"     # set A value
+      echo $A  ==> this is fun
+      B=A
+      echo $B   ==> A     (B was assigned the string "A")
+      B=$A                (B takes the VALUE of A)
+      echo $B   ==> this is fun
+
+      echo -n "enter yes or no "
+      read ANS             # sh reads a line from stdin;
+      echo $ANS
+
+      local X             # X is local to this sh; not available in child sh
+      export Y            # variable Y will be passed to child sh process
+
+5. Quotes:
+   Sh has many special chars, such as $, /, *, >, <, etc.  
+   To use these as ordinary chars, use \ to quote them, as in
+         echo \$A     ==> $A
+     OR  echo '$A'    ==> $A    (NO substitution within SINGLE quotes)
+
+         echo " this is $A"     (DOUBLE quotes will substitute $A !!!)
+
+6. Command Substitution:
+     When sh sees $(cmd), it executes cmd first, and SUSTITUTEs $(cmd)
+     with the RESULT (string) of the execution.
+
+     echo $(date)       ==> display current date string
+
+     NAMES=$(ls ./)
+     echo $NAMES
+
+7. sh control statements
+7-1. if-else-fi statement
+     if [ condition ]
+       then
+          statements
+       else                # as usual, the else part is optional
+          statements
+     fi
+
+ $# is the number of command line parameters, which are known as 
+ $1,$2,$3,...., $9    As usual, $0 is the name of the execcutable itself.
+
+ By default, all values in sh are strings, so they can be compared by
+  if [ s1 = s2 ];  if [ s1 != s2 ];   if [ s1 \< s2 ]; if [ s1 \> s2 ]; etc.
+ Note the spaces between the tokens
+
+ In contrast, the operators -eq, -ne, -lt, -gt compare them as (integer)
+ NUMBERS, thus
+   if [ "123" = "0123" ]  is false (since they differ as strings)
+   if [ "123" -eq "0123" ] is true. 
+
+
+ In sh, the following tests can be used:
+ if [ -e name ]      test whether file name exists
+ if [ -f name ]      test whether name is a (REG) file
+ if [ -d name ]      test whether name is a DIR
+ if [ -r name ]      test whether name is readable; also -w,-x
+ if [ f1 -ef f2 ]    test whether f1, f2 are the SAME file
+
+
+7-2. for statement in sh:
+
+       for VARIABLE in string1 string2,...., stringn
+         do
+            commands
+         done
+
+   Examples:
+      for FRUIT in  apple  orange  banana  cherry
+        do
+           echo $FRUIT    # ===> apple  orange  banana  cherry 
+        done 
+
+     ------------------------------------------------------------------
+      DIRNAMES=$(ls ./)
+      for NAMES in DIRNAMES
+        do
+          if [ -f $NAME ]; then
+             echo $NAME is a REG file
+          else
+             echo $NAME is NOT REG
+          fi
+        done
+
+      ----------------------------------------------------------------
+      for NAME in $* 
+        do
+          echo $NAME      ==>  all command-line param strings
+          if [ -f $NAME ]; then
+             echo $NAME is a file
+          fi
+          if [ -d $NAME ]; then
+             echo $NAME is a DIR
+          fi
+        done
+     ----------------------------------------------------------------
+
+7-3. while [ condition ]
+       do
+          commands
+       done
+
+  -------------------------------------------------------------------
+                  Example:
+   echo '$#' = $#         # echo the number of parameters 
+   I=0                    # set I to "0" (STRING !!!!) 
+   while [ $1 ]           # while $1 is not the empty string
+   do
+      echo $1             # echo current $1
+      I=$(expr $I + 1)    # use expr to change I from "0" to "1"
+      shift               # shift once, $2 becomes $1, $3 becomes $2, ... etc.
+   done
+          
+   echo I = $I            # total number of parameters 
+  --------------------------------------------------------------------
+
+7-4 Other Flow-Control statements:
+
+    until [ "$ANS" = "give up" ]
+    do
+        echo -n "enter your answer : "
+        read ANS
+    done
+   
+    case statement (SELF-STUDY)
+
+7-5. break and continue statements:
+     They work exactly the same as they do in C
+
+ 
+8. sh FUNCTIONS (by examples)
+    --------------------------------------------------------
+     # check_file() is a function, NOT the entry point
+
+              check_file()     
+              {
+                if [ -f $1 ]; then
+                   return 0           # 0 for OK
+                fi
+                return 1              # 1 for BAD
+              }
+
+     # Here is the entry point of the program
+     # Usage : thisFile  f1 f2  f3 ......
+
+              for FILE in $*             # for FILE in $1 $2 ....
+              do
+                  check_file  $FILE      # call check_file() 
+                  if [ $? = 0 ]          # returnCode == 0 ?
+                     then
+                         echo $FILE is a regular file
+                     else
+                         echo $FILE is not regular
+                  fi
+              done
+     -------------------------------------------------------------
+9. I/O Redirection:
+
+   When entering a sh command, we may instruct sh to re-direct I/O
+   to files other than the default stdin, stdout, sterr. I/O redirections
+   have the following form and meaning:
+      -------------------------------------------------
+      >  file   stdout goes to file, which will be created if non-existing.
+      >> file   stdout append to file
+      <  file   use file as stdin; file must exist and have r permission.
+ 
+     << word   take inputs from "here" file until a line containing only 
+                "word" is encountered. 
+                Try these:
+                ---------------------------------------------
+                echo << END    
+                  keep entering lines until a line with only
+                  END
+                --------------------------------------------
+                cat << DONE
+                  keep entering lines until
+                DONE
+                -------------------------------------------
+
+      >&2      dup (see below) the fd=2 and use the result as stdout.
+
+      <&3      dup fd=3 and use the result as stdin
+      --------------------------------------------------
+      A digit may preceed any of these to mean: use that fd instead of 
+      stdin or stdout.  Examples:
+                2> file           stderr to file
+                2>> file          stderr append to file
+                2>&1              dup 1 and use it as 2 ==> merge 1 and 2
+
+
+
+#----------------- sh mycp program example:-----------------------------
+#  mycp: copy file to a file  OR into a DIR
+#----------------------------------------------------------------------
+#! /bin/bash
+
+cpf2f()      # called as   cpf2f f1 f2 
+{
+ if [ ! -e $1 ]; then
+    echo no such source file $1 
+    return 1
+ fi
+
+ if [ $1 -ef $2 ]; then
+    echo "Silly! we never copy a file to itself"
+    return 1
+ fi
+ 
+ if [ -L $1 ]; then
+    echo "Copying LINK $1 ...."
+    link=$(readlink $1)
+    ln -s $link $2
+    return 0
+ fi
+ echo "COPYING $1 to $2 ...."
+ cp $1 $2 2> /dev/null
+ 
+}
+
+
+cpf2d()      # called as cpf2d f1 d2
+{
+ N=$2/$(basename $1)
+ cpf2f $1 $N
+}
+
+
+# ********* mycp f1 f2  ****************
+# ****** ENTRY POINT OF mycp ***********
+
+if [ $# -lt 2 ]; then
+  echo "Usage : mycp f1 f2"
+  exit 1
+fi
+
+# assume $# = 2
+if [ ! -e $1 ]; then
+   echo source $1 does not exist
+   exit 1
+fi
+
+if [ ! -f $1 ]; then
+   echo $1 is NOT a regular file
+   exit 1
+fi
+
+# $2 does NOT exist
+if [ ! -e $2 ]; then     
+   cpf2f $1 $2
+   exit 0
+fi
+
+# $2 exists: 
+if [ -f $2 ]; then
+   cpf2f $1 $2
+   exit 0
+fi
+
+if [ -d $2 ]; then
+   cpf2d $1 $2
+   exit 0
+fi
+
+echo "ALL DONE"
+#------------------------------------------------------------------
+
+
+ASSIGNMENT: Write YOUR sh code for cpd2d(), which copies a directory d1 to
+            a directory d2.

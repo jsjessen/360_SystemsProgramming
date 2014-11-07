@@ -1,0 +1,182 @@
+<Title>360 PROJECT HELP</Title>
+<Body bgcolor="#ffffca" text="#000000">
+
+<H1>360 FS Utility Functions</H1>
+
+<Pre>
+
+/* type.h is ALSO available in samples/type.h  */
+#include &lt;stdio.h&gt
+#include &lt;fcntl.h&gt
+#include &lt;ext2fs/ext2_fs.h&gt   // NOTE: Ubuntu users MAY NEED "ext2_fs.h"
+#include &lt;libgen.h&gt
+#include &lt;string.h&gt
+#include &lt;sys/stat.h&gt
+
+// define shorter TYPES, save typing efforts
+typedef struct ext2_group_desc  GD;
+typedef struct ext2_super_block SUPER;
+typedef struct ext2_inode       INODE;
+typedef struct ext2_dir_entry_2 DIR;    // need this for new version of e2fs
+
+GD    *gp;
+SUPER *sp;
+INODE *ip;
+DIR   *dp; 
+
+#define BLOCK_SIZE     1024
+
+// Block number of EXT2 FS on FD
+#define SUPERBLOCK        1
+#define GDBLOCK           2
+#define ROOT_INODE        2
+
+// Default dir and regulsr file modes
+#define DIR_MODE    0040777 
+#define FILE_MODE   0100644
+#define SUPER_MAGIC  0xEF53
+#define SUPER_USER        0
+
+// Proc status
+#define FREE              0
+#define READY             1
+#define RUNNING           2
+
+// Table sizes
+#define NMINODES        100
+#define NMOUNT           10
+#define NPROC            10
+#define NFD              10
+#define NOFT            100
+
+// Open File Table
+typedef struct oft{
+  int   mode;
+  int   refCount;
+  struct minode *inodeptr;
+  int   offset;
+}OFT;
+
+// PROC structure
+typedef struct proc{
+  int   uid;
+  int   pid, gid;
+  int   status;
+  struct minode *cwd;
+  OFT   *fd[NFD];
+}PROC;
+      
+// In-memory inodes structure
+typedef struct minode{		
+  INODE INODE;               // disk inode
+  int   dev, ino;
+  int   refCount;
+  int   dirty;
+  int   mounted;
+  struct mount *mountptr;
+}MINODE;
+
+// Mount Table structure
+typedef struct mount{
+        int    dev;
+        int    nblocks,ninodes;
+        int    bmap, imap, iblk;
+        MINODE *mounted_inode;
+        char   name[64]; 
+        char   mount_name[64];
+}MOUNT;
+
+
+====================== YOUR Utility Functions ============================
+
+   The util.c file contains utility functions that are needed by most other  
+   functions. We already have most of thse functions.
+
+===================== Functions YOU already have ==========================
+1. get_block(dev, blk, buf) 
+   put_block(dev, blk, buf)    These require no explanation.
+
+2. tokenize(char *pathname)
+{
+  tokenize a pathname into components and their numbers n.
+  Store the components in names[64][64] and let name[i] point at names[i];
+  The components will be used to search for the inode of a pathname. 
+}
+
+3. dirname() and basename(): These are C library functions. 
+      dirname("a/b/c/d")  returns a pointer to "/a/b/c";
+      basename("a/b/c/d") returns a pointer to "d"
+   NOTE: Both functions destroy the parameter string
+  
+4. int getino(int dev, char *pathname)
+{
+  This is the most important function of the FS. It converts a pathname, such as
+  /a/b/c/d OR x/y/z, into its inode number (ino).
+  THIS IS THE SAME AS YOUR showblock.c program. Instead of printing blocks, 
+  return its inode number.
+}   
+
+5. int search(MINODE *mip, char *name)
+{
+   This function searches the data blocks of a DIR inode (inside an Minode[])
+   for name. You may assume DIRECT data blocks only.
+}
+
+================ Write C code for these NEW functions ================
+
+6. MINODE *iget(int dev, int ino)
+{
+  Once you have the ino of an inode, you may load the inode into a slot
+  in the Minode[] array. To ensure uniqueness, you must search the Minode[] 
+  array to see whether the needed INODE already exists:
+ 
+  If you find the needed INODE already in a Minode[] slot, just inc its 
+  refCount by 1 and return the Minode[] pointer.
+
+  If you do not find it in memory, you must allocate a FREE Minode[i], load
+  the INODE from disk into that Minode[i].INODE, initialize the Minode[]'s
+  other fields and return its address as a MINODE pointer,
+
+
+7. int iput(MINODE *mip)
+{
+  This function releases a Minode[]. Since an Minode[]'s refCount indicates
+  the number of users on this Minode[], releasing is done as follows:
+   
+  First, dec the refCount by 1. 
+  If (after dec) refCount > 0 ==> return;
+  if Minode[].dirty == 0 ==> no need to write back, so return;
+  --------------------------------------------------------------
+  Otherwise, (dirty==1) ==> must write the INODE back to disk.
+   
+  To write an INODE back to disk:
+     Use Minode's (dev, ino) to determine which dev and which INODE on disk,
+  i.e. use Mailman's algorithm to determine disk block and which inode in that 
+  block.
+  Read that block in, copy Minode's INODE into the INODE area in that block
+  and write the block back to disk.
+} 
+
+8. int findmyname(MINODE *parent, int myino, char *myname) 
+{
+   Given the parent DIR (MINODE pointer) and myino, this function finds 
+   the name string of myino in the parent's data block. This is the SAME
+   as SEARCH() by myino, then copy its name string into myname[ ].
+}
+
+9. int findino(MINODE *mip; int *myino, *parentino)
+{
+  For a DIR Minode, extract the inumbers of . and .. 
+  Read in 0th data block. The inumbers are in the first two dir entries.
+}
+
+================ alloc_dealloc.c file =============================
+         YOUR ALREADY HAVE THESE in LAB5pre work
+
+int ialloc(dev): allocate a FREE inode number
+int balloc(dev): allocate a FREE block number
+
+          WRITE C code for 
+int idealloc(dev, ino): deallocate an ino
+int bdealloc(dev, bno): deallocate a bno
+===================================================================

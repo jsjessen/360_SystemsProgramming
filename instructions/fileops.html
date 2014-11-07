@@ -1,0 +1,171 @@
+<Title>360 Calss Notes</Title>
+<Body bgcolor="#00cccc" text="#000000">
+
+<H1>360 Notes #6</H1>
+
+<Pre>
+                   CS360 NOTES on FILE OPERATIONS
+
+1. File Operations in Unix consists of 5 levels, from LOW to HIGH:
+   
+1.1. Hardware Level:
+     File operations at this level prepare the hardware device, such as disk 
+     drives, for storing file systems.
+
+     Examples: fdisk : divide a hard disk into partitions.
+               mkfs  : create a file system on a disk, also known as format.
+               fsck  : check and repair file systems.
+               defragementation: compact file system.
+----------------------------------------------------------------------
+Example 1: Under Linux, run    
+                 fdisk /dev/hda OR fdisk /dev/sda 
+          enter  p   # to see partitions on YOUR hard disk
+          enter  q   # to quit fdisk
+
+Example 2: Run   cat > mydisk
+           enter CONTROL_D to end cat
+                 mkfs mydisk 1440
+                 mount -o loop mydisk /mnt
+                 mount; ls /mnt;
+                 mkdir /mnt/hi; ls /mnt
+                 umount /mnt
+-----------------------------------------------------------------------
+
+1.2. System Call Level:
+     Every Operating System provides support for BASIC file operations. 
+     Some of these functions in the Unix kernel are listed below:
+
+          kmount(), kumount();            (for mount/umount file systems)
+
+          Kmkdir(), Krmdir(), Kchdir()    (obvious)  
+          kgetcwd(char *buf[], int size)   copy CWD pathname into buf[ ]
+
+          klink(),  kunlink(),ksymlink(), (for link/remove files) 
+          Kchmod(), Kchown(), ktouch()    (change file MODE, owner, time)  
+
+          Kcreat(), Kopen(),              (create/open file for R,W,RW,..) 
+          Kread(),  Kwrite(),             (read/write opened files) 
+          Klseek();                       (change R/W byte position)
+          Kclose()                        (close opened files)
+
+          kopendir(), kreaddir(), kclosedir(), (READ directories)
+          kreadlink();                    (READ symbolic link files)
+
+          kstat(),  kfstat(), klstat(),   (get file status/information)
+
+     The prefix K emphasizes that these are functions inside the Unix Kernel.
+
+     
+                        SYSTEM CALLS:
+
+     Processes use System Calls (syscall for short) to access Kernel functions.
+
+Example 1: man 2  mkdir, rmdir, chdir, getcwd, unlink
+
+#include &lt;stdio.h>
+#include &lt;unistd.h>
+
+char buf[1024], *s;
+
+main()
+{
+  int r;
+  r = mkdir("dir1", 0755);  // mkdir("name", mode)
+  printf("r=%d\n", r);
+
+  r = chdir("dir1");
+  printf("r=%d\n", r);
+
+  s = getcwd(buf, 64);
+  printf("cwd=%s\n", s);
+
+ // use rmdir to remove a DIR
+ // use unlink to remove a file, etc.  
+}
+           
+Example 2:
+
+#include &lt;fcntl.h>  
+#define BLKSIZE 1024
+int fd; char buffer[BLKSIZE];
+main()
+{
+   fd = open("mydisk", O_RDONLY);   /* open a disk image for READ */
+   read(fd, buffer, BLKSIZE);       /* read block#0 into buffer */
+   lseek(fd, (long)(2*BLKSIZE), 0); /* skip 2048 bytes ==> to BLOCK#3 */
+   read(fd, buffer, BLKSIZE);       /* read one block into buffer */
+}
+
+The functions open(), read(), write(), lseek(), close() in a User mode 
+program are Library functions.  Each such Library function issues a
+syscall, causing the process to switch from User mode to Kernel mode.
+Once in K mode, the process will be directed to the corresponding Kenrel
+function, e.g. open() goes to Kopen(), read() goes to Kread(), etc.  
+When the process finishes executing the Kernel function, it returns to 
+User mode with the desired results (or returns -1 if error).
+
+Syscalls cause the process to enter K mode and then back to U mode.
+Switching between Umode and Kmode takes a lot of actions (and time). Data
+transfer between Kmode and Umode is especially "expensive". 
+Although it is permissible to issue
+               read(fd, buffer, 1);
+syscall to read just ONE byte, it is NOT very wise to do so because that 
+one byte would come with a terrific cost. Every time you have to cross the
+boarder to enter the wonderful world of Kernel, do as much as you can 
+rather than in piece meal in order to make the journey worthwhile. In the
+case of READ/WRITE files, the best way is to match what the Kernel does. 
+The kernel reads/writes disks by BLOCK size, which ranges from 1KB to
+8KB. For instance, in Linux, the default BLOCK size is 4KB for hard disks
+and 1KB for floppy disks. 
+
+1.3  Library I/O Functions:
+    
+     Syscalls allow us to read/write chunks of data, which are just a sequence
+     of bytes. They do not know, nor care, about the meaning of the data. 
+     However, a user (program) often needs to read/write individual chars or
+     lines. If so, the user program would have to do these from/to a beffered 
+     data area by itself. Most users would consider this "too much"!
+
+     The C library provides a set of standard I/O functions for convenience, 
+     as well as for run-time efficiency. The library I/O functions include:
+
+     FILE I/O      :  fopen(), fread(); fwrite(), fseek(), fclose();
+                      fflush(), 
+     char mode I/O :  getc(), putc(), getchar(), putchar(), ungetc()
+     line mode I/O :  gets(), puts(), fgets(), fputs();
+
+     formatted I/O :  scanf(), fscanf(), sscanf();
+                      printf(), fprintf(), sprintf()
+
+     With the exceptions of sscanf()/sprintf(), which read/write memroy 
+     locations, all other library I/O functions are built on top of syscalls 
+     in that they ultimately issue syscalls for "actual" data transfer through
+     the Operating System Kernel.
+
+1.4. User Commands Level:
+
+     Instead of writing programs, users may use Unix commands to manipulate
+     files. Examples of user commands are
+
+            mkdir, rmdir, cd, pwd, ls;
+            rm, cat, cp, mv, chmod, .....
+
+     Each user command is in fact an executable program (except cd), which 
+     typically calls library I/O functions, which in turn issue syscalls to 
+     invoke the corresponding kernel functions. Thus, the processing sequence 
+     is either
+            Command ==> Library I/O function ==> Syscall ==> | Kernel Function
+        or
+            Command ===========================> Syscall ==> | Kernel Function
+
+1.5. sh Script Files:
+
+     Although much more convenient than syscalls, commands must be entered
+     manually, which is often tedious and time-consuming.
+
+     sh scripts are files written in the sh programming language. The sh 
+     language includes all valid Unix commands. It also includes additional 
+     statements (if, do, for, while, case, etc.) to control the executions.  
+     In practice, sh scripts are used extensively in Unix system programming.
+     In addition to sh, many other script languages, such as Perl, are also in
+     wide use. sh programming will be covered later. 

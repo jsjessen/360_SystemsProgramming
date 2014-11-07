@@ -1,0 +1,98 @@
+<Title>360 PROJECT HELP</Title>
+<Body bgcolor="#ffffca" text="#000000">
+
+<H1>HOWTO rmdir</H1>
+
+<Pre>
+Assume: command line = "rmdir pathname"
+1. Extract cmd, pathname from line and save them as globals.
+
+int rmdir()
+{
+  2. get inumber of pathname:  
+         ino = getino(dev, pathname) 
+  3. get its minode[ ] pointer:
+         mip = iget(dev, ino);
+
+  4. check ownership 
+       super user : OK
+       not super user: uid must match
+ 
+  ------------------------------------------------------------------------
+  5. check DIR type (HOW?) AND not BUSY (HOW?) AND is empty:
+
+     HOWTO check whether it's empty:
+     First, check link count (links_count > 2 means not empty);
+     However, links_count == 2 may still have FILEs, so go through its data 
+     block(s) to see whether it has any entries in addition to . and ..
+
+     if (NOT DIR || BUSY || not empty): iput(mip); retunr -1;
+
+  6. ASSUME passed the above checks.
+     Deallocate its block and inode
+     for (i=0; i<12; i++){
+         if (mip->INODE.i_block[i]==0)
+             continue;
+         bdealloc(mip->dev, mip->INODE.i_block[i]);
+     }
+     idealloc(mip->dev, mip->ino);
+     iput(mip); (which clears mip->refCount = 0);
+     
+
+  7. get parent DIR's ino and Minode (pointed by pip);
+         pip = iget(mip->dev, parent's ino); 
+
+  8. remove child's entry from parent directory by
+
+        rm_child(MINODE *pip, char *name);
+                 pip->parent Minode, name = entry to remove
+
+  9. decrement pip's link_count by 1; 
+     touch pip's atime, mtime fields;
+     mark pip dirty;
+     iput(pip);
+     return SUCCESS;
+}
+
+// rm_child(): removes the entry [INO rlen nlen name] from parent's data block.
+
+int rm_child(MINODE *parent, char *name)
+{
+   1. Search parent INODE's data block(s) for the entry of name
+
+   2. Erase name entry from parent directory by
+
+      if NOT first entry in block{
+          move all entries AFTER this entry LEFT;
+          add removed rec_len to the LAST entry of the block;
+          no need to change parent's fileSize;
+
+               | remove this entry   |
+          -----------------------------------------------
+          xxxxx|INO rlen nlen NAME   |yyy  |zzz         | 
+          -----------------------------------------------
+
+                  becomes:
+          -----------------------------------------------
+          xxxxx|yyy |zzz (rec_len INC by rlen)          |
+          -----------------------------------------------
+
+      }
+      if (first entry in a data block){
+         deallocate the data block; modify parent's file size;
+
+          -----------------------------------------------
+          |INO Rlen Nlen NAME                           | 
+          -----------------------------------------------
+          
+          Assume this is parent's i_block[i]:
+          move parent's NONZERO blocks upward, i.e. 
+               i_block[i+1] becomes i_block[i]
+               etc.
+          so that there is no HOLEs in parent's data block numbers
+      }
+
+  3. Write the parent's data block back to disk;
+     mark parent minode DIRTY for write-back
+}
+

@@ -1,3 +1,6 @@
+<html>
+<body bgcolor="#00cccc" text="#000000">
+<pre>
 
                 NOTES #11: EXT2 File System on Virtual FD
 
@@ -24,9 +27,9 @@ The layout of an EXT2 file system on a virtual disk image is
 BLOCK: |Boot|Super| Gd |Bmap|Imap|Inodes blocks .....|....  data blocks ....|
                                  |    INODEs         |
                               ino|1,2,3,4 .......... |
-
+<font color="red">
 NOTE: Depending on mkfs: Bmap, Imap, Inodes and data start blocks MAY vary.
-
+</font>
 The block contents are explained below.
 
 Block#0: Boot Block:

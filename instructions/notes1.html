@@ -1,0 +1,282 @@
+<TITLE>CS360 NOTES#2</Title>
+<Body bgcolor="#00CCCC" text="#000000">
+
+<H1>CS360 NOTES #1 : Introduction to Unix</H1>
+
+<Pre>
+
+1. You MUST have a computer running Linux which supports programming in C.
+   Check YOUR Linux installation by trying to run some C programs. 
+   Example:
+
+         /******* test.c file *******/
+         #include &lt;stdio.h>   
+         #include &lt;stdlib.h>
+         main()
+         {
+            int i;
+            for (i=0; i < 10; i++)
+                printf("i = %d\n", i);
+         }
+    
+    -------------- Under Linux: --------------------
+    gcc test.c         
+    a.out
+    ------------------------------------------------
+
+2. Install and Run the MTX Operating System
+
+   ============= DEMO OS MTX of KCW ===============================
+   MTX is a Unix-like OS designed and written entirely by KCW. MTX can run on 
+   either REAL PCs or Virtual Machines. Get MTX at
+
+       http://www.eecs.wsu.edu/~cs360/samples/MTXinstallCD.iso
+   
+(1). Burn MTXinstallCD.iso to a CD/DVD or use it as a virtual CD.
+
+(2). Under Linux, install QEMU on your Linux machine:
+      ------------------------------------------
+      mount -o loop MTXinstallCD.iso /mnt
+      cp /mnt/vdisk ./
+      cp /mnt/qemu-0.9.1-i386.tar.gz /
+      umount /mnt
+
+      cd /
+      zcat qemu-0.9.1-i386.tar.gz | tar xvf -
+      ------------------------------------------
+
+(3).Run QEMU on vdisk:
+
+      qemu -hda vdisk -smp 8 -m 512m -serial mon:stdio
+
+     Then boot up MTX from partitions 
+          1 (rmtx): MTX in 16-bit real mode
+          2 (pmtx): MTX in 32-bit protected mode
+          3 (smp) : SMP MTX in 32-bit protected mode
+          4 (mtx32.1): MTX in 32-bit mode using segmentation
+
+(4). When MTX starts, login as root
+          login: root
+          password: 12345
+
+(5). Enter commands for sh to execute, just like in Unix/Linux
+
+
+3. The Unix File System Tree:
+   The Unix file system is organized as a tree, as shown below.
+
+
+            |--> bin 
+            |--> dev
+            |--> etc
+     / ---> |--> lib
+            |--> sbin
+            |              |--> bin
+            |--> tmp       |--> include --> .h files 
+            |              |--> lib
+            |--> usr ----->|--> local
+            |              |--> man
+            |--> user      |--> X11 ------>
+            |--> vmunix 
+
+
+   Each NODE of the tree is a FILE. Unix files have the following types:
+
+4. Unix File Types:
+
+   (1). Directory files : 
+        These are directories. A directory may contain other directories 
+        and (non-directory) files.
+
+   (2). Non-directory files : 
+        Non-directory files are either REGULAR or SPECIAL files (SEE BELOW).
+        Note that Non-directory files can only appear as leaf-nodes in the 
+        tree.
+
+        (2).1  REGULAR files : 
+               Regular files are also called ORDINARY files. They contain 
+               either ordinary text or executable binary codes.
+
+        (2).2  SPECIAL files : 
+               Special files are entries in the /dev directory. They represent
+               I/O devices, and are further classified as . 
+
+               CHAR  special files, e.g. /dev/tty0, /dev/modem.
+               BLOCK special files, e.g. /dev/fd0,  /dev/hda.
+               Other types such as Network special files.
+
+   (3). Soft LINK files:
+        These are Regular files whose contents are pathnames of other 
+        files. As such they are used to reference other files.
+        Example: the Unix command
+                 ln   -s   aVeryLongFileName   myLink
+        sets up  myLink  as a soft-link to  aVeryLongFileName.  Access to 
+        myLink will be re-directed to the actual file aVeryLongFileName.
+
+5. Pathname:
+
+   The ROOT node of a Unix file system tree, symbolized by /, is called the 
+   "root directory".
+
+   Each node of the tree is represented by a PATHNAME of the form
+
+             /a/b/c/d    OR    a/b/c/d
+
+   So, each Unix file is specified by a pathname.
+
+*   A pathname is ABSOLUTE if it begins with a /.  
+*   A pathname is RELATIVE if it does not begin with a /. 
+ 
+    A relative pathname starts from the Current Working Directory (CWD).
+    When a user login to Unix, the CWD is usually set to his/hers HOME 
+    directory.  The CWD can be changed by using the cd  command.  
+    The pwd command prints the absolute pathname of the CWD.
+            
+6. Contents of Directories Under / :  
+
+   /bin : commonly used system commands, e.g ls, date,...
+   /dev : Special files.
+   /etc : Unix system maintenance files.
+   /lib : Unix system libraries.
+   /sbin: Unix system administration commands.
+   /tmp : temporary files.
+   /usr : /usr/bin:      more executable files such as  cc,  gzip.
+          /usr/include : .h files
+          /usr/lib:      specific library files.
+          /usr/man     : on-line manual directory.
+          /usr/X11     : X-Window system.
+
+   /user: user home directories.
+   /vmunix : bootable Unix system image file.
+
+
+7. Login:
+
+(1). User Account:
+     Each user is assigned an account by the system administrator. In a stand-
+     alone Unix system, user accounts are maintained in a file named     
+                        /etc/passwd.
+     In a network system composed of many Unix machines, such information is 
+     usually maintained on a Server machine, which provides other Unix machines
+     with a single copy of the user account information. 
+ 
+     A user account typically contains the following fields, separated by :
+
+     root:aXuoPkB4hz:0:0:root:/root:/bin/bash
+     kwang:Pir2NYB4Bqi9I:501:100:k.c.wang,cs faculty:/home/kwang:/bin/bash
+     ----- ----------------- --- ------------------- ----------- --------------
+  username: password :gid:uid:    full name      : HOME dir  : programToExecute
+
+(2). Login Process:
+     
+     A PROCESS is a sequence of executions regarded as a single entiry by the 
+     system. In Unix, every activity is carried out by a process.  
+     When Unix starts, it generates a special process, P1, which executes the 
+     file   /etc/init.  For this reason, P1 is also called the INIT process. 
+     It is the parent of all user processes in the following manner:
+
+     P1 reads some system configuration files to find out the terminals 
+     supported by the system.  For each terminal, it generates a child process 
+     on that terminal. Then, it waits for any of the terminal process to 
+     terminate.  When a terminal process terminates (by user logout), P1 
+     regenerates another child process on that terminal. 
+
+     Each child process opens 3 (stream) FILEs on its own terminal. These FILEs
+     are known as 
+
+          stdin : the terminal's Keyboard, for inputs;
+          stdout: the terminal's Display, for outputs;
+          stderr: also the Display, for error outputs;
+
+     Then the child process executes /etc/getty, which displays the message  
+          login:  
+     on its stdout, awaiting a user to login.  
+     At this moment, the login process is not yet associated with any user.
+
+     When a user tries to login, the login process validates his/her username 
+     and password in /etc/passwd. If the user has a valid account, the login 
+     process takes on the user's uid and gid, thereby becoming the user's 
+     process.  It then sets the CWD to the user's HOME directory and executes 
+     the program specified in the user's account. That program is usually a 
+     version of the Unix shell, e.g. bash, csh, etc.
+    
+     The Unix shell is a command interpreter.  It displays a prompt
+         %     (OR some other symbol, which can be set by the usr)
+     and waits for the user to input commands.
+
+     A command is simply an executable program. When the user enters a command,
+     the sh process (i.e. the user process that's executing the sh) will
+
+       (1). generate a child process to perform the command;
+       (2). wait for the child process to terminate;
+       (3). prompt the user for commands again;  
+            The sh process terminates when it sees logout or END_OF_FILE.
+   
+     NOTE that the command is NOT executed by sh itself but by a child process.
+
+     Using this feature of sh, a user can start many processes, each performing
+     a different task.  For example, the command (line)
+
+            %   ls & date & a.out  &
+                --   ----   ----- ----- 
+                C1    C2     C3   NoWait
+
+     will start 3 children processes, C1, C2, C3, which execute ls, date, a.out
+     respectively, and cause the sh to prompt again without waiting for any of
+     the child processes to terminate.  This is called MULTI-TASKING.
+
+     In this example, all 4 processes will run CONCURRENTLY (which means IN 
+     PARALLEL in a logical sense). Among them, the sh runs in the FOREGROUND 
+     while others run in the BACKGROUND.  Only the foreground process can 
+     receive inputs from stdin.
+     The  fg  command can be used to raise a background process to foreground.
+     The  ps  command displays all the ProcessId (PID) of a user.
+
+
+8. REVIEW QUESTIONS:
+
+(1). The   ls -l   command lists the contents of a directory:
+
+drwxr-xr-x   root   bin     2048  Dec 23 09:22 bin/
+lrwxrwxrwx   root   root      23  Dec 20 20:15 kwang -> /home/kwang/public_html
+-rw-r--r--   root   root  433387  Dec  8 21:52 vmlinuz
+-rwxr-xr-x   kwang  kwang  21400  Jan 10 07{30 a.out
+
+EXPLAIN THE MEANING OF EACH field?
+
+(2). What are the permission bits of a file, and what do they do?
+     
+(3). Each user has a UserId (uid) and a GroupId (gid).  
+     How does a user get hid/her uid and gid?
+     What are the uid and gid used for? 
+
+(4). The owner of a file can use the Unix command
+         chmod  0766  fileName  
+     to change the mode of fileName. What are the resulting permissions?
+
+(5). What does the x bits of a directory mean?
+
+(6). Unix has a special user, called the SuperUser or the Root, who can access
+     any file. What's the reason for having such a Super user?
+
+(7). How does a user acquire a Unix process?
+
+(8). How many processes will be executing with the sh command?
+         %  a & b & c & d &
+     Which one is the foreground process?
+
+(9). The Unix command    ls | more
+     sets up 2 processes, one executes ls and the other executes more, in such 
+     a way that the outputs of the first process ls are PIPEd to the second 
+     process more. 
+     How many processes will be executing with the sh command?
+         %  a | b | c | d 
+ 
+
+
+
+
+
+
+
+

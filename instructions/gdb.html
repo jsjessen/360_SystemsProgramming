@@ -1,0 +1,177 @@
+<Title>360 Notes</Title>
+<Body bgcolor="#00cccc" text="#000000">
+
+<H1>360 Notes on GDB</H1>
+
+<Pre>
+                 HOW TO USE THE GDB DEBUGGER
+
+GDB is an interactive debugger which can debug programs written in C, C++ and
+many other languages. Under Linux or Unix, use  man gdb  to read the manual
+pages of gdb. This note shows how to use gdb in conjunction with emacs under
+X-window.
+
+1. Under X-window, use emacs to edit a C file, e.g. t.c
+   
+   int a,b,c;
+   main()
+   {
+      printf("enter main\n");
+      a = 1;
+      b = 2;
+      printf("calling sub\n");
+      c = sub(a,b);
+      printf("back from sub: c = %d\n", c);
+   }
+
+   int sub(int x, int y)
+   {
+      int u, v;
+      printf("enter sub\n");
+      u = 4; 
+      v = 5;
+      printf("return from sub\n");
+      return (x+y+u+v);
+   }
+
+2. Under emacs's Tools menu, select  Compile ==> modify the command line at 
+   the bottom to
+                 cc -g t.c
+
+   the -g flag tells cc to generate a.out for debugging (it builds a symbol 
+   table for debugger to access variables and functions in the C program). 
+   Without -g, a.out cannot be debugged by gdb.
+
+   Emacs will show the compile results in a split window.
+
+3. Under the File menu, 
+        choose Remove Splits    to kill the split window.
+   Then choose Split Window     to create a split window (containing t.c)
+
+4. Under the Toosl menu, select Debugger ===> the bottom line will show 
+
+         gdb a.out
+
+   Enter to invoke gdb on a.out. gdb will run in the TOP window. Execution of 
+   t.c will be displayed in the split window.
+
+5. In the gdb window: enter gdb commands to
+     ---------------------------------------------------
+      set breakpoints:  b main; b sub; b 10; etc
+      run a.out (with command line parameters as usual)
+      print variable values
+      set watchpoints (of variable changes)
+      next line 
+      continue execution
+      step (single step execution)
+      examine stack frames
+      etc.
+     ---------------------------------------------------
+
+6. Sample sessions:
+   Assume:  cc -g t.c ==> a.out
+            gdb a.out ==> ----------------------------- 
+                              GDB windows
+                          -----------------------------
+                              t.c source window
+                          -----------------------------
+(1). Set break points to main, sub (function names) ==> execution will stop
+     whenever main() or sub() is reached.
+     b main    ==> set break point at main()
+     b sub     ==> another break point at sub()
+
+(1.1). You may also set breakpoints to line numbers (as you scroll up or
+       down in the C program window, emacs displays line numbers):
+       b   200    (stop whenever at line 200 in t.c file)
+       b   100    (stop at line 100, etc.)
+
+(2). r         ==> run a.out ==> will stop immediately at main()
+                   An arrow => will point at the line to be executed.
+(3). n         ==> execute next line of t.c
+     n         ==> another line, etc.
+
+(4). p a       ==> print value of a 
+     p b       ==> print value of b, etc.
+
+(5). The printf() lines will generae outputs in the GDB window.
+=================================================================
+(6). c         ==> continue (continue execution normally).==>
+                   will call sub()
+
+(7). Since sub() is a break point, executionn will stop at sub()
+
+(8). While in sub(), use 
+     
+     info local   to see values of all local variables of the function.
+  
+     **** Examine stack frames; not very useful for simple programs ***** 
+     bt           (backtrce) to see stack frames up to the current function:
+                  bt display each frame in one line with a FRAME# (0,1,2,etc).
+     frame fFRAME# to display that stack frame
+     **********************************************************************
+
+(9). HOW TO CHNAGE variable values:
+     set VAR a=100   ===> set variale a to 100
+     set VAR b=200   ===> set b to 200, etc.
+ 
+(10). HOW TO clear break points:
+      clear line#   (Clear bp at line#)
+      clear name    (clear bp at function name)
+
+(11). Watch varaible changes:
+      watch c    ( watch for changes in variable c; whenever c changes
+                   it will display its old value and new value)
+      watch u    ( watch changes in u, etc).
+==============================================================================
+
+
+7. Best Debugging:
+   All debugging tools can only offer limited help. The BEST approach to
+   program development is to write your source code carefully (so that it 
+   would not need any debugging tool at all). Use printf or fprintf in a 
+   program is often more effective than relying on a debugging tool.
+    
+    
+8. HOW DOES A PROGRAM TERMINATE
+
+   OS Kernel:              kexit(value):      ZOMBIE PROC
+                              |         ---------------------- 
+                              |         exitValue=| Hi  | Lo  |
+                              |                   |value| SIG#|
+                              |         -----------------------
+==============================|=============================|==========
+A. NORMAL TERMINATION:        ^                               
+                              |                             
+   a.out memory image:        |                             
+     crt0.o                   |                             
+      |         exit(0) --> _exit(0)                         
+     main()       |                                          
+     {            |
+                  |
+(1). } ======> to crt0.o
+
+
+(2). In main()
+     or any part of a.out
+    
+        exit(value)-----> _exit(value)
+
+(3).   _exit(value) ----> to Kernel to DIE immediately.
+----------------------------------------------------------
+
+B. ABNORMAL TERMINATION:
+
+(1). Exceptions:
+     divide by zero      |
+     illegal address     |
+     illegal instruction |:ALL trap to Kernel ==> Signal Number in Lo byte 
+     privilege violation |
+     etc.                |       
+    
+(2). Signal from Other Process:
+
+       kill -s (1 to 31) pid ==> send signal# to target process by pid
+                                 requesting it to DIE.
+
+---------------------------------------------------------------------------
+ 

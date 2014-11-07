@@ -1,0 +1,667 @@
+<html>
+<bofy>
+<pre>
+
+                      ---------------------------------- (NOT in a.out)
+1. cc t.c ==> a.out = |header|  Code   |   Data        |      bss      |  
+                      -------------------------------------------------- 
+                      |tsize |Executabe|Initialized    | uninitialized |
+                      |dsize |  code   | globals       |  globals      |
+                      |bsize |         | static locals |               |
+                      --------------------------------------------------
+
+   ls -l a.out : show the total size of a.out in bytes
+   size  a.out : show the sizes of a.out sections, e.g.
+                 text    data     bss     dec     hex   filename
+                  843     260       4    1107     453   a.out
+
+2. Run-time memory image of a.out:
+
+       LOW                                    HIGH
+       -------------------------------------------
+       | Code  | Data |  bss  |  HEAP |  stack   |
+       --|-------------------------------------|--
+         IP                                    SP
+
+3. List Processing Example Programs
+
+/******************* l1.c ********************************************/
+#include &lt;stdio.h>   
+#include &lt;stdlib.h>  
+#include &lt;string.h>
+
+#define N 10
+
+typedef struct node{
+  struct node *next;
+  char name[64];
+  int  id;
+}NODE;
+
+char name[64];
+NODE *mylist,       node[N]; // all in the bss section of run-time image
+     -------        --0----1----2-----------------------------------9---
+     |  ?  |        |next|    |    |                              |    |
+     -------        |name|    |    |                              |    |
+                    |id  |    |    |                              |    |
+                    ----------------------------------------------------
+
+main()
+{
+  int i; 
+  NODE *p;
+
+  for (i=0; i < N; i++){
+     p = &node[i];
+     sprintf(name, "%s%d", "node",i); // node0, node1, node2 etc
+     strcpy(p->name, name);
+     p->id = i;
+     p->next = p+1;        // node[i].next = &node[i+1];
+  }
+  node[N-1].next = 0;
+  mylist = &node[0];
+
+  printlist("mylist", mylist);
+}     
+
+int printlist(char *name, NODE *p)
+{
+   printf("%s = ", name);
+   while(p){
+     printf("[%s %d]->", p->name, p->id);
+      p = p->next;
+  }
+  printf("NULL\n");
+}
+
+
+/************************* l2.c *******************************/
+// included files
+
+#define N 10
+
+typedef struct node{
+  struct node *next;
+  char name[64];
+  int  id;
+}NODE;
+
+char name[64];
+NODE *mylist,   *node;    // node[N];
+     -------    ------
+     |  ?  |    | ?  | globals are in bss ----|
+     -------    ------             ---------------------------------
+main()                             |CODE| DATA| bss  | HEAP|  stack|
+{                                  ---------------------------------
+  int i;                                              ^
+  NODE *p;                                            |
+                                                      | 
+  node = malloc(N*sizeof(NODE)); // node -> N*72 bytes area in HEAP
+
+  for (i=0; i < N; i++){
+     p = &node[i];               // access each NODE area in HEAP 
+     sprintf(name, "%s%d", "node",i);
+     strcpy(p->name, name);
+     p->id = i;
+     p->next = p+1;        // node[i].next = &node[i+1];
+  }
+  node[N-1].next = 0;
+  mylist = &node[0];
+
+  printlist("mylist", mylist);
+}     
+
+int printlist(char *name, NODE *p)
+{
+   // SAME AS BEFORE
+}
+
+/********************* l3.c *********************************/
+// included .h files
+
+#define N 10
+
+typedef struct node{
+  struct node *next;
+  char name[64];
+  int  id;
+}NODE;
+
+char name[64];
+
+NODE *freelist, *mylist, node[N];
+
+int init()
+{
+  int i;
+  for (i=0; i < N; i++){
+      node[i].next = &node[i+1];
+      node[i].name[0] = 0;        // NULL string
+      node[i].id = i;
+  }
+  freelist = &node[0];
+  node[N-1].next = 0;
+}
+
+main()
+{
+  init();
+  printlist("freelist", freelist);
+}     
+
+int printlist(char *name, NODE *p)
+{
+   // SAME as before
+}
+
+
+/********************** l4.c *********************************/
+//include files
+
+#define N 10
+
+typedef struct node{
+  struct node *next;
+  char name[64];
+  int  id;
+}NODE;
+
+char name[64];
+
+NODE *freelist, *mylist, *node;   //node[N];
+
+int init()
+{
+  int i;
+  node = malloc(N*sizeof(NODE));
+
+  for (i=0; i < N; i++){
+      node[i].next = &node[i+1];
+      node[i].name[0] = 0;
+      node[i].id = i;
+  }
+  freelist = &node[0];
+  node[N-1].next = 0;
+}
+
+main()
+{
+  init();
+  printlist("freelist", freelist);
+}     
+
+
+int printlist(char *name, NODE *p)
+{
+    // SAME as before
+}
+
+
+/************************** l5.c ***************************/
+// included files
+
+#define N 10
+
+typedef struct node{
+  struct node *next;
+  char name[64];
+  int  id;
+}NODE;
+
+char name[64];
+
+NODE *freelist, *mylist, node[N];
+
+int init()
+{
+  int i;
+  for (i=0; i < N; i++){
+      node[i].next = &node[i+1];
+      node[i].name[0] = 0;
+      node[i].id = i;
+  }
+  freelist = &node[0];
+  node[N-1].next = 0;
+
+  mylist = 0;
+}
+
+NODE *getnode()
+{
+  NODE *p;
+  p = freelist;
+  if (p)
+     freelist = freelist->next;
+  return p;
+}
+
+int putnode(NODE *p)
+{
+  p->next = freelist;
+  freelist = p;
+}
+
+main()
+{
+
+  init();
+  printlist("freelist", freelist);
+  printlist("mylist", mylist);
+
+  printf("enter a key:"); getchar();
+  
+  insert(&mylist, "new0");
+  printlist("freelist", freelist);
+  printlist("mylist", mylist);
+
+  printf("enter a key:"); getchar();
+  insert(&mylist, "new1");
+  printlist("freelist", freelist);
+  printlist("mylist", mylist);
+
+}     
+
+int insert(NODE **list, char *name)
+{
+  // get a new node
+  NODE *p, *q;
+  p = getnode();
+
+  if (p==0){
+    printf("no more nodes\n");
+    return -1;
+  }
+
+  strcpy(p->name, name);
+  
+  if (*list==0){
+     *list = p;
+     p->next = 0;
+     return;
+  }
+
+  // insert to end of list
+  q = *list;
+  while(q->next)
+    q = q->next;
+
+  q->next = p;
+  p->next = 0;
+}
+
+int printlist(char *name, NODE *p)
+{
+  // SAME as before
+}
+
+
+
+
+
+
+/*************************** l6.c *******************************/
+// included files
+
+#define N 10
+
+typedef struct node{
+  struct node *next;
+  char name[64];
+  int  id;
+}NODE;
+
+char name[64];
+
+NODE *freelist, *mylist;  //node[N];
+
+int init()
+{
+  mylist = 0;
+}
+
+main()
+{
+
+  init();
+  printlist("mylist", mylist);
+
+  printf("enter a key:"); getchar();
+  
+  insert(&mylist, "new0");
+  printlist("mylist", mylist);
+
+  printf("enter a key:"); getchar();
+  insert(&mylist, "new1");
+  printlist("mylist", mylist);
+
+}     
+
+int insert(NODE **list, char *name)
+{
+  // get a new node
+  NODE *p, *q;
+
+  p = malloc(sizeof(NODE));
+
+  if (p==0){
+     printf("out of HEAP memory\n");
+     return -1;
+  }
+
+  strcpy(p->name, name);
+  
+  
+  if (*list==0){  // if list was EMPTY
+     *list = p;
+     p->next = 0;
+     return;
+  }
+
+  // insert to end of list
+  q = *list;
+  while(q->next)
+    q = q->next;
+
+  q->next = p;
+  p->next = 0;
+}
+
+int printlist(char *name, NODE *p)
+{
+   // SAME as before
+}
+
+
+
+
+/**************************** l7.c ***************************/
+// included files
+
+#define N 10
+
+typedef struct node{
+  struct node *next;
+  char name[64];
+  int  id;
+}NODE;
+
+char name[64];
+
+NODE *freelist, *mylist, node[N];
+
+int init()
+{
+  int i;
+  for (i=0; i < N; i++){
+      node[i].next = &node[i+1];
+      node[i].name[0] = 0;
+      node[i].id = i;
+  }
+  freelist = &node[0];
+  node[N-1].next = 0;
+
+  mylist = 0;
+}
+
+NODE *getnode()
+{
+  NODE *p;
+  p = freelist;
+  if (p)
+     freelist = freelist->next;
+  return p;
+}
+
+int putnode(NODE *p)
+{
+  p->next = freelist;
+  freelist = p;
+}
+
+char buf[64];
+NODE *search();
+
+main()
+{
+  int i; NODE *p;
+  init();
+  printlist("freelist", freelist);
+  printlist("mylist", mylist);
+
+  printf("enter a key:"); getchar();
+
+  for (i=0; i < N; i++){
+    sprintf(buf, "%s%d", "node", i);
+    insert(&mylist, buf);
+  }
+  printlist("mylist", mylist);
+
+  printf("enter a name to search : ");
+  gets(buf);
+
+  if ( p=search(mylist, buf) )
+    printf("found %s at %08x\n", buf, p);
+  else
+     printf("%s not found\n", buf);
+  
+}     
+
+
+int insert(NODE **list, char *name)
+{
+  // get a new node
+  NODE *p, *q;
+
+  p = getnode();
+
+  if (p==0){
+    printf("no more nodes\n");
+    return -1;
+  }
+
+  strcpy(p->name, name);
+  
+  if (*list==0){
+     *list = p;
+     p->next = 0;
+     return;
+  }
+
+  // insert to end of list
+  q = *list;
+  while(q->next)
+    q = q->next;
+
+  q->next = p;
+  p->next = 0;
+}
+
+NODE *search(NODE *list, char *name)
+{
+  NODE *p;
+  p = list;
+  while(p){
+    if (strcmp(p->name, name)==0)
+      return p;
+    p = p->next;
+  }
+  return 0;
+} 
+
+
+int printlist(char *name, NODE *p)
+{
+  // SAME as before
+}
+
+
+
+/************************* l8.c **************************/
+// included files
+
+#define N 10
+
+typedef struct node{
+  struct node *next;
+  char name[64];
+  int  id;
+}NODE;
+
+char name[64];
+
+NODE *freelist, *mylist, node[N];
+
+int printlist(char *name, NODE *p)
+{
+   printf("%s = ", name);
+   while(p){
+     printf("%s -> ", p->name);
+      p = p->next;
+  }
+  printf("NULL\n");
+}
+
+int init()
+{
+  int i;
+  for (i=0; i < N; i++){
+      node[i].next = &node[i+1];
+      node[i].name[0] = 0;
+      node[i].id = i;
+  }
+  freelist = &node[0];
+  node[N-1].next = 0;
+
+  mylist = 0;
+}
+
+NODE *getnode()
+{
+  NODE *p;
+  p = freelist;
+  if (p)
+     freelist = freelist->next;
+  return p;
+}
+
+int putnode(NODE *p)
+{
+  p->next = freelist;
+  freelist = p;
+}
+
+
+char buf[64];
+NODE *search();
+
+main()
+{
+  int i; NODE *p;
+  init();
+
+  printlist("freelist", freelist);
+  printlist("mylist", mylist);
+
+  printf("enter a key:"); getchar();
+
+  for (i=0; i < N; i++){
+     sprintf(buf, "%s%d", "node", i);
+     insert(&mylist, buf);
+  }
+  printlist("mylist", mylist);
+
+  printf("enter a name to search : ");
+  gets(buf);
+  /**************
+  fgets(buf, 64, stdin);
+  buf[strlen(buf)-1] = 0;   // kill CR key
+  *****************/
+  if ( p = search(mylist, buf) )
+    printf("found %s at %08x\n", buf, p);
+  else
+     printf("%s not found\n", buf);
+
+  printlist("mylist", mylist);
+  printf("enter a name to delete : ");
+  gets(buf);
+  /*************
+  fgets(buf, 64, stdin);
+  buf[strlen(buf)-1] = 0;   // kill CR key
+  ************/
+  if ( delete(&mylist, buf) )
+    printf("deleted OK\n");
+  else
+     printf("delete failed\n");
+
+  printlist("mylist", mylist);
+  printlist("freelist", freelist);
+}     
+
+
+int insert(NODE **list, char *name)
+{
+  // get a new node
+  NODE *p, *q;
+
+  p = getnode();
+
+  if (p==0){
+    printf("no more nodes\n");
+    return -1;
+  }
+
+  strcpy(p->name, name);
+  
+  if (*list==0){
+     *list = p;
+     p->next = 0;
+     return;
+  }
+
+  // insert to end of list
+  q = *list;
+  while(q->next)
+    q = q->next;
+
+  q->next = p;
+  p->next = 0;
+}
+
+NODE *search(NODE *list, char *name)
+{
+  NODE *p;
+  p = list;
+  while(p){
+    if (strcmp(p->name, name)==0)
+      return p;
+    p = p->next;
+  }
+  return 0;
+} 
+
+int delete(NODE **list, char *name)
+{
+  NODE *p, *q;
+  if (*list == 0) 
+      return 0;
+
+  p = *list;
+  if (strcmp(p->name, name)==0){
+    *list = p->next;
+    putnode(p);
+    return 1;
+  }
+
+  q = p->next;
+  while(q){
+    if (strcmp(q->name, name)==0){
+      p->next = q->next;
+      putnode(q);
+      return 1;
+    }
+    p = q; 
+    q = q->next;
+  }
+  return 0;
+}
+     
