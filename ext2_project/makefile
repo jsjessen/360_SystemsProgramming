@@ -1,5 +1,5 @@
 
-TARGET = myext2 
+TARGET = my_ext2fs
 
 #
 # 'make'		build and execute
@@ -18,8 +18,6 @@ DEBUG  = -g -Wall -O0
 
 ###### Libraries ######
 LIBS     = #-lmylib -lm
-#   if I want to link in libraries (libx.so or libx.a) I use the -llibname 
-#   option, something like (this will link in libmylib.so and libm.so:
 
 ###### Directories ######
 CMD_DIR  = ../cmd
@@ -37,25 +35,7 @@ INCLUDES = -I$(CMD1_DIR) \
 		   -I$(OBJ_DIR)  \
 		   -I$(DISK_DIR) \
 
-#OBJECTS = main.o \
-	#	   input.o util.o print.o \
-	#	   search.o memory.o transfer.o \
-	#	   cmd.o
-#
-#run : $(OBJECTS)
-#	$(CC) -o $(TARGET) $(OBJECTS) $(CFLAGS)
-#
-#
-#main.o     : global.h search.h print.h cmd.h
-#util.o	   : global.h
-#print.o    : global.h transfer.h
-#search.o   : global.h input.h transfer.h memory.h print.h
-#memory.o   : global.h util.h transfer.h
-#transfer.o : global.h
-#
-#cmd.o 	   : global.h print.h cmd.c level1.c level2.c level3.c
-#	$(CC) -o $@ cmd.c level1.c level2.c level3.c $(CFLAGS)
-
+###### Files ######
 SOURCES = main.c \
 		  input.c print.c util.c memory.c transfer.c search.c \
 		  menu.c cmd.c sync.c quit.c \
@@ -79,10 +59,9 @@ default: $(TARGET)
 $(TARGET): $(OBJECTS) 
 	$(CC) $(CFLAGS) $(INCLUDES) -o $(TARGET) $(OBJECTS) $(LFLAGS) $(LIBS)
 
-# this is a suffix replacement rule for building .o's from .c's
-# it uses automatic variables $<: the name of the prerequisite of
-# the rule(a .c file) and $@: the name of the target of the rule (a .o file) 
-# (see the gnu make manual section about automatic variables)
+# Build .o's from .c's
+# $<: name of the prerequisite of the rule(.c file) 
+# $@: name of the target of the rule (.o file) 
 .c.o:
 	$(CC) $(CFLAGS) $(INCLUDES) -c $<  -o $@
 
@@ -93,8 +72,13 @@ tar :
 	tar -zcfv $(TARGET).tar.gz *.c *.h makefile
 
 submit : run clean tar
-	ul_ssh $(TARGET).tar.gz
+	./script/upload.sh $(TARGET).tar.gz
 
+# The makedepend program reads each sourcefile in sequence and parses it like a C-preprocessor, 
+# processing all #include, #define, #undef, #ifdef, #ifndef, #endif, #if, #elif and #else directives 
+# so that it can correctly tell which #include, directives would be used in a compilation. 
+# Any #include, directives can reference files having other #include directives, 
+# and parsing will occur in these files as well.  
 depend: $(SOURCES)
 	makedepend $(INCLUDES) $^
 

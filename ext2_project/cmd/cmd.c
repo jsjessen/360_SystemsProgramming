@@ -1,4 +1,43 @@
-#include "cmd.h"
+#include <cmd.h>
+
+// General
+#include<menu.c>
+#include<my_sync.c>
+#include<quit.c>
+
+// Level 1
+#include<my_ls.c>
+#include<my_cd.c>
+#include<my_pwd.c>
+#include<my_mkdir.c>
+#include<my_rmdir.c>
+#include<my_creat.c>
+#include<my_link.c>
+#include<my_unlink.c>
+#include<my_symlink.c>
+#include<my_rm.c>
+#include<my_chmod.c>
+#include<my_chown.c>
+#include<my_stat.c>
+#include<my_touch.c>
+
+// Level 2
+#include<my_open.c>
+#include<my_close.c>
+#include<my_pfd.c>
+#include<my_lseek.c>
+#include<my_access.c>
+#include<my_read.c>
+#include<my_write.c>
+#include<my_cat.c>
+#include<my_cp.c>
+#include<my_mv.c>
+
+// Level 3
+#include<my_mount.c>
+#include<my_umount.c>
+#include<my_cs.c>
+
 
 typedef struct command
 {
@@ -47,6 +86,12 @@ static const COMMAND lookup[] =
     { "exit"    , &quit       }
 };
 
+int invalid(int argc, char* argv[])
+{
+    printf("invalid command\n");
+    return 0;
+}
+
 int (*get_cmd(char* cmd_name))(int, char**)
 {
     int i = 0;
@@ -58,33 +103,4 @@ int (*get_cmd(char* cmd_name))(int, char**)
             return lookup[i].cmd;
     }
     return &invalid;
-}
-
-int menu(int argc, char* argv[])
-{
-    print_title("Menu", '=');
-    printf("ls  cd  pwd quit\n");
-    print_divider('-');
-
-    return 0;
-}
-
-int invalid(int argc, char* argv[])
-{
-    printf("invalid command\n");
-    return 0;
-}
-
-int quit(int argc, char* argv[])
-{
-    int i = 0;
-
-    for(i = 0; i < NMINODES; i++)
-    {
-        MINODE* mip = &MemoryInodeTable[i];
-
-        mip->refCount = 1;
-        iput(mip);
-    }
-    exit(0);
 }

@@ -12,7 +12,6 @@
 int (*get_cmd(char* cmd_name))(int, char**);
 
 int menu       (int argc, char* argv[]);
-int invalid    (int argc, char* argv[]);
 int quit       (int argc, char* argv[]);
 
 int my_ls      (int argc, char* argv[]);

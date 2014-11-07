@@ -1,9 +1,0 @@
-#! /bin/bash
-
-make 
-
-prog="showblock"
-disk="fdimage"
-file="/Z/hugefile"
-
-valgrind --leak-check=full $prog $disk $file
