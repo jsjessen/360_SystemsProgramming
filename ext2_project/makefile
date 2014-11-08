@@ -1,18 +1,24 @@
 
 PROG = my_ext2fs
 
+LAB  = LAB6
+
 #
-# 'make'		build and execute
+# 'make'		compiles everything
 #
-# 'make clean'	remove all .o files
+# 'make clean'	removes all object files
 #
 # 'make tar'	adds everything needed to recreate executable into a tar and compresses
 #
-# 'make submit'	uploads tar
+# 'make submit'	uploads tar to KC's server into directory defined by LAB 
 #
 
 .PHONY : all clean tar submit depend
 
+# Add any additional utility files here
+SOURCE = main.c cmd.c \
+		 util.c input.c print.c memory.c transfer.c search.c
+	
 DEBUG    = -g -Wall -O0
 # -g 		add debugging info
 # -Wall		enable most compiler warnings
@@ -35,6 +41,10 @@ CMD3_DIR = cmd/level_3
 OBJ_DIR  = obj
 DISK_DIR = disk
 
+# -Idir
+# Add the directory dir to the head of the list of directories to be searched for header files. 
+# This can be used to override a system header file, substituting your own version, 
+# since these directories are searched before the system header file directories. 
 INCLUDES = -I$(CUR_DIR)  \
 		   -I$(UTIL_DIR) \
 		   -I$(CMD_DIR)  \
@@ -45,13 +55,11 @@ INCLUDES = -I$(CUR_DIR)  \
 # VPATH specifies a list of directories that make should search
 VPATH = $(UTIL_DIR) $(CMD_DIR) $(OBJ_DIR)
 
-SOURCE = main.c cmd.c \
-		 util.c input.c print.c memory.c transfer.c search.c
-		 
 OBJECTS = $(SOURCE:.c=.o)
 
 OBJPROG = $(addprefix $(OBJ_DIR)/, $(PROG))
 
+# make
 all : $(OBJPROG)
 
 $(OBJECTS) : | $(OBJ_DIR)
@@ -66,13 +74,13 @@ $(OBJ_DIR)/%.o : %.c
 	$(CC) $(CFLAGS) -c $< -o $@
 
 clean :
-	@$(RM) -f  $(PROG) $(OBJ_DIR)/*.o *~ 
+	@$(RM) -f $(PROG) $(OBJ_DIR)/*.o *~ 
 
 tar :
 	tar -zcfv $(PROG).tar.gz $(UTIL_DIR) $(CMD_DIR) *.c *.h makefile 
 
 submit : tar
-	script/upload.sh $(PROG).tar.gz
+	script/upload.sh $(LAB) $(PROG).tar.gz
 
 # The makedepend program reads each sourcefile in sequence and parses it like a C-preprocessor, 
 # processing all #include, #define, #undef, #ifdef, #ifndef, #endif, #if, #elif and #else directives 
