@@ -45,18 +45,9 @@ INCLUDES = -I$(CUR_DIR)  \
 # VPATH specifies a list of directories that make should search
 VPATH = $(UTIL_DIR) $(CMD_DIR) $(OBJ_DIR)
 
-#vpath %.c $(CMD1_DIR) $(CMD2_DIR) $(CMD3_DIR)
-
-
-SOURCE = main.c \
-		 input.c print.c util.c memory.c transfer.c search.c \
-		 cmd.c
-		 #menu.c cmd.c quit.c \
-		 #list_dir.c change_dir.c pwd.c mkdir.c rmdir.c creat.c \
-		 #link.c unlink.c symlink.c rm.c chmod.c chown.c stat.c touch.c \
-		 #open.c close.c pfd.c lseek.c access.c read.c write.c cat.c cp.c mv.c \
-		 #mount.c umount.c cs.c sync.c
-
+SOURCE = main.c cmd.c \
+		 util.c input.c print.c memory.c transfer.c search.c
+		 
 OBJECTS = $(SOURCE:.c=.o)
 
 OBJPROG = $(addprefix $(OBJ_DIR)/, $(PROG))
