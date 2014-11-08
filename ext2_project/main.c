@@ -9,8 +9,9 @@
 #include <global.h>
 #include <input.h>
 #include <print.h>
-#include <cmd.h>
 #include <memory.h>
+#include <cmd.h>
+
 
 MINODE *root;
 PROC *running; // Points at the PROC structure of the current running process
@@ -21,7 +22,7 @@ MOUNT     MountTable[NMOUNT];
 PROC      ProcessTable[NPROC]; 
 OPEN_FILE OpenFileTable[NOFT];
 
-// ------------------------------------------------------------------------------
+// ------------------------------------------------------------------------
 // PROC *running           MINODE *root                          
 //       |                          |              
 //       |                          |               ||*********************
@@ -44,7 +45,7 @@ OPEN_FILE OpenFileTable[NOFT];
 //     pid=2                        |          | 
 //     uid=1                        |==========|  
 //     cwd ----> root minode        
-// -----------------------------------------------------------------------------
+// ------------------------------------------------------------------------
 
 // Initialize the data file system structures
 void initialize_fs()
@@ -219,7 +220,10 @@ int main(int argc, char* argv[])
         int    cmd_argc = 0;
         int  (*cmd_fptr)(int, char**) = NULL; 
 
-        do { printf("command : "); }     // Prompt user for input
+        do // Prompt user for input
+        { 
+            printf("[%d %s]$ ", running->uid, my_pwd(cmd_argc, cmd_argv)); 
+        }     
         while(!(input = get_input()));   // Get user input
 
         cmd_argv = parse(input, " ");    // Parse input into cmd argv[]

@@ -72,7 +72,7 @@ char* get_input()
 }
 
 // Parse input string by splitting on delimiters
-char** parse(char* input, char* delimiters)
+char** parse(const char* input, const char* delimiters)
 {
     int i = 0;
     int size = INITIAL_BUF_SIZE;

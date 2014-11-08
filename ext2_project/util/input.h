@@ -29,7 +29,7 @@ char* get_input();
 
 // Parses input string by splitting on delimiters
 // Returns an array of char* appended with a NULL entry
-char** parse(char* input, char* delimiters);
+char** parse(const char* input, const char* delimiters);
 
 // Example:
 //          output[0] = "cmd"
