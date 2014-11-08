@@ -24,6 +24,7 @@
 #include <string.h>
 #include <time.h>
 #include <ext2fs/ext2_fs.h>
+#include <sys/stat.h>
 
 #include <global.h>
 #include <util.h>
@@ -50,5 +51,8 @@ void print_bmap (int dev);
 void print_file_blocks(int device, int inode_number);
 int  print_indirect_block(int device, int block_size, int* buf, int level);
 
+void list_file(MINODE* mip,char* name);
+void list_dir(MINODE* mip);
+    
 
 #endif

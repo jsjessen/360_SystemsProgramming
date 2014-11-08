@@ -288,3 +288,85 @@ int print_indirect_block(int device, int block_size, int* buf, int level)
     free(buf);
     return 1;
 }
+
+// permissions link  gid  uid  size  date  name
+void list_file(MINODE* mip, char* name)
+{
+    int i = 0; 
+    INODE *ip = &mip->inode;
+
+    u16 mode = ip->i_mode;
+    u16 links = ip->i_links_count;
+    u16 uid = ip->i_uid;
+    u16 gid = ip->i_gid;
+    u32 size = ip->i_size;
+    char* time = ctime((time_t*)&ip->i_mtime);
+
+    static const char* Permissions = "rwxrwxrwx";
+
+    // Type 
+    // The leading 4 bits of mode (2 bytes/16 bits) indicate type
+    // 0xF000 = 1111 0000 0000 0000
+    switch(mode & 0xF000) 
+    {
+        case 0x8000:  putchar('-');     break; // 0x8 = 1000
+        case 0x4000:  putchar('d');     break; // 0x4 = 0100
+        case 0xA000:  putchar('l');     break; // oxA = 1010
+        default:      putchar('?');     break;
+    }
+
+    // Permissions
+    for(i = 0; i < strlen(Permissions); i++)
+        putchar((mode & 1 << i) ? Permissions[i] : '-');
+
+    // Everything else
+    printf("\n %4hu %4hu %4hu %6u %26s %s", 
+            links, gid, uid, size, time, name);
+
+    // Trace link
+    if(S_ISLNK(ip->i_mode))
+        printf(" -> %s", (char*)ip->i_block);
+}
+
+void list_dir(MINODE* mip)
+{
+    int i;
+    int device = mip->dev;
+    int block_size = get_block_size(device);
+
+    INODE* ip = &mip->inode;
+    MINODE* cip = NULL;
+
+    //Check that dir is a directory
+    if (!S_ISDIR(ip->i_mode))
+    {
+        fprintf(stderr, "Not a directory\n");
+        return;
+    }
+
+    // For DIR inodes, assume that (the number of entries is small so that) only has
+    // 12 DIRECT data blocks. Therefore, search only the direct blocks for name[0].
+    for(i = 0; i < (ip->i_size / block_size); i++)
+    {
+        if (ip->i_block[i] == 0)
+            break;
+
+        u8* block = get_block(device, ip->i_block[i]);
+        u8* cp = block; 
+        DIR* dp = (DIR*)block;
+
+        while (cp < block + block_size)
+        {
+            char name[256];
+            strncpy(name, dp->name, dp->name_len);
+            name[dp->name_len] = 0;
+
+            cip = iget(device, dp->inode);
+            list_file(cip, name);
+            iput(cip);
+
+            cp += dp->rec_len;       // advance cp by rec_len BYTEs
+            dp = (DIR*)cp;           // pull dp along to the next record
+        } 
+    }
+}

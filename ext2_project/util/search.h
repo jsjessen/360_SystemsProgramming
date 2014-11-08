@@ -21,16 +21,26 @@
 #include <memory.h>
 #include <print.h>
 
+// Given the parent DIR (MINODE pointer) and myino, this function finds 
+// the name string of myino in the parent's data block. This is the SAME
+// as SEARCH() by myino, then copy its name string into myname[ ].
+int findmyname(MINODE *parent, int myino, char *myname);
+
+// For a DIR Minode, extract the inumbers of . and .. 
+// Read in 0th data block. The inumbers are in the first two dir entries.
+// CALLER MUST iput(mip)
+int findino(MINODE *mip, int *myino, MINODE *parentino);
+
 // Assumes the device uses the ext2 filesystem 
 // Given the file descriptor of an open device and target file's pathname
 // Searches through the device along pathname for target file 
-int search_fs(int device, char* pathname);
+int getino(int device, char* pathname);
 // Returns the inode number of target file if it exists
 // Returns -1 if the target file does not exist
 
 // Given a the inode number of a directory
 // Searches through the directory for the target file
-int search_dir(int device, int dir, char* target);
+int search(MINODE *mip, char* target);
 // Returns the target file's inode number if it exists
 // Returns -1 if the target file does not exist
 

@@ -9,6 +9,8 @@
 #include <global.h>
 #include <print.h>
 #include <util.h>
+#include <search.h>
+
 
 int (*get_cmd(char* cmd_name))(int, char**);
 
