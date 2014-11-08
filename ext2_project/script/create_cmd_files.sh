@@ -4,7 +4,7 @@ cd ..
 
 cmd0=(menu.c quit.c)
 
-cmd1=(list_dir.c change_dir.c pwd.c mkdir.c rmdir.c echo.c link.c unlink.c symlink.c rm.c chmod.c chown.c stat.c echo.c)
+cmd1=(ls.c cd.c pwd.c mkdir.c rmdir.c creat.c link.c unlink.c symlink.c rm.c chmod.c chown.c stat.c touch.c)
 
 cmd2=(open.c close.c pfd.c lseek.c access.c read.c write.c cat.c cp.c mv.c)
 

@@ -6,25 +6,55 @@
 
 #include <stdio.h>
 
-#include "global.h"
-#include "input.h"
-#include "print.h"
-#include "cmd.h"
-#include "memory.h"
+#include <global.h>
+#include <input.h>
+#include <print.h>
+#include <cmd.h>
+#include <memory.h>
 
 MINODE *root;
 PROC *running; // Points at the PROC structure of the current running process
-               // Every file operation is performed by the current running process
+// Every file operation is performed by the current running process
 
 MINODE    MemoryInodeTable[NMINODES];
 MOUNT     MountTable[NMOUNT];
 PROC      ProcessTable[NPROC]; 
 OPEN_FILE OpenFileTable[NOFT];
 
+// ------------------------------------------------------------------------------
+// PROC *running           MINODE *root                          
+//       |                          |              
+//       |                          |               ||*********************
+//       V                          |  MINODE       || 
+//     PROC[0]                      V minode[100]   ||         Disk dev
+//  =============  |-pointerToCWD-> ============    ||   ==================
+//  |nextProcPtr|  |                |  INODE   |    ||   |     INODEs   
+//  |pid = 1    |  |                | -------  |    ||   ================== 
+//  |uid = 0    |  |                | (dev,2)  |    || 
+//  |cwd --------->|                | refCount |    ||*********************
+//  |           |                   | dirty    |
+//  |fd[10]     |                   |          |         
+//  | ------    |                   |          |
+//  | - ALL 0 - |                   |==========|         
+//  | ------    |                   |  INODE   |          
+//  | ------    |                   | -------  |   
+//  =============                   | (dev,ino)|   
+//                                  |  refCount|  
+//    PROC[1]                       |  dirty   |   
+//     pid=2                        |          | 
+//     uid=1                        |==========|  
+//     cwd ----> root minode        
+// -----------------------------------------------------------------------------
+
 // Initialize the data file system structures
 void initialize_fs()
 {
     int i = 0;
+
+    PROC* pp       = NULL; 
+    OPEN_FILE* ofp = NULL; 
+    MINODE* mip    = NULL; 
+    MOUNT *mp      = NULL; 
 
     printf("initialize_fs()\n");
 
@@ -33,7 +63,7 @@ void initialize_fs()
     {
         int j = 0;
 
-        PROC* pp = &ProcessTable[i];
+        pp = &ProcessTable[i];
 
         pp->pid    = i;
         pp->uid    = 0;
@@ -49,7 +79,7 @@ void initialize_fs()
     // Initialize all open files
     for(i = 0; i < NOFT; i++)
     {
-        OPEN_FILE* ofp = &OpenFileTable[i];
+        ofp = &OpenFileTable[i];
 
         ofp->mode       = 0;
         ofp->refCount   = 0;
@@ -60,7 +90,7 @@ void initialize_fs()
     // Initialize all memory-inodes
     for(i = 0; i < NMINODES; i++)
     {
-        MINODE* mip = &MemoryInodeTable[i];
+        mip = &MemoryInodeTable[i];
 
         mip->dev       = 0;
         mip->ino       = 0;
@@ -73,7 +103,7 @@ void initialize_fs()
     // Initialize all mounts
     for(i = 0; i < NMOUNT; i++)
     {
-        MOUNT *mp = &MountTable[i];
+        mp = &MountTable[i];
 
         mp->dev        = 0;
         mp->nblocks    = 0;
@@ -179,6 +209,8 @@ int main(int argc, char* argv[])
     running->cwd = root; root->refCount++;
     running->uid = SUPER_USER;
     printf("root refCount = %d\n", root->refCount);
+
+    // Create Process1 with uid = 1 for non-super user
 
     while(true)
     {

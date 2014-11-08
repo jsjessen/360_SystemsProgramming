@@ -6,8 +6,9 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "global.h"
-#include "print.h"
+#include <global.h>
+#include <print.h>
+#include <util.h>
 
 int (*get_cmd(char* cmd_name))(int, char**);
 
