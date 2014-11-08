@@ -18,9 +18,9 @@
 #include <sys/types.h>
 #include <ext2fs/ext2_fs.h>
 
-#include "global.h"
-#include "util.h"
-#include "transfer.h"
+#include <global.h>
+#include <util.h>
+#include <transfer.h>
 
 // Input an array of pointers like char* argv[]
 // Goes through and frees each element

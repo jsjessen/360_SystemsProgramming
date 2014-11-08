@@ -18,8 +18,7 @@
 #include <sys/types.h>
 #include <ext2fs/ext2_fs.h>
 
-#include "global.h"
-#include "type.h"
+#include <global.h>
 
 u8*     get_block(int device, int block);
 SUPER*  get_super(int device); 

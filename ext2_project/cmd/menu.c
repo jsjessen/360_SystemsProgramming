@@ -1,3 +1,5 @@
+#include <cmd.h>
+
 int menu(int argc, char* argv[])
 {
     print_title("Menu", '=');

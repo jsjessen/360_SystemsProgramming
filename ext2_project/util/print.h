@@ -25,9 +25,9 @@
 #include <time.h>
 #include <ext2fs/ext2_fs.h>
 
-#include "global.h"
-#include "util.h"
-#include "transfer.h"
+#include <global.h>
+#include <util.h>
+#include <transfer.h>
 
 // Printing Bitmaps
 #define GROUP_SIZE 8

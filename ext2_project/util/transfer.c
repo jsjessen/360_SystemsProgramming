@@ -279,10 +279,17 @@ int get_inodes_per_block(int device)
 {
     SUPER* sp = get_super(device);
 
+    int inodes_per_block = 0;
+
     int block_size = 1024 << sp->s_log_block_size;
     int inode_size = sp->s_inode_size;
 
-    int inodes_per_block = block_size / inode_size;
+    if(inode_size <= 0)
+    {
+        fprintf(stderr, "transfer.c: get_inodes_per_block(): inode_size = %d\n", inode_size);
+        return -1;
+    }
+    inodes_per_block = block_size / inode_size;
 
     free(sp);
     return inodes_per_block;

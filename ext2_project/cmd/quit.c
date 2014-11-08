@@ -1,5 +1,4 @@
-#include <global.h>
-#include <transfer.h>
+#include <cmd.h>
 
 int quit(int argc, char* argv[])
 {

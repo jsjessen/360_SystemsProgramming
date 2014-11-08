@@ -18,7 +18,7 @@
 #include <sys/types.h>
 #include <ext2fs/ext2_fs.h>
 
-#include "global.h"
+#include <global.h>
 
 int  test_bit (u8*  buf, int bit);
 void set_bit  (u8** buf, int bit);

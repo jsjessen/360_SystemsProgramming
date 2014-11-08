@@ -4,9 +4,6 @@
 // CptS 360
 
 #include "util.h"
-#include "transfer.h"
-#include "type.h"
-#include "global.h"
 
 int test_bit(u8* buf, int bit)
 {

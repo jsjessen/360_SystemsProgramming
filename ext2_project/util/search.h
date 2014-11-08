@@ -15,11 +15,11 @@
 #include <stdio.h>
 #include <sys/stat.h>
 
-#include "global.h"
-#include "input.h"
-#include "transfer.h"
-#include "memory.h"
-#include "print.h"
+#include <global.h>
+#include <input.h>
+#include <transfer.h>
+#include <memory.h>
+#include <print.h>
 
 // Assumes the device uses the ext2 filesystem 
 // Given the file descriptor of an open device and target file's pathname

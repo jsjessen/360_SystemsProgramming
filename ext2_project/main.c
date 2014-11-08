@@ -222,7 +222,7 @@ int main(int argc, char* argv[])
 
         do // Prompt user for input
         { 
-            printf("[%d %s]$ ", running->uid, my_pwd(cmd_argc, cmd_argv)); 
+            printf("[%d %s]$ ", running->uid, "cwd"); 
         }     
         while(!(input = get_input()));   // Get user input
 

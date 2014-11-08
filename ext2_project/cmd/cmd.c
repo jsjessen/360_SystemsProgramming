@@ -2,41 +2,41 @@
 
 // General
 #include <menu.c>
-#include <my_sync.c>
 #include <quit.c>
 
 // Level 1
-#include <my_ls.c>
-#include <my_cd.c>
-#include <my_pwd.c>
-#include <my_mkdir.c>
-#include <my_rmdir.c>
-#include <my_creat.c>
-#include <my_link.c>
-#include <my_unlink.c>
-#include <my_symlink.c>
-#include <my_rm.c>
-#include <my_chmod.c>
-#include <my_chown.c>
-#include <my_stat.c>
-#include <my_touch.c>
+#include <ls.c>
+#include <cd.c>
+#include <pwd.c>
+#include <mkdir.c>
+#include <rmdir.c>
+#include <creat.c>
+#include <link.c>
+#include <unlink.c>
+#include <symlink.c>
+#include <rm.c>
+#include <chmod.c>
+#include <chown.c>
+#include <stat.c>
+#include <touch.c>
 
 // Level 2
-#include <my_open.c>
-#include <my_close.c>
-#include <my_pfd.c>
-#include <my_lseek.c>
-#include <my_access.c>
-#include <my_read.c>
-#include <my_write.c>
-#include <my_cat.c>
-#include <my_cp.c>
-#include <my_mv.c>
+#include <open.c>
+#include <close.c>
+#include <pfd.c>
+#include <lseek.c>
+#include <access.c>
+#include <read.c>
+#include <write.c>
+#include <cat.c>
+#include <cp.c>
+#include <mv.c>
 
 // Level 3
-#include <my_mount.c>
-#include <my_umount.c>
-#include <my_cs.c>
+#include <mount.c>
+#include <umount.c>
+#include <cs.c>
+#include <sync.c>
 
 
 typedef struct command
