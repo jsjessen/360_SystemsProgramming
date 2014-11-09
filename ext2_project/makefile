@@ -1,7 +1,7 @@
 
 PROG = my_ext2fs
 
-LAB  = LAB6
+LAB  = LAB7
 
 #
 # 'make'		compiles everything
@@ -85,13 +85,14 @@ $(OBJ_DIR)/%.o : %.c
 
 
 clean :
-	@$(RM) -f $(PROG) $(OBJ_DIR)/*.o *~ 
+	@$(RM) -f $(PROG) $(PROG).tar.gz $(OBJ_DIR)/*.o *~ 
 
 tar :
-	tar -zcfv $(PROG).tar.gz $(UTIL_DIR) $(CMD_DIR) *.c *.h makefile 
+	tar -zcf $(PROG).tar.gz $(UTIL_DIR) $(CMD_DIR) *.c *.h makefile 
 
-submit : tar
+submit : tar 
 	script/upload.sh $(LAB) $(PROG).tar.gz
+	@$(RM) -f $(PROG).tar.gz
 
 # The makedepend program reads each sourcefile in sequence and parses it like a C-preprocessor, 
 # processing all #include, #define, #undef, #ifdef, #ifndef, #endif, #if, #elif and #else directives 
