@@ -108,7 +108,7 @@ int getino(int device, char* pathname)
         //else
         //    printf("Find %s in / \n", name[i]);
 
-        if((ino = search(iget(device, ino), name[i])) < 0)
+        if((ino = search(iget(device, ino), name[i])) <= 0)
         {
             //printf("no such file or directory\n");
             free_array(name);

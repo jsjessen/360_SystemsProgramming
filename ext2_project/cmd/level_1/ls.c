@@ -6,10 +6,11 @@
 // ls a/b/c e/f/g /h/i/j
 int my_ls(int argc, char* argv[])
 {
+    int i = 0;
     int ino = 0;
     int dev = running->cwd->dev;
     MINODE *mip = NULL;
-
+    
     // If given no path, ls cwd
     if(argc < 2)
     {
@@ -18,7 +19,6 @@ int my_ls(int argc, char* argv[])
     }
 
     // ls each path given by user
-    int i = 0;
     while(argv[++i])
     {
         // If printing multiple lists
