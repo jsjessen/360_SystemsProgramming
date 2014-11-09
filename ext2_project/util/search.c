@@ -95,30 +95,25 @@ int findino(MINODE *mip, int *myino, MINODE *parentino)
 int getino(int device, char* pathname)
 {
     int i = 0;
+    int ino = 0;
+    
     char** name = parse(pathname, "/");
-    int ino = ROOT_INODE;
 
-    //printf("\nSearching for %s\n", pathname);
+    // Absolute or Relative?
+    if(pathname[0] == '/')
+        ino = search(root, name[0]); // Absolute: start at root
+    else
+        ino = search(running->cwd, name[0]); // Relative: start at cwd
 
-    while(name[i])
+    // Continue search
+    while(name[++i])
     {
-        //putchar('\n');
-        //if(i)
-        //    printf("Find %s in %s\n", name[i], name[i - 1]);
-        //else
-        //    printf("Find %s in / \n", name[i]);
-
         if((ino = search(iget(device, ino), name[i])) <= 0)
         {
-            //printf("no such file or directory\n");
             free_array(name);
             return -1;
         }
-        //print_divider('-');
-
-        i++;
     }
-    //printf("\nFound!\n");
 
     free_array(name);
     return ino;
