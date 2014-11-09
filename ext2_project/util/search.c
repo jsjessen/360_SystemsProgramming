@@ -5,8 +5,21 @@
 
 #include "search.h"
 
+char* find_name(MINODE *me)
+{
+    int ino = 0;
+    char* myname = NULL;
 
-int findmyname(MINODE *parent, int myino, char *myname)
+    MINODE* parent = NULL;
+
+    findino(me, &ino, parent);
+    findmyname(parent, ino, &myname);
+
+    iput(parent);
+    return myname;
+}
+
+int findmyname(MINODE *parent, int myino, char **myname)
 {
     int i;
     int device = parent->dev;
@@ -47,8 +60,8 @@ int findmyname(MINODE *parent, int myino, char *myname)
             if(dp->inode == myino)
             {
                 //printf(" <%.*s here", 15 - dp->name_len, "---------------");
-                myname = (char*)malloc(strlen(name) + 1);
-                strcpy(myname, name);
+                *myname = (char*)malloc(strlen(name) + 1);
+                strcpy(*myname, name);
             }
             putchar('\n');
 
@@ -101,9 +114,9 @@ int getino(int device, char* pathname)
 
     // Absolute or Relative?
     if(pathname[0] == '/')
-        ino = search(root, name[0]); // Absolute: start at root
+        ino = search(root, name[0]);        // Absolute: start at root
     else
-        ino = search(running->cwd, name[0]); // Relative: start at cwd
+        ino = search(running->cwd, name[0]);// Relative: start at cwd
 
     // Continue search
     while(name[++i])

@@ -21,10 +21,14 @@
 #include <memory.h>
 #include <print.h>
 
+
+// Given an MINODE pointer this function finds its name
+char* find_name(MINODE *me);
+
 // Given the parent DIR (MINODE pointer) and myino, this function finds 
 // the name string of myino in the parent's data block. This is the SAME
 // as SEARCH() by myino, then copy its name string into myname[ ].
-int findmyname(MINODE *parent, int myino, char *myname);
+int findmyname(MINODE *parent, int myino, char **myname);
 
 // For a DIR Minode, extract the inumbers of . and .. 
 // Read in 0th data block. The inumbers are in the first two dir entries.

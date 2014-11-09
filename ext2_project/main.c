@@ -220,9 +220,11 @@ int main(int argc, char* argv[])
         int    cmd_argc = 0;
         int  (*cmd_fptr)(int, char**) = NULL; 
 
+        char* cwd = find_name(running->cwd);
+
         do // Prompt user for input
         { 
-            printf("[%d %s]$ ", running->uid, "cwd"); 
+            printf("[uid:%d %s]$ ", running->uid, cwd); 
         }     
         while(!(input = get_input()));   // Get user input
 
@@ -234,6 +236,7 @@ int main(int argc, char* argv[])
         cmd_fptr = get_cmd(cmd_argv[0]); // Get the command's function pointer
         cmd_fptr(cmd_argc, cmd_argv);    // Execute the command with parameters
 
+        free(cwd);
         free(input);
         free_array(cmd_argv);
     }
