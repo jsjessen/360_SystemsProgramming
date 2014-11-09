@@ -82,45 +82,27 @@ tar :
 submit : tar
 	script/upload.sh $(LAB) $(PROG).tar.gz
 
+ 
+###### Dependencies ######
+main.o		: global.h input.h print.h memory.h cmd.h
+cmd.o		: global.h print.h util.h search.h
+util.o		: global.h
+print.o		: global.h util.h transfer.h
+memory.o	: global.h util.h transfer.h
+transfer.o	: global.h
+search.o	: global.h input.h transfer.h memory.h print.h
+input.o		: 
+
+
 # The makedepend program reads each sourcefile in sequence and parses it like a C-preprocessor, 
 # processing all #include, #define, #undef, #ifdef, #ifndef, #endif, #if, #elif and #else directives 
 # so that it can correctly tell which #include, directives would be used in a compilation. 
 # Any #include, directives can reference files having other #include directives, 
 # and parsing will occur in these files as well.  
-depend : 
-	makedepend -- $(CFLAGS) -I/usr/include/linux/ -I/usr/lib/gcc/i686-redhat-linux/4.8.3/include/ -- $(SOURCE)
+
+# Not working
+
+#depend : 
+	#makedepend -- $(CFLAGS) -I/usr/include/linux/ -I/usr/lib/gcc/i686-redhat-linux/4.8.3/include/ -- $(SOURCE)
 
 # DO NOT DELETE THIS LINE -- make depend needs it
-
-main.o: /usr/include/stdio.h /usr/include/features.h
-main.o: /usr/include/stdc-predef.h /usr/include/sys/cdefs.h
-main.o: /usr/include/bits/wordsize.h /usr/include/gnu/stubs.h
-main.o: /usr/include/gnu/stubs-32.h /usr/include/linux/stddef.h
-main.o: /usr/include/bits/types.h /usr/include/bits/typesizes.h
-main.o: /usr/include/libio.h /usr/include/_G_config.h /usr/include/wchar.h
-main.o: /usr/lib/gcc/i686-redhat-linux/4.8.3/include/stdarg.h
-main.o: /usr/include/bits/stdio_lim.h /usr/include/bits/sys_errlist.h
-main.o: ./global.h /usr/include/linux/fcntl.h /usr/include/asm/fcntl.h
-main.o: /usr/include/asm-generic/fcntl.h /usr/include/linux/types.h
-main.o: /usr/include/asm/types.h /usr/include/asm-generic/types.h
-main.o: /usr/include/asm-generic/int-ll64.h /usr/include/asm/bitsperlong.h
-main.o: /usr/include/asm-generic/bitsperlong.h
-main.o: /usr/include/linux/posix_types.h /usr/include/linux/stddef.h
-main.o: /usr/include/asm/posix_types.h /usr/include/asm/posix_types_32.h
-main.o: /usr/include/asm-generic/posix_types.h /usr/include/ext2fs/ext2_fs.h
-main.o: /usr/include/ext2fs/ext2_types.h
-main.o: /usr/include/ext2fs/ext2_types-i386.h /usr/include/libgen.h
-main.o: /usr/include/linux/string.h /usr/include/sys/stat.h
-main.o: /usr/include/linux/time.h /usr/include/bits/stat.h util/input.h
-main.o: /usr/include/stdlib.h /usr/include/bits/waitflags.h
-main.o: /usr/include/bits/waitstatus.h /usr/include/endian.h
-main.o: /usr/include/bits/endian.h /usr/include/bits/byteswap.h
-main.o: /usr/include/bits/byteswap-16.h /usr/include/sys/types.h
-main.o: /usr/include/sys/select.h /usr/include/bits/select.h
-main.o: /usr/include/bits/sigset.h /usr/include/bits/time.h
-main.o: /usr/include/sys/sysmacros.h /usr/include/alloca.h
-main.o: /usr/include/bits/stdlib-float.h /usr/include/ctype.h
-main.o: /usr/include/xlocale.h util/print.h util/util.h
-main.o: /usr/include/linux/unistd.h /usr/include/asm/unistd.h
-main.o: /usr/include/asm/unistd_32.h util/transfer.h util/memory.h cmd/cmd.h
-main.o: util/search.h

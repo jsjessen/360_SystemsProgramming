@@ -7,6 +7,7 @@ int recursive_pwd(MINODE* mip, char** path, int size)
 
     MINODE* parent = NULL;
 
+    printf("check root\n");
     if(mip == root)
     {
         iput(mip);
@@ -15,10 +16,11 @@ int recursive_pwd(MINODE* mip, char** path, int size)
     }
 
     // Find my inode number and parent MINODE
+    printf("findino\n");
     findino(mip, &ino, parent);
-    iput(mip);
 
     // Recurse
+    printf("recurse\n");
     if(recursive_pwd(parent, path, size) != 0)
     {
         iput(parent);
@@ -26,6 +28,7 @@ int recursive_pwd(MINODE* mip, char** path, int size)
     }
 
     // Add name of current dir
+    printf("findmyname\n");
     findmyname(parent, ino, &myname);
 
     // Curent + New + / + null + root(/)
@@ -42,8 +45,10 @@ int recursive_pwd(MINODE* mip, char** path, int size)
     }
 
     // Add name of current dir to path
+    printf("path: %s\n", *path);
     strcat(*path, myname);
     strcat(*path, "/");
+    printf("path: %s\n", *path);
 
     iput(parent);
     free(myname);
@@ -63,7 +68,6 @@ int my_pwd(int argc, char* argv[])
         return 0;
     }
 
-    running->cwd->refCount++;
     recursive_pwd(running->cwd, &path, initial_size);
     puts(path);
 

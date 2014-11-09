@@ -125,6 +125,12 @@ MINODE *iget(int device, int inode_number)
 
 void iput(MINODE *mip)
 {
+    if(!mip)
+    {
+        fprintf(stderr,"iput: null mip\n");
+        return;
+    }
+
     // Decrement refCount
     // Only write to MemoryInode to disk if
     // No processes are using it and it has been modified

@@ -10,6 +10,9 @@ char* find_name(MINODE *me)
     int ino = 0;
     char* myname = NULL;
 
+    if(me == root)
+        return "/";
+
     MINODE* parent = NULL;
 
     findino(me, &ino, parent);
@@ -21,13 +24,23 @@ char* find_name(MINODE *me)
 
 int findmyname(MINODE *parent, int myino, char **myname)
 {
-    int i;
-    int device = parent->dev;
+    int i = 0;;
+    int device = 0;
     int target_ino= 0;
-    int block_size = get_block_size(device);
-    INODE* ip = &parent->inode;
+    int block_size = 0;
+    INODE* ip = NULL;
 
-    //Check that parent is a directory
+    if(!parent)
+    {
+        fprintf(stderr, "findmyname: null parent\n");
+        return -1;
+    }
+
+    device = parent->dev;
+    block_size = get_block_size(device);
+    ip = &parent->inode;
+
+        //Check that parent is a directory
     if (!S_ISDIR(ip->i_mode))
     {
         fprintf(stderr, "Not a directory\n");
@@ -75,10 +88,19 @@ int findmyname(MINODE *parent, int myino, char **myname)
     return target_ino;   
 }
 
-int findino(MINODE *mip, int *myino, MINODE *parentino)
+int findino(MINODE *mip, int *myino, MINODE *parent)
 {
-    int device = mip->dev;
-    INODE* ip = &mip->inode;
+    int device = 0;
+    INODE* ip = NULL;
+
+    if(!mip)
+    {
+        fprintf(stderr, "findino: null mip\n");
+        return -1;
+    }
+
+    device = mip->dev;
+    ip = &mip->inode;
 
     //Check that mip is a directory
     if (!S_ISDIR(ip->i_mode))
@@ -96,7 +118,7 @@ int findino(MINODE *mip, int *myino, MINODE *parentino)
     cp += dp->rec_len;       // advance cp by rec_len BYTEs
     dp = (DIR*)cp;           // pull dp along to the next record
 
-    parentino =iget(device, dp->inode);
+    parent = iget(device, dp->inode);
 
     free(block);
 

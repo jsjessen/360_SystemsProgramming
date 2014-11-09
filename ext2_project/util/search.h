@@ -33,7 +33,7 @@ int findmyname(MINODE *parent, int myino, char **myname);
 // For a DIR Minode, extract the inumbers of . and .. 
 // Read in 0th data block. The inumbers are in the first two dir entries.
 // CALLER MUST iput(mip)
-int findino(MINODE *mip, int *myino, MINODE *parentino);
+int findino(MINODE *mip, int *myino, MINODE *parent);
 
 // Assumes the device uses the ext2 filesystem 
 // Given the file descriptor of an open device and target file's pathname
