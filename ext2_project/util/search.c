@@ -32,21 +32,21 @@ int findmyname(MINODE *parent, int myino, char *myname)
         u8* cp = block; 
         DIR* dp = (DIR*)block;
 
-        print_divider('-');
-        printf(" Inode #   Record Length   Name Length   Name \n");
-        print_divider('-');
+        //print_divider('-');
+        //printf(" Inode #   Record Length   Name Length   Name \n");
+        //print_divider('-');
 
         while (cp < block + block_size)
         {
             char name[256];
             strncpy(name, dp->name, dp->name_len);
             name[dp->name_len] = 0;
-            printf(" %4d          %4d          %4d        %s",
-                    dp->inode, dp->rec_len, dp->name_len, name);
+           // printf(" %4d          %4d          %4d        %s",
+           //         dp->inode, dp->rec_len, dp->name_len, name);
 
             if(dp->inode == myino)
             {
-                printf(" <%.*s here", 15 - dp->name_len, "---------------");
+                //printf(" <%.*s here", 15 - dp->name_len, "---------------");
                 myname = (char*)malloc(strlen(name) + 1);
                 strcpy(myname, name);
             }
@@ -98,27 +98,27 @@ int getino(int device, char* pathname)
     char** name = parse(pathname, "/");
     int ino = ROOT_INODE;
 
-    printf("\nSearching for %s\n", pathname);
+    //printf("\nSearching for %s\n", pathname);
 
     while(name[i])
     {
-        putchar('\n');
-        if(i)
-            printf("Find %s in %s\n", name[i], name[i - 1]);
-        else
-            printf("Find %s in / \n", name[i]);
+        //putchar('\n');
+        //if(i)
+        //    printf("Find %s in %s\n", name[i], name[i - 1]);
+        //else
+        //    printf("Find %s in / \n", name[i]);
 
         if((ino = search(iget(device, ino), name[i])) < 0)
         {
-            printf("\nCouldn't find: %s \n", name[i]);
+            //printf("no such file or directory\n");
             free_array(name);
             return -1;
         }
-        print_divider('-');
+        //print_divider('-');
 
         i++;
     }
-    printf("\nFound!\n");
+    //printf("\nFound!\n");
 
     free_array(name);
     return ino;
@@ -151,24 +151,24 @@ int search(MINODE *mip, char* target)
         u8* cp = block; 
         DIR* dp = (DIR*)block;
 
-        print_divider('-');
-        printf(" Inode #   Record Length   Name Length   Name \n");
-        print_divider('-');
+        //print_divider('-');
+        //printf(" Inode #   Record Length   Name Length   Name \n");
+        //print_divider('-');
 
         while (cp < block + block_size)
         {
             char name[256];
             strncpy(name, dp->name, dp->name_len);
             name[dp->name_len] = 0;
-            printf(" %4d          %4d          %4d        %s",
-                    dp->inode, dp->rec_len, dp->name_len, name);
+            //printf(" %4d          %4d          %4d        %s",
+            //        dp->inode, dp->rec_len, dp->name_len, name);
 
             if (strcmp(name, target) == 0)
             {
-                printf(" <%.*s here", 15 - dp->name_len, "---------------");
+                //printf(" <%.*s here", 15 - dp->name_len, "---------------");
                 target_ino = dp->inode;
             }
-            putchar('\n');
+            //putchar('\n');
 
             cp += dp->rec_len;       // advance cp by rec_len BYTEs
             dp = (DIR*)cp;           // pull dp along to the next record

@@ -301,6 +301,7 @@ void list_file(MINODE* mip, char* name)
     u16 gid = ip->i_gid;
     u32 size = ip->i_size;
     char* time = ctime((time_t*)&ip->i_mtime);
+    time[strlen(time) - 1] = 0;
 
     static const char* Permissions = "rwxrwxrwx";
 
@@ -320,12 +321,14 @@ void list_file(MINODE* mip, char* name)
         putchar((mode & 1 << i) ? Permissions[i] : '-');
 
     // Everything else
-    printf("\n %4hu %4hu %4hu %6u %26s %s", 
+    printf("%4hu %4hu %4hu %8u %26s  %s", 
             links, gid, uid, size, time, name);
 
     // Trace link
     if(S_ISLNK(ip->i_mode))
         printf(" -> %s", (char*)ip->i_block);
+
+    putchar('\n');
 }
 
 void list_dir(MINODE* mip)

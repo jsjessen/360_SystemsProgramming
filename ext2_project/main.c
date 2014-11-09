@@ -187,7 +187,7 @@ void mount_root(char* device_name)
 
 int main(int argc, char* argv[])
 {
-    char* device = "disk"; //default
+    char* device = "disk/fdimage"; //default
 
     if (argc > 2)
     {
@@ -228,7 +228,7 @@ int main(int argc, char* argv[])
 
         cmd_argv = parse(input, " ");    // Parse input into cmd argv[]
 
-        while(cmd_argv[cmd_argc + 1])    // Determine cmd argc
+        while(cmd_argv[cmd_argc])    // Determine cmd argc
         { cmd_argc++; } 
 
         cmd_fptr = get_cmd(cmd_argv[0]); // Get the command's function pointer
