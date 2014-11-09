@@ -5,28 +5,29 @@
 
 #include "search.h"
 
-char* find_name(MINODE *me)
+char* find_name(MINODE *mip)
 {
-    int ino = 0;
-    char* myname = NULL;
+    int my_ino = 0;
+    int parent_ino = 0;
+    char* my_name = NULL;
+    MINODE* parent_mip = NULL;
 
-    if(me == root)
-        return "/";
+    findino(mip, &my_ino, &parent_ino);
+    parent_mip = iget(running->cwd->dev, parent_ino);
+    findmyname(parent_mip, my_ino, &my_name);
 
-    MINODE* parent = NULL;
+    if(mip == root)
+        strcpy(my_name, "/");
 
-    findino(me, &ino, parent);
-    findmyname(parent, ino, &myname);
-
-    iput(parent);
-    return myname;
+    iput(parent_mip);
+    return my_name;
 }
 
 int findmyname(MINODE *parent, int myino, char **myname)
 {
     int i = 0;;
     int device = 0;
-    int target_ino= 0;
+    int target_ino= 4;
     int block_size = 0;
     INODE* ip = NULL;
 
@@ -40,7 +41,7 @@ int findmyname(MINODE *parent, int myino, char **myname)
     block_size = get_block_size(device);
     ip = &parent->inode;
 
-        //Check that parent is a directory
+    //Check that parent is a directory
     if (!S_ISDIR(ip->i_mode))
     {
         fprintf(stderr, "Not a directory\n");
@@ -67,8 +68,8 @@ int findmyname(MINODE *parent, int myino, char **myname)
             char name[256];
             strncpy(name, dp->name, dp->name_len);
             name[dp->name_len] = 0;
-           // printf(" %4d          %4d          %4d        %s",
-           //         dp->inode, dp->rec_len, dp->name_len, name);
+            // printf(" %4d          %4d          %4d        %s",
+            //         dp->inode, dp->rec_len, dp->name_len, name);
 
             if(dp->inode == myino)
             {
@@ -76,7 +77,7 @@ int findmyname(MINODE *parent, int myino, char **myname)
                 *myname = (char*)malloc(strlen(name) + 1);
                 strcpy(*myname, name);
             }
-            putchar('\n');
+            //putchar('\n');
 
             cp += dp->rec_len;       // advance cp by rec_len BYTEs
             dp = (DIR*)cp;           // pull dp along to the next record
@@ -88,7 +89,7 @@ int findmyname(MINODE *parent, int myino, char **myname)
     return target_ino;   
 }
 
-int findino(MINODE *mip, int *myino, MINODE *parent)
+int findino(MINODE *mip, int *myino, int *parent)
 {
     int device = 0;
     INODE* ip = NULL;
@@ -118,10 +119,9 @@ int findino(MINODE *mip, int *myino, MINODE *parent)
     cp += dp->rec_len;       // advance cp by rec_len BYTEs
     dp = (DIR*)cp;           // pull dp along to the next record
 
-    parent = iget(device, dp->inode);
+    *parent = dp->inode;
 
     free(block);
-
     return 0;
 }
 
@@ -131,7 +131,7 @@ int getino(int device, char* pathname)
 {
     int i = 0;
     int ino = 0;
-    
+
     char** name = parse(pathname, "/");
 
     // Absolute or Relative?

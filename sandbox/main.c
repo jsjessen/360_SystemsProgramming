@@ -1,13 +1,16 @@
 #include <stdio.h>
-#include <sys/types.h>
-#include <unistd.h>
 
-//#define u8 unsigned char
-typedef unsigned char u8;
-
-int main(int argc, char* argv[], char* env[])
+void function(int* num1,int* num2,int* num3)
 {
-    u8 byte = 3;
+    *num1 = 10;
+    *num2 = 20;
+    *num3 = 30;
+}
 
-    printf("%d \n", byte);
+int main()
+{
+    int one=1, two=2, three=3;
+    function(&one, &two, &three);
+    printf("%d %d %d", one,two,three);
+    return 0;
 }

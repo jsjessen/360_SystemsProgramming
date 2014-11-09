@@ -12,8 +12,9 @@ int my_cd(int argc, char* argv[])
     // If no arg, cd to root
     if(argc < 2)
     {
-        iput(running->cwd);
         running->cwd = root;
+        running->cwd->refCount++;
+        return 1;
     }
 
     // Get dir inode in memory
@@ -30,6 +31,7 @@ int my_cd(int argc, char* argv[])
 
     iput(running->cwd);
     running->cwd = mip;
+    running->cwd->refCount++;
 
     return 1;
 }

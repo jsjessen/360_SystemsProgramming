@@ -60,18 +60,29 @@ OBJECTS = $(SOURCE:.c=.o)
 OBJPROG = $(addprefix $(OBJ_DIR)/, $(PROG))
 
 # make
-all : $(OBJPROG)
+all : clean $(OBJPROG)
 
 $(OBJECTS) : | $(OBJ_DIR)
 
 $(OBJ_DIR) :
 	@mkdir -p $@
 
+###### Dependencies ######
 $(OBJPROG) : $(addprefix $(OBJ_DIR)/, $(OBJECTS))
 	$(CC) $(CFLAGS) $^ $(LFLAGS) $(LIBS) -o $(PROG)
 
 $(OBJ_DIR)/%.o : %.c
 	$(CC) $(CFLAGS) -c $< -o $@
+
+#$(OBJ_DIR)/input.o	  : 
+#$(OBJ_DIR)/util.o	  : global.h
+#$(OBJ_DIR)/transfer.o : global.h
+#$(OBJ_DIR)/print.o	  : global.h util.h transfer.h
+#$(OBJ_DIR)/memory.o	  : global.h util.h transfer.h
+#$(OBJ_DIR)/main.o	  : global.h input.h print.h memory.h cmd.h
+#$(OBJ_DIR)/search.o	  : global.h input.h transfer.h memory.h print.h
+#$(OBJ_DIR)/cmd.o	  : global.h print.h util.h search.h $(CMD1_DIR)/%.c $(CMD1_DIR)/%.c $(CMD1_DIR)/%.c
+
 
 clean :
 	@$(RM) -f $(PROG) $(OBJ_DIR)/*.o *~ 
@@ -82,18 +93,6 @@ tar :
 submit : tar
 	script/upload.sh $(LAB) $(PROG).tar.gz
 
- 
-###### Dependencies ######
-main.o		: global.h input.h print.h memory.h cmd.h
-cmd.o		: global.h print.h util.h search.h
-util.o		: global.h
-print.o		: global.h util.h transfer.h
-memory.o	: global.h util.h transfer.h
-transfer.o	: global.h
-search.o	: global.h input.h transfer.h memory.h print.h
-input.o		: 
-
-
 # The makedepend program reads each sourcefile in sequence and parses it like a C-preprocessor, 
 # processing all #include, #define, #undef, #ifdef, #ifndef, #endif, #if, #elif and #else directives 
 # so that it can correctly tell which #include, directives would be used in a compilation. 
@@ -103,6 +102,6 @@ input.o		:
 # Not working
 
 #depend : 
-	#makedepend -- $(CFLAGS) -I/usr/include/linux/ -I/usr/lib/gcc/i686-redhat-linux/4.8.3/include/ -- $(SOURCE)
+#makedepend -- $(CFLAGS) -I/usr/include/linux/ -I/usr/lib/gcc/i686-redhat-linux/4.8.3/include/ -- $(SOURCE)
 
 # DO NOT DELETE THIS LINE -- make depend needs it
