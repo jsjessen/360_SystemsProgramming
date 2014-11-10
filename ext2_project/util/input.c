@@ -127,3 +127,40 @@ char** parse(const char* input, const char* delimiters)
     free(copy);
     return buf;
 }
+
+int parse_path(const char* path, char** dirname, char** basename)
+{
+    int i = 0;
+
+    if(path == NULL)
+        return 0;
+
+    i = strlen(path) - 1;
+
+    for(i = strlen(path) - 1; i >= 0 && path[i] != '/'; i--) {}
+    i++; // last '/' is the i-th char in path
+
+    if(i != 0)
+    {
+        // +1 for index -> # char, +1 for null char
+        if((*dirname = (char*)malloc((i + 2) * sizeof(char))) == NULL)
+        {
+            perror("input.c: parse_path(): malloc dirname");
+            return 0;
+        }
+        // CHECK CODE AFTER THIS POINT******************
+        strncpy(*dirname, path, i);
+        (*dirname)[i] = 0; 
+    }
+
+    if(i == 1 && strlen(path) ==  1)
+        return 0;
+
+    *basename = (char*)malloc(strlen(path + i) + 1);
+    if(*basename == NULL)
+        return -1; // memory allocation failed
+
+    strcpy(*basename, path + i);
+
+    return 0;
+}

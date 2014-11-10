@@ -37,4 +37,8 @@ char** parse(const char* input, const char* delimiters);
 //          output[2] = "arg2"
 //          output[3] =  NULL
 
+// Parses a path in dirname and basename
+int parse_path(const char* path, char** dirname, char** basename);
+
+
 #endif

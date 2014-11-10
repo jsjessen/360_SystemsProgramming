@@ -1,4 +1,5 @@
 #include <cmd.h>
+#include <string.h>
 
 
 int enter_name(MINODE *parent_mip, int my_ino, char *my_name)
@@ -130,6 +131,8 @@ int make_dir(MINODE* parent_mip, char* child_name)
     return 1;
 }
 
+
+
 int my_mkdir(int argc, char* argv[])
 {
     int i = 0;
@@ -145,18 +148,17 @@ int my_mkdir(int argc, char* argv[])
     {
         int device = running->cwd->dev;
 
+        int parent_ino = 0;
+
+        MINODE* parent_mip = NULL;
+
+        char* path = argv[i];
         char* parent_name = NULL;
         char* child_name  = NULL;
 
-        int parent_ino = 0;
-        int child_ino  = 0;
+        parse_path(path, &parent_name, &child_name);
 
-        MINODE* parent_mip = NULL;
-        MINODE* child_mip  = NULL;
-
-        printf("mkdir: creating directory '%s'\n", argv[i]);
-
-        // give name values
+        printf("mkdir: creating directory '%s'\n", path);
 
         parent_ino = getino(device, parent_name);
         parent_mip = iget(device, parent_ino);
@@ -165,7 +167,7 @@ int my_mkdir(int argc, char* argv[])
         if(!parent_mip)
         {
             fprintf(stderr, "mkdir: cannot create directory \
-                    '%s': No such file or directory\n", argv[i]);
+                    '%s': No such file or directory\n", path);
             return 0;
         }
 
@@ -173,15 +175,15 @@ int my_mkdir(int argc, char* argv[])
         if(!S_ISDIR(parent_mip->inode.i_mode))
         {
             fprintf(stderr, "mkdir: cannot create directory \
-                    '%s': Not a directory\n", argv[i]);
+                    '%s': Not a directory\n", path);
             return 0;
         }
 
         // Verify that child does not yet exist
-        if(getino(device, argv[i]) > 0)
+        if(getino(device, path) > 0)
         {
             fprintf(stderr, "mkdir: cannot create directory \
-                    '%s': File exists\n", argv[i]);
+                    '%s': File exists\n", path);
             return 0;
         }
 
