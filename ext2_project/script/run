@@ -1,0 +1,4 @@
+!#/user/bin
+
+mkfs.ext2 disk 1440
+my_ext2fs disk

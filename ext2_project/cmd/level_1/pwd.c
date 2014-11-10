@@ -7,7 +7,7 @@ int rpwd(MINODE* mip, char** path, int size)
     char* my_name = NULL;
     MINODE* parent_mip = NULL;
 
-    // Base case: check
+    // Base case: check if at root
     if(mip == root)
     {
         iput(mip);
@@ -27,18 +27,17 @@ int rpwd(MINODE* mip, char** path, int size)
         iput(mip);
         return 0;
     }
-
     // path = /a/b/.../<need to add my name here>
 
-    // Look in parent DIR for my name using my inode number
+    // Look in parent directory for my inode number to get my name
     findmyname(parent_mip, my_ino, &my_name);
 
     // path + my_name + / + null + root(/)
-    while(strlen(*path) + strlen(my_name) + 3 >= size)
+    while(strlen(*path) + strlen(my_name) + 3 > size)
     {
+        // Double size of path
         size += size;
 
-        // Double size of path
         if((*path = (char*)realloc(*path, size * sizeof(char))) == NULL)
         {
             iput(mip);
@@ -66,13 +65,6 @@ int my_pwd(int argc, char* argv[])
     int initial_size = 128; // DEBUG WITH LOWER VALUE
     char* path = NULL;
 
-    // Keep things simple if cwd is root
-    //if(running->cwd == root)
-    //{
-    //    printf("/\n");
-    //    return 1;
-    //}
-
     // Minimum: root(/) + null (to avoid multiple realloc checks)
     if(initial_size < 2)
         initial_size = 2;
@@ -84,11 +76,10 @@ int my_pwd(int argc, char* argv[])
         return 0;
     } 
 
-    // null char for strcat, otherwise it doesn't know location of end
+    // set first char to null for strcat (null = where to start cat)
     path[0] = 0;
-    path[1] = 0;
 
-    // rpwd assume mip was obtained with iget and iputs accordingly
+    // rpwd assumes mip was obtained with iget, iputs accordingly
     running->cwd->refCount++;
 
     if(rpwd(running->cwd, &path, initial_size))
