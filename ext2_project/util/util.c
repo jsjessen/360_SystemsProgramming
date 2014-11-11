@@ -31,3 +31,9 @@ void clear_bit(u8** buf, int bit)
 
     (*buf)[byte] &= ~(1 << bit);
 }
+
+int get_ideal_record_length(const int name_len)
+{
+    //     (4 * ((4 + 2 + 1 + 1 + name_len + 3) / 4))
+    return (4 * ((      8       + name_len + 3) / 4)); // Ideal
+}

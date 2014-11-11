@@ -91,6 +91,7 @@ void print_inode(int device, int inode_number)
     printf("gid                     =                    %4u\n", ip->i_gid);
     printf("size                    =                    %4u\n", ip->i_size);
     printf("links_count             =                    %4u\n", ip->i_links_count);
+    printf("i_blocks                =                    %4u\n", ip->i_blocks);
     printf("i_block[0]              =                    %4u\n", ip->i_block[0]);
     print_divider('-');
 

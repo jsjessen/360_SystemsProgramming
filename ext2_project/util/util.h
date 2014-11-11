@@ -24,5 +24,6 @@ int  test_bit (u8*  buf, int bit);
 void set_bit  (u8** buf, int bit);
 void clear_bit(u8** buf, int bit);
 
+int get_ideal_record_length(const int name_len);
 
 #endif
