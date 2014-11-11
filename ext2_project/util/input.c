@@ -5,7 +5,7 @@
 
 #include "input.h"
 
-static const int INITIAL_BUF_SIZE = 8;
+static const int INITIAL_BUF_SIZE = 64;
 
 
 // Get input from user in a controlled manner
@@ -131,36 +131,91 @@ char** parse(const char* input, const char* delimiters)
 int parse_path(const char* path, char** dirname, char** basename)
 {
     int i = 0;
+    int c = 0;
+
+    int dirname_start  = 0;
+    int dirname_end    = 0;
+    int dirname_len    = 0;
+
+    int basename_start = 0;
+    int basename_end   = 0;
+    int basename_len   = 0;
 
     if(path == NULL)
         return 0;
 
-    i = strlen(path) - 1;
+    //  path       dirname   basename
+    //  -----------------------------
+    //  /usr/lib   /usr      lib
+    //  /usr/      /         usr
+    //  usr        .         usr
+    //  /          /         /
+    //  .          .         .
+    //  ..         .         ..
 
-    for(i = strlen(path) - 1; i >= 0 && path[i] != '/'; i--) {}
-    i++; // last '/' is the i-th char in path
+    // DEBUG
+    printf("len = %d\n", strlen(path));
+    puts(path);
+    for(i = 0; i <= strlen(path); i++)
+        printf("%d", i);
+    putchar('\n');
 
-    if(i != 0)
+
+    i = strlen(path);
+    while(--i >= 0) // skips null char comparison
     {
-        // +1 for index -> # char, +1 for null char
-        if((*dirname = (char*)malloc((i + 2) * sizeof(char))) == NULL)
-        {
-            perror("input.c: parse_path(): malloc dirname");
-            return 0;
-        }
-        // CHECK CODE AFTER THIS POINT******************
-        strncpy(*dirname, path, i);
-        (*dirname)[i] = 0; 
+        c = path[i];
+
+        if(c != '/' && !isspace(c)) 
+            break;
     }
+    // /usr/0  len = 5
+    // 012345
+    // end = 4
+    // start = 1
+    // len = 3
+    // dirname = "usr"
+    basename_end = i + 1;
 
-    if(i == 1 && strlen(path) ==  1)
-        return 0;
+    i = basename_end;
+    while(--i >= 0) 
+    {
+        c = path[i];
 
-    *basename = (char*)malloc(strlen(path + i) + 1);
-    if(*basename == NULL)
-        return -1; // memory allocation failed
+        if(c == '/')
+            break;
+    }
+    basename_start = i + 1;
 
-    strcpy(*basename, path + i);
+    dirname_start = 0;
+    dirname_end = basename_start;
+
+    if(strcmp(path, ".") == 0 || strcmp(path, "..") == 0)
+        dirname_end = strlen(path);
+
+    if(dirname_end <= 0)
+        dirname_end = 1;
+    
+    basename_len = basename_end - basename_start;
+    dirname_len  = dirname_end  - dirname_start; 
+
+    *dirname  = (char*)malloc((dirname_len  + 1) * sizeof(char*));
+    *basename = (char*)malloc((basename_len + 1) * sizeof(char*));
+
+    if(dirname_end == 1 && path[0] != '/') 
+        strncpy(*dirname,  ".",  dirname_len);
+    else
+    strncpy(*dirname,  path  + dirname_start,  dirname_len);
+
+    strncpy(*basename, path + basename_start, basename_len);
+
+    // DEBUG
+    printf("dirname_start  = %d\n", dirname_start);
+    printf("dirname_end    = %d\n", dirname_end);
+    printf("dirname_len    = %d\n", dirname_len);
+    printf("basename_start = %d\n", basename_start);
+    printf("basename_end   = %d\n", basename_end);
+    printf("basename_len   = %d\n", basename_len);
 
     return 0;
 }
