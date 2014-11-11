@@ -26,8 +26,10 @@ int enter_name(MINODE *parent_mip, int my_ino, char *my_name)
         if(parent_ip->i_block[i] == 0) 
             break;
 
+    bno = parent_ip->i_block[i];
+
         // Get parent's data block into a buf[];
-        block = get_block(device, parent_ip->i_block[i]);
+        block = get_block(device, bno);
         cp = block; 
         dp = (DIR*)block;
 
@@ -82,8 +84,6 @@ int enter_name(MINODE *parent_mip, int my_ino, char *my_name)
 
             // Write data block to disk;
             put_block(device, bno, block);
-
-            free(block);
             return 1;
         } 
     }
@@ -114,8 +114,6 @@ int enter_name(MINODE *parent_mip, int my_ino, char *my_name)
 
     // Write data block to disk
     put_block(device, bno, block);
-
-    free(block);
     return 1;
 }
 
@@ -179,9 +177,6 @@ int make_dir(MINODE* parent_mip, char* child_name)
     dp->inode = (u32)parent_mip->ino;
     dp->rec_len = (u16)(block_size - (cp - block)); // The rest of the block 
 
-    // DEBUG
-    printf(".. rec_len = %d : should be 1012\n", dp->rec_len);
-
     dp->name_len = (u8)strlen("..");
     dp->file_type = (u8)EXT2_FT_DIR;
     dp->name[0] = '.';
@@ -223,9 +218,6 @@ int my_mkdir(int argc, char* argv[])
 
         // From path, get path to parent and name of child
         parse_path(path, &parent_name, &child_name);
-
-        printf("parent_name = %s\n", parent_name);
-        printf("child_name = %s\n", child_name);
 
         // Get parent in memory
         parent_ino = getino(device, parent_name);
@@ -272,6 +264,9 @@ int my_mkdir(int argc, char* argv[])
 
         // Move parent inode from memory to disk (if no other references)
         iput(parent_mip);
+
+        free(parent_name);
+        free(child_name);
     }
 
     return 0;

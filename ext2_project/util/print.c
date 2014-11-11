@@ -371,5 +371,7 @@ void list_dir(MINODE* mip)
             cp += dp->rec_len;       // advance cp by rec_len BYTEs
             dp = (DIR*)cp;           // pull dp along to the next record
         } 
+
+        free(block);
     }
 }

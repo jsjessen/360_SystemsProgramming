@@ -49,13 +49,13 @@ int rpwd(MINODE* mip, char** path, int size)
 
     // Add my name to path
     strcat(*path, my_name);
+    free(my_name);
 
     // Leave off /a/b/c'/'
     if(mip != running->cwd)
         strcat(*path, "/");
 
     iput(mip);
-    free(my_name);
     return 1;
 }
 

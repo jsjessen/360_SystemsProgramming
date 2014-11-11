@@ -64,7 +64,7 @@ typedef struct minode
     int           ino;       // The inode came from inode # (for writing)
     int           refCount;  // # of processes using me
     int           dirty;     // Has my inode been modified? (eventually write to disk)
-    int           mounted;   // Have I been mounted? (I should be a DIR)
+    bool          mounted;   // Have I been mounted? (I should be a DIR)
     struct mount *mount_ptr; // If mounted, points to the MountTable entry
 }MINODE;
 

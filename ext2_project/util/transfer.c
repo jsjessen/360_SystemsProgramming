@@ -65,8 +65,6 @@ void put_inode(int device, int inode_number, INODE inode)
     INODE* inode_table = (INODE*)get_block(device, block);
     inode_table[index] = inode;
     put_block(device, block, (u8*)inode_table);
-
-    free(inode_table);
 }
 
 
@@ -74,7 +72,10 @@ MINODE *iget(int device, int inode_number)
 {
     // Once you have the ino of an inode, you may load the inode into a slot
     // in the Minode[] array. 
-    int i;
+    int i = 0;
+
+    if(inode_number < ROOT_INODE)
+        return NULL;
 
     // To ensure uniqueness, you must search the Minode[] 
     // array to see whether the needed INODE already exists
@@ -104,9 +105,12 @@ MINODE *iget(int device, int inode_number)
             // load the INODE from disk into that Minode[i].INODE, 
             // initialize the Minode[]'s other fields 
 
-            mip->refCount = 1;
             mip->dev = device;
             mip->ino = inode_number;
+            mip->refCount = 1;
+            mip->dirty = false;
+            mip->mounted = false;
+            mip->mount_ptr = NULL;
 
             ip = get_inode(device, inode_number);
 

@@ -1,10 +1,11 @@
 #! /bin/bash
 
-cd ..
-
 make 
 
 PROG="my_ext2fs"
-DISK="fdimage"
+DISK="disk"
+
+touch $DISK
+sudo mkfs.ext2 $DISK 1440
 
 valgrind --leak-check=full $PROG $DISK $FILE

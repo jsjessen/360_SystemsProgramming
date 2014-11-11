@@ -174,27 +174,36 @@ int parse_path(const char* path, char** dirname, char** basename)
     if(strcmp(path, ".") == 0 || strcmp(path, "..") == 0)
         dirname_end = strlen(path);
 
-    if(!dirname_end)
-        dirname_end = 1;
+    if(dirname_end  == 0) dirname_end  = 1;
 
-    if(!basename_end)
-        basename_end = 1;
+    if(basename_end == 0) basename_end = 1;
 
     basename_len = basename_end - basename_start;
     dirname_len  = dirname_end  - dirname_start; 
 
-    *dirname  = (char*)malloc((dirname_len  + 1) * sizeof(char*));
-    *basename = (char*)malloc((basename_len + 1) * sizeof(char*));
+    if((*dirname  = (char*)malloc((dirname_len  + 1) * sizeof(char))) == NULL)
+    {
+        perror("input.c: parse_path(): malloc dirname");
+        return 0;
+    }
+    if((*basename = (char*)malloc((basename_len + 1) * sizeof(char))) == NULL)
+    {
+        perror("input.c: parse_path(): malloc basename");
+        return 0;
+    }
 
     if(dirname_end == 1 && path[0] != '/') 
-        strncpy(*dirname,  ".",  dirname_len);
+        strcpy(*dirname,  ".");
     else
-        strncpy(*dirname,  path  + dirname_start,  dirname_len);
+        strncpy(*dirname,  path + dirname_start,  dirname_len);
 
     if(strcmp(path, "/") == 0)
-        strncpy(*basename, "/", basename_len);
+        strcpy(*basename, "/");
     else
         strncpy(*basename, path + basename_start, basename_len);
+
+    (*dirname)[dirname_len] = 0;
+    (*basename)[basename_len] = 0;
 
     return 0;
 }

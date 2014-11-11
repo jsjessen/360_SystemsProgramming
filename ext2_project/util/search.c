@@ -16,20 +16,23 @@ char* find_name(MINODE *mip)
     parent_mip = iget(running->cwd->dev, parent_ino);
     findmyname(parent_mip, my_ino, &my_name);
 
-    if(mip == root)
-        strcpy(my_name, "/");
-
     iput(parent_mip);
     return my_name;
 }
 
-int findmyname(MINODE *parent, int myino, char **myname)
+int findmyname(MINODE *parent, int myino, char **my_name)
 {
     int i = 0;;
     int device = 0;
-    int target_ino= 4;
     int block_size = 0;
     INODE* ip = NULL;
+
+    if(myino == ROOT_INODE)
+    {
+        *my_name = (char*)malloc((strlen("/") + 1) * sizeof(char));
+        strcpy(*my_name, "/");
+        return ROOT_INODE;
+    }
 
     if(!parent)
     {
@@ -59,34 +62,22 @@ int findmyname(MINODE *parent, int myino, char **myname)
         u8* cp = block; 
         DIR* dp = (DIR*)block;
 
-        //print_divider('-');
-        //printf(" Inode #   Record Length   Name Length   Name \n");
-        //print_divider('-');
-
         while (cp < block + block_size)
         {
-            char name[256];
-            strncpy(name, dp->name, dp->name_len);
-            name[dp->name_len] = 0;
-            // printf(" %4d          %4d          %4d        %s",
-            //         dp->inode, dp->rec_len, dp->name_len, name);
-
             if(dp->inode == myino)
             {
-                //printf(" <%.*s here", 15 - dp->name_len, "---------------");
-                *myname = (char*)malloc(strlen(name) + 1);
-                strcpy(*myname, name);
+                *my_name = (char*)malloc((dp->name_len + 1) * sizeof(char));
+                strncpy(*my_name, dp->name, dp->name_len);
+                (*my_name)[dp->name_len] = 0;
+                free(block);
+                return dp->inode;
             }
-            //putchar('\n');
-
             cp += dp->rec_len;       // advance cp by rec_len BYTEs
             dp = (DIR*)cp;           // pull dp along to the next record
         } 
-
         free(block);
     }
-
-    return target_ino;   
+    return 0;   
 }
 
 int findino(MINODE *mip, int *myino, int *parent)
@@ -131,8 +122,12 @@ int getino(int device, char* pathname)
 {
     int i = 0;
     int ino = 0;
+    char** name = NULL; 
 
-    char** name = parse(pathname, "/");
+    if(strcmp(pathname, "/") == 0)
+        return ROOT_INODE;
+
+    name = parse(pathname, "/");
 
     // Absolute or Relative?
     if(pathname[0] == '/')

@@ -57,8 +57,6 @@ void initialize_fs()
     MINODE* mip    = NULL; 
     MOUNT *mp      = NULL; 
 
-    printf("initialize_fs()\n");
-
     // Initialize all processes
     for(i = 0; i < NPROC; i++)
     {
@@ -136,8 +134,6 @@ void mount_root(char* device_name)
     GD    *gp = NULL;
     MOUNT *mp = NULL;
 
-    printf("mount_root()\n");
-
     // Open device for read/write
     if((dev = open(device_name, O_RDWR)) < 0)
     {
@@ -146,7 +142,6 @@ void mount_root(char* device_name)
     }
 
     // Verify device is an Ext2 Filesystem
-    printf("Checking that %s is an Ext2 File System...", device_name);
     if(!isExt2(dev))
     {
         fprintf(stderr, "%s does not use the ext2 filesystem\n", device_name);
@@ -154,9 +149,9 @@ void mount_root(char* device_name)
     }
     printf("OK\n");
 
-    print_super(dev);
-    print_gd(dev);
-    print_inode(dev, ROOT_INODE);
+    //print_super(dev);
+    //print_gd(dev);
+    //print_inode(dev, ROOT_INODE);
 
     sp = get_super(dev);
     gp = get_gd(dev);
@@ -175,11 +170,11 @@ void mount_root(char* device_name)
     strcpy(mp->name, "root");               //CHANGE
     strcpy(mp->mount_name, "sir mounty");   //CHANGE
 
-    printf("nblocks = %d\n", mp->nblocks);
-    printf("ninodes = %d\n", mp->ninodes);
-    printf("bmap    = %d\n", mp->bmap);
-    printf("imap    = %d\n", mp->imap);
-    printf("iblk    = %d\n", mp->iblk);
+    //printf("nblocks = %d\n", mp->nblocks);
+    //printf("ninodes = %d\n", mp->ninodes);
+    //printf("bmap    = %d\n", mp->bmap);
+    //printf("imap    = %d\n", mp->imap);
+    //printf("iblk    = %d\n", mp->iblk);
 
     free(sp);
     free(gp);
@@ -227,16 +222,15 @@ int main(int argc, char* argv[])
             printf("[%d %s]$ ", running->uid, dir); 
         }     
         while(!(input = get_input()));   // Get user input
+        free(dir);
 
         cmd_argv = parse(input, " ");    // Parse input into cmd argv[]
+        free(input);
 
         while(cmd_argv[++cmd_argc]){}    // Determine cmd argc
 
         cmd_fptr = get_cmd(cmd_argv[0]); // Get the command's function pointer
         cmd_fptr(cmd_argc, cmd_argv);    // Execute the command with parameters
-
-        free(dir);
-        free(input);
         free_array(cmd_argv);
     }
 
