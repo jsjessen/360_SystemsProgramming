@@ -128,14 +128,6 @@ char** parse(const char* input, const char* delimiters)
     return buf;
 }
 
-//  path       dirname   basename
-//  -----------------------------
-//  /usr/lib   /usr/     lib
-//  /usr/      /         usr
-//  usr        .         usr
-//  /          /         /
-//  .          .         .
-//  ..         .         ..
 int parse_path(const char* path, char** dirname, char** basename)
 {
     int i = 0;
@@ -152,6 +144,8 @@ int parse_path(const char* path, char** dirname, char** basename)
     if(path == NULL)
         return 0;
 
+    // From the end moving toward start, 
+    // finds the first character of a filename
     i = strlen(path);
     while(--i >= 0) // skips null char comparison
     {
@@ -160,8 +154,10 @@ int parse_path(const char* path, char** dirname, char** basename)
         if(c != '/' && !isspace(c)) 
             break;
     }
-    basename_end = i + 1;
+    basename_end = i + 1; // just after it
 
+    // From the last position moving toward start, 
+    // finds the first '/'
     i = basename_end;
     while(--i >= 0) 
     {
@@ -170,10 +166,10 @@ int parse_path(const char* path, char** dirname, char** basename)
         if(c == '/')
             break;
     }
-    basename_start = i + 1;
+    basename_start = i + 1; // just after it
 
     dirname_start = 0;
-    dirname_end = basename_start;
+    dirname_end = basename_start; // end of dirname is the start of basename
 
     if(strcmp(path, ".") == 0 || strcmp(path, "..") == 0)
         dirname_end = strlen(path);
