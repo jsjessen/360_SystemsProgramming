@@ -1,10 +1,8 @@
 #! /bin/bash
 
-cd ..
-
 make 
 
 PROG="my_ext2fs"
-DISK="fdimage"
+DISK="disk/mydisk"
 
 $PROG $DISK

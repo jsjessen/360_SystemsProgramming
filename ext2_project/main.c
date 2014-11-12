@@ -182,7 +182,7 @@ void mount_root(char* device_name)
 
 int main(int argc, char* argv[])
 {
-    char* device = "disk/fdimage"; //default
+    char* device = "disk/mydisk"; //default
 
     if (argc > 2)
     {

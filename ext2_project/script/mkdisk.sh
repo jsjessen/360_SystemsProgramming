@@ -1,4 +1,6 @@
 #!/bin/sh
 
-touch disk
-sudo mkfs.ext2 disk 1440
+DISK=disk/mydisk
+
+touch $DISK 
+sudo mkfs.ext2 $DISK 1440
