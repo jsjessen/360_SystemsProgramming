@@ -19,11 +19,13 @@
 #include <ext2fs/ext2_fs.h>
 
 #include <global.h>
+#include <transfer.h>
+#include <memory.h>
 
-int  test_bit (u8*  buf, int bit);
-void set_bit  (u8** buf, int bit);
-void clear_bit(u8** buf, int bit);
 
 int get_ideal_record_length(const int name_len);
+
+int enter_name(MINODE *parent_mip, int my_ino, char *my_name);
+
 
 #endif

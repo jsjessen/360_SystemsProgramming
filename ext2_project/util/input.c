@@ -56,11 +56,14 @@ char* get_input()
             if (buf[0] == 0)
                 continue;
 
-            while (isspace(c))  
+            while (isspace(c) && c != '\n')  
                 c = getchar();
 
             ungetc(c, stdin);
-            buf[i++] = ' ';
+
+            if(c != '\n')
+                buf[i++] = ' ';
+
             continue;
         }
 

@@ -31,13 +31,13 @@ int findmyname(MINODE *parent, int myino, char **my_name)
     {
         *my_name = (char*)malloc((strlen("/") + 1) * sizeof(char));
         strcpy(*my_name, "/");
-        return ROOT_INODE;
+        return 1;
     }
 
     if(!parent)
     {
         fprintf(stderr, "findmyname: null parent\n");
-        return -1;
+        return 0;
     }
 
     device = parent->dev;
@@ -48,7 +48,7 @@ int findmyname(MINODE *parent, int myino, char **my_name)
     if (!S_ISDIR(ip->i_mode))
     {
         fprintf(stderr, "Not a directory\n");
-        return -1;
+        return 0;
     }
 
     // For DIR inodes, assume that (the number of entries is small so that) only has
@@ -70,7 +70,7 @@ int findmyname(MINODE *parent, int myino, char **my_name)
                 strncpy(*my_name, dp->name, dp->name_len);
                 (*my_name)[dp->name_len] = 0;
                 free(block);
-                return dp->inode;
+                return 1;
             }
             cp += dp->rec_len;       // advance cp by rec_len BYTEs
             dp = (DIR*)cp;           // pull dp along to the next record

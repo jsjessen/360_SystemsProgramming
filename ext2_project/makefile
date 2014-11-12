@@ -13,12 +13,12 @@ LAB  = LAB7
 # 'make submit'	uploads tar to KC's server into directory defined by LAB 
 #
 
-.PHONY : all clean tar submit depend
+.PHONY : all clean tar submit
 
 # Add any additional utility files here
 SOURCE = main.c cmd.c \
 		 util.c input.c print.c memory.c transfer.c search.c
-	
+
 DEBUG    = -g -Wall -O0
 # -g 		add debugging info
 # -Wall		enable most compiler warnings
@@ -59,7 +59,9 @@ OBJECTS = $(SOURCE:.c=.o)
 
 OBJPROG = $(addprefix $(OBJ_DIR)/, $(PROG))
 
-# make
+# TEMP HACK 
+# Research: http://make.mad-scientist.net/papers/advanced-auto-dependency-generation/
+#all : $(OBJPROG)
 all : clean $(OBJPROG)
 
 $(OBJECTS) : | $(OBJ_DIR)
@@ -74,16 +76,6 @@ $(OBJPROG) : $(addprefix $(OBJ_DIR)/, $(OBJECTS))
 $(OBJ_DIR)/%.o : %.c
 	$(CC) $(CFLAGS) -c $< -o $@
 
-#$(OBJ_DIR)/input.o	  : 
-#$(OBJ_DIR)/util.o	  : global.h
-#$(OBJ_DIR)/transfer.o : global.h
-#$(OBJ_DIR)/print.o	  : global.h util.h transfer.h
-#$(OBJ_DIR)/memory.o	  : global.h util.h transfer.h
-#$(OBJ_DIR)/main.o	  : global.h input.h print.h memory.h cmd.h
-#$(OBJ_DIR)/search.o	  : global.h input.h transfer.h memory.h print.h
-#$(OBJ_DIR)/cmd.o	  : global.h print.h util.h search.h $(CMD1_DIR)/%.c $(CMD1_DIR)/%.c $(CMD1_DIR)/%.c
-
-
 clean :
 	@$(RM) -f $(PROG) $(PROG).tar.gz $(OBJ_DIR)/*.o *~ 
 
@@ -93,16 +85,3 @@ tar :
 submit : tar 
 	script/upload.sh $(LAB) $(PROG).tar.gz
 	@$(RM) -f $(PROG).tar.gz
-
-# The makedepend program reads each sourcefile in sequence and parses it like a C-preprocessor, 
-# processing all #include, #define, #undef, #ifdef, #ifndef, #endif, #if, #elif and #else directives 
-# so that it can correctly tell which #include, directives would be used in a compilation. 
-# Any #include, directives can reference files having other #include directives, 
-# and parsing will occur in these files as well.  
-
-# Not working
-
-#depend : 
-#makedepend -- $(CFLAGS) -I/usr/include/linux/ -I/usr/lib/gcc/i686-redhat-linux/4.8.3/include/ -- $(SOURCE)
-
-# DO NOT DELETE THIS LINE -- make depend needs it

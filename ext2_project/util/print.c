@@ -318,7 +318,7 @@ void list_file(MINODE* mip, char* name)
 
     // Permissions
     for(i = 0; i < strlen(Permissions); i++)
-        putchar((mode & 1 << i) ? Permissions[i] : '-');
+        putchar(mode & (1 << (strlen(Permissions) - 1 - i)) ? Permissions[i] : '-');
 
     // Everything else
     printf("%4hu %4hu %4hu %8u %26s  %s", 

@@ -28,8 +28,8 @@ int my_ls(int argc, char* argv[])
 
         if((ino = getino(dev, argv[i])) < 0)
         {
-            printf("ls: cannot access %s: \
-                    no such file or directory\n", argv[i]);
+            printf("ls: cannot access %s:"
+                    " No such file or directory\n", argv[i]);
             return 0;
         }
         mip = iget(dev, ino);

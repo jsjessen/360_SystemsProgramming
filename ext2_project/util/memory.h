@@ -27,6 +27,10 @@
 // and then frees the array
 void free_array(char** array);
 
+int  test_bit (u8*  buf, int bit);
+void set_bit  (u8** buf, int bit);
+void clear_bit(u8** buf, int bit);
+
 void set_free_inodes(int device, int change);
 void set_free_blocks(int device, int change);
 int ialloc(int device);
