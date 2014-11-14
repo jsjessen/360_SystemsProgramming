@@ -1,0 +1,145 @@
+<Title>360 PROJECT HELP</Title>
+<Body bgcolor="#ffffca" text="#000000">
+
+<H1>360 PROJECT HELP</H1>
+
+<Pre>
+                     HOW TO write_cp_mv    
+
+int write_file()
+{
+  1. Preprations:
+     ask for a fd   and   a text string to write;
+
+  2. verify fd is indeed opened for WR or RW or APPEND mode
+
+  3. copy the text string into a buf[] and get its length as nbytes.
+
+     return(mywrite(fd, buf, nbytes));
+}
+
+The algorithm of write_file() can also be explained in terms of the following
+figure.
+
+(1).  PROC              (2).                          | 
+     =======   |--> OFT oft[ ]                        |
+     | pid |   |   ============                       |
+     | cwd |   |   |mode=flags|                       | 
+     | . ..|   |   |minodePtr ------->  minode[ ]     |      BlockDevice
+     | fd[]|   |   |refCount=1|       =============   |   ==================
+ fd: | .------>|   |offset    |       |  INODE    |   |   | INODE -> blocks|
+     |     |       |===|======|       |-----------|   |   ==================
+     =======           |              | dev,inode |   | 
+                       |              |  dirty    |   |
+                       |              =============   |
+                       |
+    -------------------|-----------------
+    |    |    | ...  |lbk  | ............
+    -------------------|-----------------
+lbk   0    1 .....     |rem|            |
+                     start           fileSize (in INODE)  
+                        
+------------------------------------------------------------------------------
+               Data Structures for write()
+
+
+mywrite behaves exactly the same as Unix's write(fd, buf, nbytes) syscall.
+It writes nbytes from buf[ ] to the file descriptor fd, extending the file 
+size as needed.
+
+int mywrite(int fd, char buf[ ], int nbytes) 
+{
+  while (nbytes > 0 ){
+
+     compute LOGICAL BLOCK (lbk) and the startByte in that lbk:
+
+          lbk       = oftp->offset / BLKSIZE;
+          startByte = oftp->offset % BLKSIZE;
+
+    // I only show how to write DIRECT data blocks, you figure out how to 
+    // write indirect and double-indirect blocks.
+
+     if (lbk < 12){                         // direct block
+        if (ip->INODE.i_block[lbk] == 0){   // if no data block yet
+
+           mip->INODE.i_block[lbk] = balloc(mip->dev);// MUST ALLOCATE a block
+
+           // write a block of 0's to blk on disk: OPTIONAL for data block 
+           //                                      but MUST for I or D blocks
+        }
+        blk = mip->INODE.i_block[lbk];      // blk should be a disk block now
+     }
+     else if (lbk >= 12 && lbk < 256 + 12){ 
+            // indirect blocks
+     }
+     else{
+            // double indirect blocks */
+     }
+
+     /* all cases come to here : write to the data block */
+     get_block(mip->dev, blk, wbuf);   // read disk block into wbuf[ ]  
+     char *cp = wbuf + startByte;      // cp points at startByte in wbuf[]
+     remain = BLKSIZE - startByte;     // number of BYTEs remain in this block
+
+     while (remain > 0){               // write as much as remain allows  
+           *cp++ = *cq++;              // cq points at buf[ ]
+           nbytes--; remain--;         // dec counts
+           oftp->offset++;             // advance offset
+           if (offset > INODE.i_size)  // especially for RW|APPEND mode
+               mip->INODE.i_size++;    // inc file size (if offset > fileSize)
+           if (nbytes <= 0) break;     // if already nbytes, break
+     }
+     put_block(mip->dev, blk, wbuf);   // write wbuf[ ] to disk
+     
+     // loop back to while to write more .... until nbytes are written
+  }
+
+  mip->dirty = 1;       // mark mip dirty for iput() 
+  printf("wrote %d char into file descriptor fd=%d\n", nbytes, fd);           
+  return nbytes;
+}
+
+
+                OPTIMIZATION OF write Code
+
+As in read(), the above inner while(remain > 0) loop can be optimized:
+Instead of copying one byte at a time and update the control variables on each 
+byte, TRY to copy only ONCE and adjust the control variables accordingly.
+
+REQUIRED: Optimize the write() code in your project.
+
+=============================================================================
+
+                      HOW TO cp ONE file:
+
+cp src dest:
+
+1. fd = open src for READ;
+
+2. gd = open dst for WR|CREAT; 
+
+   NOTE:In the project, you may have to creat the dst file first, then open it 
+        for WR, OR  if open fails due to no file yet, creat it and then open it
+        for WR.
+
+3. while( n=read(fd, buf[ ], BLKSIZE) ){
+       write(gd, buf, n);  // notice the n in write()
+   }
+
+==============================================================================
+
+                    HOW TO mv (rename)
+mv src dest:
+
+1. verify src exists; get its INODE in ==> you already know its dev
+2. check whether src is on the same dev as src
+
+              CASE 1: same dev:
+3. Hard link dst with src (i.e. same INODE number)
+4. unlink src (i.e. rm src name from its parent directory and reduce INODE's
+               link count by 1).
+                
+              CASE 2: not the same dev:
+3. cp src to dst
+4. unlink src
+        

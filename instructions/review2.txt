@@ -1,0 +1,124 @@
+           REVIEW FOR EXAM #2 on Wednesday 11-19-2014
+
+Mailman's algorithm:
+Given: int buf[1024];
+
+    How many bits are in buf[ ]?  1024 * 32 = 32768
+
+
+Assume: bits are counted from 0.
+For BIT=12345, 
+
+    which buf[i] contains this BIT?  12345 / 32 = 385 
+    which bit in buf[i] is the BIT?  12345 % 32 = 25
+
+
+Assume: bits are counted from 100, i.e. 100, 101, 102,...., etc.
+
+    which buf[i] contains this BIT?  (12345 - 100) / 32 = 388
+    which bit in buf[i] is the BIT?  (12345 - 100) % 32 = 29
+
+
+An INODE's indirect block, i_block[12] = 1234;
+Write C code to print all the indirect data blocks.
+
+    char* buf = (char*)malloc(BLK_SIZE);
+
+    lseek(device, (long)(1234 * BLK_SIZE), 0);
+    read(device, buf, BLK_SIZE);
+
+    for(i = 0; i < BLK_SIZE / sizeof(int); i++)
+        printf("%d", buf[i]);
+
+
+List the steps of mkdir /a/b/c
+
+    ...
+
+
+Write algorithm to enter "c" into the parent DIR's data block
+
+    ...
+
+
+Assume: char buf[1024] contains the data block of the parent DIR
+Write C code to step to the LAST DIR entry in buf[]:
+
+    ...
+
+
+Assume: LAST DIR entry = [ino, rlen=1000, nlen=6, 'olddir'];
+What's its IDEAL length?
+
+    4 * ((8 + 6 + 3) / 4) = 16
+
+
+name="testnewdir", its inode number=123
+What's the NEED length?
+
+    4 * ((8 + 10 + 3) / 4) = 20 
+
+
+HOW TO enter the entry for "testnewdir"?
+
+    ...
+
+
+Great FS surgeon:
+How to convert an (empty) DIR to a FILE?
+
+    iget its inode
+    //dealloc all data blocks
+    change i_mode to FILE_MODE
+    refCount = 0
+    iput the inode back to disk
+
+
+How to convert a FILE to an (empty) DIR?
+
+    iget its inode
+    //alloc a data block
+    change i_mode to DIR_MODE
+    refcount = 2
+    input the inode back to disk
+
+
+How to remove an entry from a parent DIR?
+
+    Case FIRST and only entry in data block: deallocate the block
+
+    ...
+
+    Case LAST entry in block: absorb its rec_len to predecessor
+
+    ...
+
+    Case MIDDLE: add rec_len to LAST entry; move all entries LEFT
+
+    ...
+
+Given: an entry to be deleted is as cp
+
+      char *cp        |<------- LENGTH ----------->|
+ -----------|---------|-----------------------------
+            |  entry  | Other_Entrie .. ....       |
+ -----------|---------|-----------------------------
+                char *np
+    
+    Show the value of np
+
+    ...
+    
+    Show the value of LENGTH 
+
+    ...
+    
+    write C code to move all Other_Entries LEFT to overlay the deleted entry
+
+    ...
+
+How to HARD link oldfile newfile?
+
+    ...
+
+How to SYMlink oldfile newfile?
