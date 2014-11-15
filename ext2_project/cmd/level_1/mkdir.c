@@ -84,12 +84,13 @@ int my_mkdir(int argc, char* argv[])
     if(argc < 2)
     {
         fprintf(stderr, "mkdir: missing operand\n");
-        return 0;
+        return FAILURE;
     }
 
     // mkdir each path given by user
     while(argv[++i])
     {
+        bool error = false;
         char* path = argv[i];
         char* parent_name = NULL;
         char* child_name  = NULL;
@@ -110,33 +111,35 @@ int my_mkdir(int argc, char* argv[])
         // Verify that parent exists
         if(!parent_mip)
         {
+            error = true;
             fprintf(stderr, "mkdir: cannot create directory '%s':"
                     " No such file or directory\n", path);
-            free(parent_name);
-            free(child_name);
             return 0;
         }
-
         // Verify that parent is a directory
-        if(!S_ISDIR(parent_ip->i_mode))
+        else if(!S_ISDIR(parent_ip->i_mode))
         {
+            error = true;
             fprintf(stderr, "mkdir: cannot create directory '%s':"
                     " Not a directory\n", path);
-            free(parent_name);
-            free(child_name);
-            return 0;
-        }
-
+        }    
         // Verify that child does not yet exist
-        if(getino(device, path) > 0)
+        else if(getino(device, path) > 0)
         {
+            error = true;
             fprintf(stderr, "mkdir: cannot create directory '%s':"
                     " File exists\n", path);
+        }
+
+        // If there was an error, put/free then try the next one 
+        if(error)
+        {
+            iput(parent_mip);
             free(parent_name);
             free(child_name);
-            return 0;
+            continue;
         }
-        
+
         // If creating multiple directories
         if(argc > 2)
             printf("mkdir: creating directory '%s'\n", path);
@@ -161,5 +164,5 @@ int my_mkdir(int argc, char* argv[])
         free(child_name);
     }
 
-    return 0;
+    return SUCCESS;
 }

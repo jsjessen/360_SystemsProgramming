@@ -12,7 +12,7 @@ int rpwd(MINODE* mip, char** path, int size)
     {
         iput(mip);
         strcat(*path, "/");
-        return 1;
+        return SUCCESS;
     }
 
     // Check . and .. in my directory for my/parent's inode numbers 
@@ -25,7 +25,7 @@ int rpwd(MINODE* mip, char** path, int size)
     if(!rpwd(parent_mip, path, size))
     {
         iput(mip);
-        return 0;
+        return FAILURE;
     }
     // path = /a/b/.../<need to add my name here>
 
@@ -43,7 +43,7 @@ int rpwd(MINODE* mip, char** path, int size)
             iput(mip);
             free(my_name);
             perror("pwd: path realloc");
-            return 0;
+            return FAILURE;
         }
     }
 
@@ -56,7 +56,7 @@ int rpwd(MINODE* mip, char** path, int size)
         strcat(*path, "/");
 
     iput(mip);
-    return 1;
+    return SUCCESS;
 }
 
 // print the pathname of current working directory 
@@ -86,5 +86,5 @@ int my_pwd(int argc, char* argv[])
         puts(path);
 
     free(path);
-    return 1;
+    return SUCCESS;
 }

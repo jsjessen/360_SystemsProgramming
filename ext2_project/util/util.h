@@ -22,6 +22,10 @@
 #include <transfer.h>
 #include <memory.h>
 
+int rm_child(MINODE *parent_mip, int child_ino);
+
+DIR* get_last_dir_entry(u8* block_start, int block_size);
+
 bool isEmptyDir(MINODE *mip);
 
 int get_ideal_record_length(const int name_len);

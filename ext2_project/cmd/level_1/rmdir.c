@@ -1,83 +1,5 @@
 #include <cmd.h>
 
-int rm_child(MINODE *parent_mip, int child_ino)
-{
-    int i = 0;
-    const int device = running->cwd->dev;
-    const int block_size = get_block_size(device);
-    INODE* parent_ip = &parent_mip->inode;
-
-        DIR* dp = NULL; 
-   //1. Search parent INODE's data block(s) for the entry of name
-
-// For DIR inodes, assume that (the number of entries is small so that) only has
-    // 12 DIRECT data blocks. Therefore, search only the direct blocks for name[0].
-    for(i = 0; i < (parent_ip->i_size / block_size); i++)
-    {
-        if (parent_ip->i_block[i] == 0)
-            break;
-
-        u8* block = get_block(device, parent_ip->i_block[i]);
-        u8* cp = block; 
-        dp = (DIR*)block;
-
-        while (cp < block + block_size)
-        {
-
-            if(dp->inode == child_ino)
-            {
-                free(block);
-                break;
-            }
-
-            cp += dp->rec_len;       // advance cp by rec_len BYTEs
-            dp = (DIR*)cp;           // pull dp along to the next record
-        } 
-
-        free(block);
-    }
-    //dp = child dir
-
-    //2. Erase name entry from parent directory by
-
-    //   if NOT first entry in block{
-    //       move all entries AFTER this entry LEFT;
-    //       add removed rec_len to the LAST entry of the block;
-    //       no need to change parent's fileSize;
-
-    //            | remove this entry   |
-    //       -----------------------------------------------
-    //       xxxxx|INO rlen nlen NAME   |yyy  |zzz         | 
-    //       -----------------------------------------------
-
-    //               becomes:
-    //       -----------------------------------------------
-    //       xxxxx|yyy |zzz (rec_len INC by rlen)          |
-    //       -----------------------------------------------
-
-    //   }
-    
-    //   if (first entry in a data block){
-    //      deallocate the data block; modify parent's file size;
-
-    //       -----------------------------------------------
-    //       |INO Rlen Nlen NAME                           | 
-    //       -----------------------------------------------
-    //       
-    //       Assume this is parent's i_block[i]:
-    //       move parent's NONZERO blocks upward, i.e. 
-    //            i_block[i+1] becomes i_block[i]
-    //            etc.
-    //       so that there is no HOLEs in parent's data block numbers
-    //   }
-
-    parent_mip->dirty = true;
-
-    // Write the parent's data block back to disk;
-    iput(parent_mip);
-
-    return SUCCESS;
-}
 
 int my_rmdir(int argc, char* argv[])
 {
@@ -94,50 +16,59 @@ int my_rmdir(int argc, char* argv[])
     // rmdir each path given by user
     while(argv[++i])
     {
+        bool error = false;
         char* path = argv[i];
-
-        int ino = getino(device, path);
-        MINODE* mip = iget(device, ino);
-        INODE*   ip = &mip->inode;
 
         int parent_ino = 0;
         MINODE* parent_mip = NULL; 
         INODE*   parent_ip = NULL;
 
+        int ino = getino(device, path);
+        MINODE* mip = iget(device, ino);
+        INODE*   ip = &mip->inode;
+
+        // Verify file exists
+        if(!mip)
+        {
+            error = true;
+            fprintf(stderr, "rmdir: failed to remove '%s':"
+                    " No such file or directory\n", path);
+        }
         // Verify user has permission to remove the directory
-        if(uid != SUPER_USER && uid != ip->i_uid)
+        else if(uid != SUPER_USER && uid != ip->i_uid)
         {
-            fprintf(stderr, "rmdir: you do not own '%s':"
+            error = true;
+            fprintf(stderr, "rmdir: failed to remove '%s':"
                     " Permission denied\n", path);
-            iput(mip);
-            return FAILURE;
         }
-
         // Verify that it is a directory
-        if(!S_ISDIR(ip->i_mode))
+        else if(!S_ISDIR(ip->i_mode))
         {
-            fprintf(stderr, "mkdir: cannot remove directory '%s':"
+            error = true;
+            fprintf(stderr, "mkdir: failed to remove '%s':"
                     " Not a directory\n", path);
-            iput(mip);
-            return FAILURE;
         }
-
         // Verify that it is not busy
-        if(mip->refCount > 1)
+        else if(mip->refCount > 1)
         {
+            error = true;
             fprintf(stderr, "rmdir: failed to remove directory '%s':"
                     " Directory busy\n", path);
-            iput(mip);
-            return FAILURE;
         }
-
         // Verify that it is empty
-        if(!isEmptyDir(mip))
+        else if(!isEmptyDir(mip))
         {
+            error = true;
             fprintf(stderr, "rmdir: failed to remove directory '%s':"
                     " Directory not empty\n", path);
-            iput(mip);
-            return FAILURE;
+        }
+
+        // If there was an error, put/free then try the next one 
+        if(error)
+        {
+            if(mip)
+                iput(mip);
+            continue;
         }
 
         // If removing multiple directories
