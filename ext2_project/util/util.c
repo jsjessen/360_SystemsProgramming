@@ -5,6 +5,55 @@
 
 #include "util.h"
 
+bool isEmptyDir(MINODE *mip)
+{
+    int i = 0;
+    const int device = mip->dev;
+    const int block_size = get_block_size(device);
+    INODE* ip = &mip->inode;
+
+    //Check that dir is a directory
+    if (!S_ISDIR(ip->i_mode))
+    {
+        fprintf(stderr, "Not a directory\n");
+        return false;
+    }
+
+    if(ip->i_links_count > 2)
+        return false;
+
+    // For DIR inodes, assume that (the number of entries is small so that) only has
+    // 12 DIRECT data blocks. Therefore, search only the direct blocks for name[0].
+    for(i = 0; i < (ip->i_size / block_size); i++)
+    {
+        if (ip->i_block[i] == 0)
+            break;
+
+        u8* block = get_block(device, ip->i_block[i]);
+        u8* cp = block; 
+        DIR* dp = (DIR*)block;
+
+        while (cp < block + block_size)
+        {
+            char name[256];
+            strncpy(name, dp->name, dp->name_len);
+            name[dp->name_len] = 0;
+
+            if (strcmp(name, ".") != 0 && strcmp(name, "..") != 0)
+            {
+                free(block);
+                return false;
+            }
+
+            cp += dp->rec_len;       // advance cp by rec_len BYTEs
+            dp = (DIR*)cp;           // pull dp along to the next record
+        } 
+
+        free(block);
+    }
+
+    return true;    
+}
 
 int get_ideal_record_length(const int name_len)
 {

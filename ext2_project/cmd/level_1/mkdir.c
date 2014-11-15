@@ -99,10 +99,6 @@ int my_mkdir(int argc, char* argv[])
         MINODE* parent_mip = NULL;
         INODE* parent_ip = NULL;
 
-        // If creating multiple directories
-        if(argc > 2)
-            printf("mkdir: creating directory '%s'\n", path);
-
         // From path, get path to parent and name of child
         parse_path(path, &parent_name, &child_name);
 
@@ -140,6 +136,10 @@ int my_mkdir(int argc, char* argv[])
             free(child_name);
             return 0;
         }
+        
+        // If creating multiple directories
+        if(argc > 2)
+            printf("mkdir: creating directory '%s'\n", path);
 
         // Make a directory with the child's name in the parent directory
         make_dir(parent_mip, child_name);

@@ -22,6 +22,7 @@
 #include <transfer.h>
 #include <memory.h>
 
+bool isEmptyDir(MINODE *mip);
 
 int get_ideal_record_length(const int name_len);
 

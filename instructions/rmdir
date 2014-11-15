@@ -1,9 +1,5 @@
-<Title>360 PROJECT HELP</Title>
-<Body bgcolor="#ffffca" text="#000000">
+HOWTO rmdir
 
-<H1>HOWTO rmdir</H1>
-
-<Pre>
 Assume: command line = "rmdir pathname"
 1. Extract cmd, pathname from line and save them as globals.
 

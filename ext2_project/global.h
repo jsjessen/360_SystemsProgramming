@@ -18,6 +18,7 @@
 #include <string.h>
 #include <sys/stat.h>
 
+#define NUM_DIRECT_BLOCKS 12
 
 #define BLOCK_SIZE     1024
 #define SUPER_SIZE     1024 
@@ -43,6 +44,8 @@
 
 
 typedef enum { false, true } bool;
+
+typedef enum { FAILURE, SUCCESS } result;
 
 typedef enum { FREE, READY, RUNNING} process_status;
 
