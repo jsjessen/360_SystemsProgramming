@@ -1,83 +1,94 @@
-           REVIEW FOR EXAM #2 on Wednesday 11-19-2014
+******************** REVIEW FOR EXAM #2 ******************** 
 
 Mailman's algorithm:
 Given: int buf[1024];
 
-    How many bits are in buf[ ]?  1024 * 32 = 32768
-
+    How many bits are in buf[ ]?  1024 * 32
 
 Assume: bits are counted from 0.
 For BIT=12345, 
 
-    which buf[i] contains this BIT?  12345 / 32 = 385 
-    which bit in buf[i] is the BIT?  12345 % 32 = 25
-
+    which buf[i] contains this BIT?  12345 / 32
+    which bit in buf[i] is the BIT?  12345 % 32 
 
 Assume: bits are counted from 100, i.e. 100, 101, 102,...., etc.
 
-    which buf[i] contains this BIT?  (12345 - 100) / 32 = 388
-    which bit in buf[i] is the BIT?  (12345 - 100) % 32 = 29
-
+    which buf[i] contains this BIT?  (12345 - 100) / 32 
+    which bit in buf[i] is the BIT?  (12345 - 100) % 32
 
 An INODE's indirect block, i_block[12] = 1234;
 Write C code to print all the indirect data blocks.
 
-    char* buf = (char*)malloc(BLK_SIZE);
+    char buf[BLK_SIZE]; 
+    int* ptr;
 
     lseek(device, (long)(1234 * BLK_SIZE), 0);
     read(device, buf, BLK_SIZE);
 
     for(i = 0; i < BLK_SIZE / sizeof(int); i++)
-        printf("%d", buf[i]);
+        printf("%d", ptr[i]);
 
 
 List the steps of mkdir /a/b/c
 
-    ...
+    check that /a/b exist and is a dir
+    alloc inode and data block
+    data block = DIR block add . and ..
+    add entry to parent DIR
 
 
 Write algorithm to enter "c" into the parent DIR's data block
 
-    ...
+   ... 
 
 
 Assume: char buf[1024] contains the data block of the parent DIR
 Write C code to step to the LAST DIR entry in buf[]:
+    
+    char* cp = buf;
+    DIR*  dp = buf;
 
-    ...
+    while(cp + dp->rec_len < buf + BLK_SIZE)
+    {
+        cp += dp->rec_len;
+        dp = cp;
+    }
 
 
 Assume: LAST DIR entry = [ino, rlen=1000, nlen=6, 'olddir'];
 What's its IDEAL length?
 
     4 * ((8 + 6 + 3) / 4) = 16
+    name_length + 8 -> next multiple of 4
 
 
 name="testnewdir", its inode number=123
 What's the NEED length?
 
     4 * ((8 + 10 + 3) / 4) = 20 
+    name_length + 8 -> next multiple of 4
 
 
 HOW TO enter the entry for "testnewdir"?
 
-    ...
+    if the last entry rec_len - its ideal length is >=
+        the ideal length of testnewdir then 
 
 
 Great FS surgeon:
 How to convert an (empty) DIR to a FILE?
 
-    iget its inode
-    //dealloc all data blocks
+    get inode in memory
     change i_mode to FILE_MODE
-    refCount = 0
-    iput the inode back to disk
+    dealloc data block
+    set its size to 0
+    decrement parent links count by 1
+    put the inode back to disk
 
 
 How to convert a FILE to an (empty) DIR?
 
-    iget its inode
-    //alloc a data block
+    iget its inode //alloc a data block
     change i_mode to DIR_MODE
     refcount = 2
     input the inode back to disk
@@ -85,18 +96,13 @@ How to convert a FILE to an (empty) DIR?
 
 How to remove an entry from a parent DIR?
 
-    Case FIRST and only entry in data block: deallocate the block
+    If it is the FIRST and only entry in data block: deallocate the block
 
-    ...
+    If it is the LAST entry in block: absorb its rec_len to predecessor
 
-    Case LAST entry in block: absorb its rec_len to predecessor
+    If it is in the MIDDLE: add rec_len to LAST entry; move all entries LEFT
 
-    ...
-
-    Case MIDDLE: add rec_len to LAST entry; move all entries LEFT
-
-    ...
-
+     
 Given: an entry to be deleted is as cp
 
       char *cp        |<------- LENGTH ----------->|
@@ -107,18 +113,34 @@ Given: an entry to be deleted is as cp
     
     Show the value of np
 
-    ...
+        np = cp + deleteme->rec_len
     
     Show the value of LENGTH 
 
-    ...
+        LENGTH = (buf + BLK_SIZE) - np
     
     write C code to move all Other_Entries LEFT to overlay the deleted entry
 
-    ...
+        memcopy the entries to the right to where entry was deleted
+        add the rec_len of entry deleted to the last entry rec_len
+
 
 How to HARD link oldfile newfile?
 
     ...
 
+
 How to SYMlink oldfile newfile?
+
+    check oldfile exists
+    creat newfile
+    change newfiles TYPE from REG to LNK
+    write oldfile (string) ito newfile's INODE.i_block area
+
+
+How to unlink a file?
+
+    find files inode
+    decrement link count by 1
+    erase entry in parent
+    need to dealloc data blocks (direct, indirect, double, triple)
