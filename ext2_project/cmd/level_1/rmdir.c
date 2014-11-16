@@ -3,9 +3,8 @@
 
 int my_rmdir(int argc, char* argv[])
 {
-    int i = 0;
-    const int device = running->cwd->dev;
     const int uid = running->uid;
+    const int device = running->cwd->dev;
 
     if(argc < 2)
     {
@@ -14,18 +13,15 @@ int my_rmdir(int argc, char* argv[])
     }
 
     // rmdir each path given by user
+    int i = 0;
     while(argv[++i])
     {
-        bool error = false;
-        char* path = argv[i];
+        bool error  = false;
 
-        int ino = getino(device, path);
+        char* path  = argv[i];
+        int ino     = getino(device, path);
         MINODE* mip = iget(device, ino);
         INODE*   ip = &mip->inode;
-
-        int parent_ino = 0;
-        MINODE* parent_mip = NULL; 
-        INODE*   parent_ip = NULL;
 
         // Verify file exists
         if(!mip)
@@ -72,18 +68,19 @@ int my_rmdir(int argc, char* argv[])
             continue;
         }
 
-        // If removing multiple directories
+        // If removing multiple directories, display
         if(argc > 2)
             printf("rmdir: removing directory '%s'\n", path);
 
         // Get parent DIR's ino and Minode
+        int parent_ino = 0;
         findino(mip, &ino, &parent_ino);
-        parent_mip = iget(device, parent_ino); 
-        parent_ip = &parent_mip->inode;
+        MINODE* parent_mip = iget(device, parent_ino); 
+        INODE*   parent_ip = &parent_mip->inode;
 
         // Deallocate its blocks
-        for(i = 0; i < NUM_DIRECT_BLOCKS && ip->i_block[i] != 0; i++)
-            bfree(device, ip->i_block[i]);
+        for(int b = 0; b < NUM_DIRECT_BLOCKS && ip->i_block[b] != 0; b++)
+            bfree(device, ip->i_block[b]);
 
         // Deallocate its inode
         ifree(device, ino);
@@ -91,7 +88,7 @@ int my_rmdir(int argc, char* argv[])
         // Write changes to deleted directory to disk and clear refCount
         iput(mip); 
 
-        // Remove child's entry from parent directory by
+        // Remove child's entry from parent directory
         rm_child(parent_mip, ino); 
 
         // Update parent's info

@@ -4,7 +4,6 @@
 // CptS 360
 
 #include "util.h"
-#include <print.h> // DELETE
 
 
 int rm_child(MINODE *parent_mip, int child_ino)
@@ -20,8 +19,6 @@ int rm_child(MINODE *parent_mip, int child_ino)
     u8* cp    = NULL; 
 
     DIR* prev_dp = NULL; 
-
-    print_dir(device, parent_mip->ino);
 
     // Search parent INODE's data block(s) for the child's entry 
 
@@ -97,9 +94,6 @@ child_found:
         //       -----------------------------------------------
 
         prev_dp->rec_len += dp->rec_len;
-        printf("Prev: '%s'\n", prev_dp->name);
-        printf("Length = %d\n", prev_dp->rec_len);
-
         put_block(device, parent_ip->i_block[block_num], block);
     }
     // If there are entries after it
@@ -135,7 +129,6 @@ child_found:
     // Write the parent's data block back to disk;
     iput(parent_mip);
 
-    print_dir(device, parent_mip->ino);
     return SUCCESS;
 }
 

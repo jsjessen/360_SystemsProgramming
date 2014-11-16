@@ -140,7 +140,6 @@ void iput(MINODE *mip)
     // No processes are using it and it has been modified
     if(--(mip->refCount) <= 0 && mip->dirty == true)
     {
-        printf("Writing to disk...\n");
         put_inode(mip->dev, mip->ino, mip->inode);
         mip->dirty = false;
     }

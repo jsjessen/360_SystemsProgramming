@@ -28,7 +28,7 @@ DEBUG    = -g -Wall -O0
 LIBS     = #-lmylib -lm
 
 CC     = gcc
-CFLAGS = $(INCLUDES) $(DEBUG)
+CFLAGS = -std=c99 $(INCLUDES) $(DEBUG)
 LFLAGS = #-L../lib include libraries not in /usr/lib
 
 ###### Directories ######

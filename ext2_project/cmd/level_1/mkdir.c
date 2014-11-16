@@ -72,7 +72,7 @@ int make_dir(MINODE* parent_mip, char* child_name)
     // Make entry in parent directory for me
     enter_name(parent_mip, ino, child_name);
 
-    return 1;
+    return SUCCESS;
 }
 
 // Command accessed via main, big picture
