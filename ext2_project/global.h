@@ -18,7 +18,10 @@
 #include <string.h>
 #include <sys/stat.h>
 
+#define EMPTY 0
+#define MAX_FILE_NAME_LENGTH 256
 #define NUM_DIRECT_BLOCKS 12
+#define NUM_DATA_BLOCKS   15
 
 #define BLOCK_SIZE     1024
 #define SUPER_SIZE     1024 
@@ -63,7 +66,7 @@ typedef struct ext2_dir_entry_2 DIR;
 typedef struct minode
 {
     INODE         inode;     // Inode structure on disk (data)
-    int           dev;       // The inode came from this device (for writing)
+    int           device;    // The inode came from this device (for writing)
     int           ino;       // The inode came from inode # (for writing)
     int           refCount;  // # of processes using me
     int           dirty;     // Has my inode been modified? (eventually write to disk)
@@ -75,12 +78,12 @@ typedef struct minode
 // A device that has been mounted (on a DIR)
 typedef struct mount
 {
-    int     dev;            // Which device am I?
+    int     device;         // Which device am I?
     int     nblocks;        // # of blocks   ----------|
     int     ninodes;        // # of inodes             |   
     int     bmap;           // Block bitmap block #    |--> Convenient quick ref
     int     imap;           // Inode bitmap block #    |     
-    int     iblk;           // Inode block # ----------|
+    int     inode_block;    // Inode block # ----------|
     MINODE *minode_ptr;     // Points to the DIR I'm mounted on
     char    name[64];       // What's the difference?
     char    mount_name[64]; // What's the difference?
@@ -112,7 +115,7 @@ typedef struct proc
 // Global Variables
 extern MINODE *root;
 extern PROC *running; // Points at the PROC structure of the current running process
-               // Every file operation is performed by the current running process
+                      // Every file operation is performed by the current running process
 
 extern MINODE    MemoryInodeTable[];
 extern MOUNT     MountTable[];

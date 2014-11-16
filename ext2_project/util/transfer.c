@@ -72,18 +72,17 @@ MINODE *iget(int device, int inode_number)
 {
     // Once you have the ino of an inode, you may load the inode into a slot
     // in the Minode[] array. 
-    int i = 0;
 
     if(inode_number < ROOT_INODE)
         return NULL;
 
     // To ensure uniqueness, you must search the Minode[] 
     // array to see whether the needed INODE already exists
-    for(i = 0; i < NMINODES; i++)
+    for(int i = 0; i < NMINODES; i++)
     {
         MINODE* mip = &MemoryInodeTable[i];
 
-        if(mip->dev == device && mip->ino == inode_number)
+        if(mip->device == device && mip->ino == inode_number)
         {
             // If you find the needed INODE already in a Minode[] slot, just inc its 
             // refCount by 1 and return the Minode[] pointer.
@@ -93,7 +92,7 @@ MINODE *iget(int device, int inode_number)
     }
 
     // If you do not find it in memory
-    for(i = 0; i < NMINODES; i++)
+    for(int i = 0; i < NMINODES; i++)
     {
         MINODE* mip = &MemoryInodeTable[i];
 
@@ -105,11 +104,11 @@ MINODE *iget(int device, int inode_number)
             // load the INODE from disk into that Minode[i].INODE, 
             // initialize the Minode[]'s other fields 
 
-            mip->dev = device;
-            mip->ino = inode_number;
-            mip->refCount = 1;
-            mip->dirty = false;
-            mip->mounted = false;
+            mip->device    = device;
+            mip->ino       = inode_number;
+            mip->refCount  = 1;
+            mip->dirty     = false;
+            mip->mounted   = false;
             mip->mount_ptr = NULL;
 
             ip = get_inode(device, inode_number);
@@ -129,18 +128,14 @@ MINODE *iget(int device, int inode_number)
 
 void iput(MINODE *mip)
 {
-    if(!mip)
-    {
-        fprintf(stderr,"iput: null mip\n");
-        return;
-    }
+    if(!mip) return;
 
     // Decrement refCount
     // Only write to MemoryInode to disk if
     // No processes are using it and it has been modified
     if(--(mip->refCount) <= 0 && mip->dirty == true)
     {
-        put_inode(mip->dev, mip->ino, mip->inode);
+        put_inode(mip->device, mip->ino, mip->inode);
         mip->dirty = false;
     }
 }
@@ -297,7 +292,7 @@ int get_inodes_per_block(int device)
     if(inode_size <= 0)
     {
         fprintf(stderr, "transfer.c: get_inodes_per_block(): inode_size = %d\n", inode_size);
-        return -1;
+        return FAILURE;
     }
     inodes_per_block = block_size / inode_size;
 

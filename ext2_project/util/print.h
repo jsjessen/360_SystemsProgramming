@@ -51,8 +51,5 @@ void print_bmap (int dev);
 void print_file_blocks(int device, int inode_number);
 int  print_indirect_block(int device, int block_size, int* buf, int level);
 
-void list_file(MINODE* mip,char* name);
-void list_dir(MINODE* mip);
-    
 
 #endif

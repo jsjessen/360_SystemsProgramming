@@ -9,11 +9,11 @@ char* find_name(MINODE *mip)
 {
     int my_ino = 0;
     int parent_ino = 0;
-    char* my_name = NULL;
-    MINODE* parent_mip = NULL;
-
     findino(mip, &my_ino, &parent_ino);
-    parent_mip = iget(running->cwd->dev, parent_ino);
+
+    MINODE* parent_mip = iget(running->cwd->device, parent_ino);
+
+    char* my_name = NULL;
     findmyname(parent_mip, my_ino, &my_name);
 
     iput(parent_mip);
@@ -31,16 +31,16 @@ int findmyname(MINODE *parent, int myino, char **my_name)
     {
         *my_name = (char*)malloc((strlen("/") + 1) * sizeof(char));
         strcpy(*my_name, "/");
-        return 1;
+        return SUCCESS;
     }
 
     if(!parent)
     {
         fprintf(stderr, "findmyname: null parent\n");
-        return 0;
+        return FAILURE;
     }
 
-    device = parent->dev;
+    device = parent->device;
     block_size = get_block_size(device);
     ip = &parent->inode;
 
@@ -48,14 +48,14 @@ int findmyname(MINODE *parent, int myino, char **my_name)
     if (!S_ISDIR(ip->i_mode))
     {
         fprintf(stderr, "Not a directory\n");
-        return 0;
+        return FAILURE;
     }
 
     // For DIR inodes, assume that (the number of entries is small so that) only has
     // 12 DIRECT data blocks. Therefore, search only the direct blocks for name[0].
     for(i = 0; i < (ip->i_size / block_size); i++)
     {
-        if (ip->i_block[i] == 0)
+        if (ip->i_block[i] == EMPTY || i >= NUM_DIRECT_BLOCKS)
             break;
 
         u8* block = get_block(device, ip->i_block[i]);
@@ -70,14 +70,14 @@ int findmyname(MINODE *parent, int myino, char **my_name)
                 strncpy(*my_name, dp->name, dp->name_len);
                 (*my_name)[dp->name_len] = 0;
                 free(block);
-                return 1;
+                return SUCCESS;
             }
             cp += dp->rec_len;       // advance cp by rec_len BYTEs
             dp = (DIR*)cp;           // pull dp along to the next record
         } 
         free(block);
     }
-    return 0;   
+    return FAILURE;   
 }
 
 int findino(MINODE *mip, int *myino, int *parent)
@@ -88,17 +88,17 @@ int findino(MINODE *mip, int *myino, int *parent)
     if(!mip)
     {
         fprintf(stderr, "findino: null mip\n");
-        return -1;
+        return FAILURE;
     }
 
-    device = mip->dev;
+    device = mip->device;
     ip = &mip->inode;
 
     //Check that mip is a directory
     if (!S_ISDIR(ip->i_mode))
     {
         fprintf(stderr, "Not a directory\n");
-        return -1;
+        return FAILURE;
     }
 
     u8* block = get_block(device, ip->i_block[0]);
@@ -113,14 +113,13 @@ int findino(MINODE *mip, int *myino, int *parent)
     *parent = dp->inode;
 
     free(block);
-    return 0;
+    return SUCCESS;
 }
 
 // Searches through the device along pathname for target file 
 // Returns the target file's inode number if found
 int getino(int device, char* pathname)
 {
-    int i = 0;
     int ino = 0;
     char** name = NULL; 
 
@@ -136,6 +135,7 @@ int getino(int device, char* pathname)
         ino = search(running->cwd, name[0]);// Relative: start at cwd
 
     // Continue search
+    int i = 0;
     while(name[++i])
     {
         if((ino = search(iget(device, ino), name[i])) <= 0)
@@ -152,8 +152,7 @@ int getino(int device, char* pathname)
 // Searches through the directory for the target file
 int search(MINODE *mip, char* target)
 {
-    int i;
-    int device = mip->dev;
+    int device = mip->device;
     int target_ino= 0;
     int block_size = get_block_size(device);
     INODE* ip = &mip->inode;
@@ -166,34 +165,24 @@ int search(MINODE *mip, char* target)
     }
 
     // For DIR inodes, assume that (the number of entries is small so that) only has
-    // 12 DIRECT data blocks. Therefore, search only the direct blocks for name[0].
-    for(i = 0; i < (ip->i_size / block_size); i++)
+    // 12 DIRECT data blocks. Therefore, search only the direct blocks.
+    for(int i = 0; i < (ip->i_size / block_size); i++)
     {
-        if (ip->i_block[i] == 0)
+        if (ip->i_block[i] == EMPTY || i >= NUM_DIRECT_BLOCKS)
             break;
 
         u8* block = get_block(device, ip->i_block[i]);
         u8* cp = block; 
         DIR* dp = (DIR*)block;
 
-        //print_divider('-');
-        //printf(" Inode #   Record Length   Name Length   Name \n");
-        //print_divider('-');
-
         while (cp < block + block_size)
         {
-            char name[256];
+            char name[MAX_FILE_NAME_LENGTH];
             strncpy(name, dp->name, dp->name_len);
             name[dp->name_len] = 0;
-            //printf(" %4d          %4d          %4d        %s",
-            //        dp->inode, dp->rec_len, dp->name_len, name);
 
             if (strcmp(name, target) == 0)
-            {
-                //printf(" <%.*s here", 15 - dp->name_len, "---------------");
                 target_ino = dp->inode;
-            }
-            //putchar('\n');
 
             cp += dp->rec_len;       // advance cp by rec_len BYTEs
             dp = (DIR*)cp;           // pull dp along to the next record

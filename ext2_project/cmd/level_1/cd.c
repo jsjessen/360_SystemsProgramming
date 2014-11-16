@@ -1,37 +1,36 @@
 #include <cmd.h>
-
-// cd => cd / => cwd = /
-// cd dir   =>   cwd = dir
+ 
+// Change the current working directory to
+// the first argument after the 'cd' command
+// If none exists, root becomes the new cwd
 int my_cd(int argc, char* argv[])
 {
-    int ino = 0;
-    int dev = running->cwd->dev;
-
-    MINODE* mip = NULL;
+    const int device = running->cwd->device;
+    MINODE* cwd = running->cwd;
 
     // If no arg, cd to root
     if(argc < 2)
     {
-        iput(running->cwd);
+        iput(cwd);
         running->cwd = root;
         running->cwd->refCount++;
         return SUCCESS;
     }
 
     // Get dir inode in memory
-    ino = getino(dev, argv[1]);
-    mip = iget(dev, ino);
+    int ino = getino(device, argv[1]);
+    MINODE* new_cwd = iget(device, ino);
 
     // Check that arg is a dir
-    if(!S_ISDIR(mip->inode.i_mode))
+    if(!S_ISDIR(new_cwd->inode.i_mode))
     {
-        iput(mip);
+        iput(new_cwd);
         fprintf(stderr, "cd: %s: Not a directory\n", argv[1]);
         return FAILURE;
     }
 
-    iput(running->cwd);
-    running->cwd = mip;
+    iput(cwd);
+    running->cwd = new_cwd;
 
     return SUCCESS;
 }

@@ -8,8 +8,7 @@
 
 int rm_child(MINODE *parent_mip, int child_ino)
 {
-    int block_num = 0;
-    const int device = running->cwd->dev;
+    const int device = running->cwd->device;
     const int block_size = get_block_size(device);
 
     INODE* parent_ip = &parent_mip->inode;
@@ -24,6 +23,7 @@ int rm_child(MINODE *parent_mip, int child_ino)
 
     // For DIR inodes, assume that (the number of entries is small so that) only has
     // 12 DIRECT data blocks. Therefore, search only the direct blocks for name[0].
+    int block_num = 0;
     for(block_num = 0; block_num < (parent_ip->i_size / block_size); block_num++)
     {
         if (parent_ip->i_block[block_num] == 0)
@@ -141,8 +141,6 @@ DIR* get_last_dir_entry(u8* block_start, int block_size)
     // Step to the last entry in a data block
     while(cp + dp->rec_len < block_start + block_size)
     {
-        printf("get_last_dir_entry: rec_len = %d\n", dp->rec_len);
-
         if(dp->rec_len <= 0)
         {
             fprintf(stderr, "get_last_dir_entry:"
@@ -154,14 +152,13 @@ DIR* get_last_dir_entry(u8* block_start, int block_size)
         dp = (DIR*)cp;     // pull dp along to the next record
     }
 
-    printf("Last Dir Entry: '%s'\n", dp->name);
     return dp;
 }
 
 bool isEmptyDir(MINODE *mip)
 {
     int i = 0;
-    const int device = mip->dev;
+    const int device = mip->device;
     const int block_size = get_block_size(device);
     INODE* ip = &mip->inode;
 
@@ -227,7 +224,7 @@ int get_ideal_record_length(const int name_len)
 int enter_name(MINODE *parent_mip, int my_ino, char *my_name)
 {
     int i = 0;
-    const int device = parent_mip->dev;
+    const int device = parent_mip->device;
     const int block_size = get_block_size(device);
 
     INODE* parent_ip = &parent_mip->inode;

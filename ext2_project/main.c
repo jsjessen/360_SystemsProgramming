@@ -91,7 +91,7 @@ void initialize_fs()
     {
         mip = &MemoryInodeTable[i];
 
-        mip->dev       = 0;
+        mip->device    = 0;
         mip->ino       = 0;
         mip->refCount  = 0;
         mip->dirty     = false;
@@ -104,13 +104,13 @@ void initialize_fs()
     {
         mp = &MountTable[i];
 
-        mp->dev        = 0;
-        mp->nblocks    = 0;
-        mp->ninodes    = 0;
-        mp->bmap       = 0;
-        mp->imap       = 0;
-        mp->iblk       = 0;
-        mp->minode_ptr = NULL;
+        mp->device      = 0;
+        mp->nblocks     = 0;
+        mp->ninodes     = 0;
+        mp->bmap        = 0;
+        mp->imap        = 0;
+        mp->inode_block = 0;
+        mp->minode_ptr  = NULL;
         strcpy(mp->name, "\0");
         strcpy(mp->mount_name, "\0");
     }
@@ -128,13 +128,12 @@ void mount_root(char* device_name)
     // So the first thing a file system must do is to mount-root.
     // MountTable[0] represents the mounted root device.
 
-    int dev = 0;
-
     SUPER *sp = NULL;
     GD    *gp = NULL;
     MOUNT *mp = NULL;
 
     // Open device for read/write
+    int dev = 0;
     if((dev = open(device_name, O_RDWR)) < 0)
     {
         perror("open device");
@@ -160,13 +159,13 @@ void mount_root(char* device_name)
     // Get root inode
     root = iget(dev, 2); root->refCount++;
 
-    mp->dev = dev;
-    mp->nblocks = sp->s_blocks_count;
-    mp->ninodes = sp->s_inodes_count;
-    mp->bmap = gp->bg_block_bitmap;
-    mp->imap = gp->bg_inode_bitmap;
-    mp->iblk = gp->bg_inode_table;
-    mp->minode_ptr = root;          // Think about!
+    mp->device      = dev;
+    mp->nblocks     = sp->s_blocks_count;
+    mp->ninodes     = sp->s_inodes_count;
+    mp->bmap        = gp->bg_block_bitmap;
+    mp->imap        = gp->bg_inode_bitmap;
+    mp->inode_block = gp->bg_inode_table;
+    mp->minode_ptr  = root;          // Think about!
     strcpy(mp->name, "root");               //CHANGE
     strcpy(mp->mount_name, "sir mounty");   //CHANGE
 

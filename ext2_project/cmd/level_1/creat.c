@@ -1,107 +1,61 @@
 #include <cmd.h>
 
+int creat_file(MINODE* parent_mip, char* child_name);
 
-int creat_file(MINODE* parent_mip, char* child_name)
-{
-    int i = 0;
-    const int device = running->cwd->dev;
-    const int block_size = get_block_size(device);
 
-    // Allocate an inode for the new file 
-    int ino = ialloc(device);
-
-    // Create the inode in memory
-    MINODE* mip = iget(device, ino);
-    INODE* ip   = &mip->inode;
-
-    ip->i_mode = FILE_MODE;		     // Directory type and permissions
-    ip->i_uid  = running->uid;	     // Owner uid 
-    ip->i_gid  = running->gid;	     // Group Id
-    ip->i_size = 0;	                 // Size in bytes 
-    ip->i_links_count = 1;	         // Parent directory
-    ip->i_atime = time(0L);          // Set last access to current time
-    ip->i_ctime = time(0L);          // Set creation to current time
-    ip->i_mtime = time(0L);          // Set last modified to current time
-    ip->i_blocks = block_size / 512; // # of 512-byte blocks reserved for this inode 
-
-    // Set all of the data blocks to 0
-    for(i = 0; i < 15; i++)
-        ip->i_block[i] = 0;
-
-    // Just made it, so of course it differs from disk
-    mip->dirty = true; // mark minode dirty
-    iput(mip);         // write INODE to disk
-
-    // Make entry in parent directory for me
-    enter_name(parent_mip, ino, child_name);
-
-    return 1;
-}
-
+// Create a new file
 int my_creat(int argc, char* argv[])
 {
-    int i = 0;
-    const int device = running->cwd->dev;
+    const int device = running->cwd->device;
 
     if(argc < 2)
     {
         fprintf(stderr, "creat: missing operand\n");
-        return 0;
+        return FAILURE;
     }
 
     // creat each filename given by user
+    int i = 0;
     while(argv[++i])
     {
         char* path = argv[i];
+
+        // From path, get path to parent and name of child
         char* parent_name = NULL;
         char* child_name  = NULL;
+        parse_path(path, &parent_name, &child_name);
 
-        int parent_ino = 0;
+        // Get parent in memory
+        int parent_ino = getino(device, parent_name);
+        MINODE* parent_mip = iget(device, parent_ino);
 
-        MINODE* parent_mip = NULL;
-        INODE* parent_ip = NULL;
+        // Verify that parent exists
+        if(!parent_mip)
+        {
+            goto clean_up;
+            fprintf(stderr, "creat: cannot create file '%s':"
+                    " No such file or directory\n", path);
+        }
+        // Verify that parent is a directory
+        else if(!S_ISDIR(parent_mip->inode.i_mode))
+        {
+            goto clean_up;
+            fprintf(stderr, "creat: cannot create file '%s':"
+                    " Not a directory\n", path);
+        }
+        // Verify that child does not yet exist
+        else if(getino(device, path) > 0)
+        {
+            goto clean_up;
+            fprintf(stderr, "creat: cannot create file '%s':"
+                    " File exists\n", path);
+        }
 
         // If creating multiple files
         if(argc > 2)
             printf("creat: creating directory '%s'\n", path);
 
-        // From path, get path to parent and name of child
-        parse_path(path, &parent_name, &child_name);
-
-        // Get parent in memory
-        parent_ino = getino(device, parent_name);
-        parent_mip = iget(device, parent_ino);
-        parent_ip  = &parent_mip->inode;
-
-        // Verify that parent exists
-        if(!parent_mip)
-        {
-            fprintf(stderr, "creat: cannot create file '%s':"
-                    " No such file or directory\n", path);
-            free(parent_name);
-            free(child_name);
-            return 0;
-        }
-
-        // Verify that parent is a directory
-        if(!S_ISDIR(parent_ip->i_mode))
-        {
-            fprintf(stderr, "creat: cannot create file '%s':"
-                    " Not a directory\n", path);
-            free(parent_name);
-            free(child_name);
-            return 0;
-        }
-
-        // Verify that child does not yet exist
-        if(getino(device, path) > 0)
-        {
-            fprintf(stderr, "creat: cannot create file '%s':"
-                    " File exists\n", path);
-            free(parent_name);
-            free(child_name);
-            return 0;
-        }
+        INODE*  parent_ip  = &parent_mip->inode;
 
         // Make a file with the child's name in the parent directory
         creat_file(parent_mip, child_name);
@@ -113,12 +67,51 @@ int my_creat(int argc, char* argv[])
         // but the disk-inode does not, hence parent is dirty.
         parent_mip->dirty = true;
 
-        // Move parent inode from memory to disk (if no other references)
-        iput(parent_mip);
+clean_up:
+        // Move parent inode from memory to disk
+        iput(parent_mip); 
 
         free(parent_name);
         free(child_name);
     }
 
-    return 0;
+    return SUCCESS;
+}
+
+
+// The inner workings of file creation
+int creat_file(MINODE* parent_mip, char* child_name)
+{
+    const int device = running->cwd->device;
+    const int block_size = get_block_size(device);
+
+    // Allocate an inode for the new file 
+    int ino = ialloc(device);
+
+    // Create the inode in memory
+    MINODE* mip = iget(device, ino);
+    INODE*  ip  = &mip->inode;
+
+    ip->i_mode = FILE_MODE;		     // Directory type and permissions
+    ip->i_uid  = running->uid;	     // Owner uid 
+    ip->i_gid  = running->gid;	     // Group Id
+    ip->i_size = 0;	                 // Size in bytes 
+    ip->i_links_count = 1;	         // Links to parent directory
+    ip->i_atime = time(0L);          // Set last access to current time
+    ip->i_ctime = time(0L);          // Set creation to current time
+    ip->i_mtime = time(0L);          // Set last modified to current time
+    ip->i_blocks = block_size / 512; // # of 512-byte blocks reserved for this inode 
+
+    // Set all of the data blocks to 0
+    for(int i = 0; i < NUM_DATA_BLOCKS; i++)
+        ip->i_block[i] = 0;
+
+    // Just made it, so of course it differs from disk
+    mip->dirty = true; // mark minode dirty
+    iput(mip);         // write INODE to disk
+
+    // Make entry for me in parent directory
+    enter_name(parent_mip, ino, child_name);
+
+    return SUCCESS;
 }

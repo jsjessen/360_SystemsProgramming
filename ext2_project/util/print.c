@@ -9,11 +9,10 @@
 // *************** Title ***************  
 void print_title(char* title, char symbol)
 {
-    int i;
     int length = strlen(title) + 2; // space before/after title
 
     putchar('\n');
-    for (i = 0; i < TITLE_WIDTH - length; i++)
+    for (int i = 0; i < TITLE_WIDTH - length; i++)
     {
         if (i != (TITLE_WIDTH - length) / 2)
             putchar(symbol);
@@ -26,8 +25,7 @@ void print_title(char* title, char symbol)
 // -------------------------------------
 void print_divider(char symbol)
 {
-    int i;
-    for (i = 0; i < TITLE_WIDTH - 1; i++)
+    for (int i = 0; i < TITLE_WIDTH - 1; i++)
         putchar(symbol);
 
     putchar('\n');
@@ -98,14 +96,13 @@ void print_inode(int device, int inode_number)
 // Print the contents of a directory
 void print_dir(int device, int inode_number)
 {
-    int i;
     INODE *ip = get_inode(device, inode_number);
     int block_size = get_block_size(device);
 
     printf("\n********** DIR OF INODE: %d **********\n", inode_number);
-    for(i = 0; i < (ip->i_size / block_size); i++)
+    for(int i = 0; i < (ip->i_size / block_size); i++)
     {
-        if (ip->i_block[i] == 0)
+        if (ip->i_block[i] == EMPTY || i >= NUM_DIRECT_BLOCKS)
             break;
 
         u8* block = get_block(device, ip->i_block[i]);
@@ -245,13 +242,9 @@ void print_file_blocks(int device, int inode_number)
 // Recursive function for printing indirect data blocks
 int print_indirect_block(int device, int block_size, int* buf, int level)
 {
-    //block size might be different
-
-    int i;
-
     if(level - 1)
     {
-        for(i = 0; i < block_size / sizeof(int); i++)
+        for(int i = 0; i < block_size / sizeof(int); i++)
         {
             printf(" -> %d", buf[i]);
             if(!print_indirect_block(device, block_size, 
@@ -267,7 +260,7 @@ int print_indirect_block(int device, int block_size, int* buf, int level)
         printf(":\n");
         print_divider('-');
 
-        for(i = 0; i < block_size / sizeof(int); i++)
+        for(int i = 0; i < block_size / sizeof(int); i++)
         {
             if (i && i % GROUPS_PER_LINE == 0)
                 putchar('\n');
@@ -287,101 +280,4 @@ int print_indirect_block(int device, int block_size, int* buf, int level)
 
     free(buf);
     return 1;
-}
-
-// permissions link  gid  uid  size  date  name
-void list_file(MINODE* mip, char* name)
-{
-    if(!mip)
-    {
-        fprintf(stderr, "list_file: Null pointer to memory inode\n");
-        return;
-    }
-
-    int i = 0; 
-    INODE *ip = &mip->inode;
-
-    u16 mode = ip->i_mode;
-    u16 links = ip->i_links_count;
-    u16 uid = ip->i_uid;
-    u16 gid = ip->i_gid;
-    u32 size = ip->i_size;
-    char* time = ctime((time_t*)&ip->i_mtime);
-    time[strlen(time) - 1] = 0;
-
-    static const char* Permissions = "rwxrwxrwx";
-
-    // Type 
-    // The leading 4 bits of mode (2 bytes/16 bits) indicate type
-    // 0xF000 = 1111 0000 0000 0000
-    switch(mode & 0xF000) 
-    {
-        case 0x8000:  putchar('-');     break; // 0x8 = 1000
-        case 0x4000:  putchar('d');     break; // 0x4 = 0100
-        case 0xA000:  putchar('l');     break; // oxA = 1010
-        default:      putchar('?');     break;
-    }
-
-    // Permissions
-    for(i = 0; i < strlen(Permissions); i++)
-        putchar(mode & (1 << (strlen(Permissions) - 1 - i)) ? Permissions[i] : '-');
-
-    // Everything else
-    printf("%4hu %4hu %4hu %8u %26s  %s", 
-            links, gid, uid, size, time, name);
-
-    // Trace link
-    if(S_ISLNK(ip->i_mode))
-        printf(" -> %s", (char*)ip->i_block);
-
-    putchar('\n');
-}
-
-void list_dir(MINODE* mip)
-{
-    int i;
-    int device = mip->dev;
-    int block_size = get_block_size(device);
-
-    INODE* ip = &mip->inode;
-    MINODE* cip = NULL;
-
-    if(!mip)
-    {
-        fprintf(stderr, "list_dir: Null pointer to memory inode\n");
-        return;
-    }
-    else if(!S_ISDIR(ip->i_mode))
-    {
-        fprintf(stderr, "list_dir: Not a directory\n");
-        return;
-    }
-
-    // For DIR inodes, assume that (the number of entries is small so that) only has
-    // 12 DIRECT data blocks. Therefore, search only the direct blocks for name[0].
-    for(i = 0; i < (ip->i_size / block_size); i++)
-    {
-        if (ip->i_block[i] == 0)
-            break;
-
-        u8* block = get_block(device, ip->i_block[i]);
-        u8* cp = block; 
-        DIR* dp = (DIR*)block;
-
-        while (cp < block + block_size)
-        {
-            char name[256];
-            strncpy(name, dp->name, dp->name_len);
-            name[dp->name_len] = 0;
-
-            cip = iget(device, dp->inode);
-            list_file(cip, name);
-            iput(cip);
-
-            cp += dp->rec_len;       // advance cp by rec_len BYTEs
-            dp = (DIR*)cp;           // pull dp along to the next record
-        } 
-
-        free(block);
-    }
 }
