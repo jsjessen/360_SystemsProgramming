@@ -4,7 +4,7 @@
 // CptS 360
 
 #include "util.h"
-#include <print.h>
+#include <print.h> // DELETE
 
 
 int rm_child(MINODE *parent_mip, int child_ino)
@@ -21,9 +21,7 @@ int rm_child(MINODE *parent_mip, int child_ino)
 
     DIR* prev_dp = NULL; 
 
-    print_inode(device, parent_mip->ino);
-    printf("DEBUG1\n");
-    print_file_blocks(device, parent_mip->ino);
+    print_dir(device, parent_mip->ino);
 
     // Search parent INODE's data block(s) for the child's entry 
 
@@ -31,12 +29,6 @@ int rm_child(MINODE *parent_mip, int child_ino)
     // 12 DIRECT data blocks. Therefore, search only the direct blocks for name[0].
     for(block_num = 0; block_num < (parent_ip->i_size / block_size); block_num++)
     {
-    print_inode(device, parent_mip->ino);
-        printf("DEBUG2\n");
-        free(block);
-    print_inode(device, parent_mip->ino);
-        printf("DEBUG3\n");
-
         if (parent_ip->i_block[block_num] == 0)
             break;
 
@@ -47,32 +39,34 @@ int rm_child(MINODE *parent_mip, int child_ino)
         while (cp < block + block_size)
         {
             if(dp->inode == child_ino)
-                break;
+                goto child_found;
 
             cp += dp->rec_len;       // advance cp by rec_len BYTEs
             prev_dp = dp;
             dp = (DIR*)cp;           // pull dp along to the next record
         } 
 
+        free(block);
+        block = NULL;
     }
+    return FAILURE;
+
+child_found:
+
     // dp = child DIR entry
 
-    print_inode(device, parent_mip->ino);
-    printf("DEBUG4\n");
     // Erase name entry from parent directory 
 
-    // If first entry in a data block (HOW DO WE KNOW IT IS ALONE?)
-    if(cp == block)
+    // If it is the first and only entry 
+    // Delete the entire block, shifting proceeding non-zero blocks to fill gap
+    if(cp == block && cp + dp->rec_len == block + block_size)
     {
-
-    print_inode(device, parent_mip->ino);
-        printf("DEBUG First\n");
         //       -----------------------------------------------
         //       |INO Rlen Nlen NAME                           | 
         //       -----------------------------------------------
 
         free(block);
-        bfree(device, block_num);
+        bfree(device, parent_ip->i_block[block_num]);
         parent_ip->i_size -= block_size;
 
         //       Assume this is parent's i_block[i]:
@@ -85,75 +79,63 @@ int rm_child(MINODE *parent_mip, int child_ino)
             block_num++;
 
             block = get_block(device, parent_ip->i_block[block_num]);
-            put_block(device, block_num - 1, block);
+            put_block(device, parent_ip->i_block[block_num- 1], block);
         }
     }
-    // Last entry in a data block
+    // If it is the last entry
+    // Let its predecessor absorb its record length so it's no longer accessable
     else if(cp + dp->rec_len == block + block_size)
     {
-    print_inode(device, parent_mip->ino);
-        printf("DEBUG Last\n");
+        //                             |   remove this entry   |
+        //       -----------------------------------------------
+        //       xxxxxx| yyyyy | zzzzz |  INO rlen nlen NAME   | 
+        //       -----------------------------------------------
+
+        //       becomes:
+        //       -----------------------------------------------
+        //       xxxxxx| yyyyy | zzzzz (rec_len INC by rlen)   | 
+        //       -----------------------------------------------
 
         prev_dp->rec_len += dp->rec_len;
-        put_block(device, block_num, block);
-    print_inode(device, parent_mip->ino);
+        printf("Prev: '%s'\n", prev_dp->name);
+        printf("Length = %d\n", prev_dp->rec_len);
+
+        put_block(device, parent_ip->i_block[block_num], block);
     }
-    // Somewhere in the middle 
+    // If there are entries after it
+    // Pretend the entry has been removed, shift proceeding entries to fill void
+    // With the last absorbing the record length of the removed entry
     else
     {
-
-    print_inode(device, parent_mip->ino);
-        printf("DEBUG Middle\n");
-        printf("block_num  = %d\n", block_num);
-
-        //            | remove this entry   |
+        //             |  remove this entry  |
         //       -----------------------------------------------
-        //       xxxxx|INO rlen nlen NAME   |yyy  |zzz         | 
+        //       xxxxx | INO rlen nlen NAME  | yyyyyy | zzzzzz | 
         //       -----------------------------------------------
 
-        //               becomes:
+        //       becomes:
         //       -----------------------------------------------
-        //       xxxxx|yyy |zzz (rec_len INC by rlen)          |
+        //       xxxxx | yyyyy | zzzzzz (rec_len INC by rlen)  |
         //       -----------------------------------------------
 
-        int removed_rec_len = dp->rec_len;
         DIR* last_entry = get_last_dir_entry(block, block_size);
 
-        printf("removed_rec_len = %d\n", removed_rec_len);
+        // Add removed rec_len to the LAST entry of the block;
+        last_entry->rec_len += dp->rec_len;
 
         // Move all entries AFTER this entry LEFT
         u8* start = cp + dp->rec_len;
-    printf("DEBUGM1\n");
         u8* end = block + block_size;
-    printf("DEBUGM2\n");
+        memmove(cp, start, end - start); // the safe way when memory overlaps
 
-        if(start != end)
-            memmove(cp, start, end - start); // the safe way when memory overlaps
-
-    printf("DEBUGM3\n");
-        // Add removed rec_len to the LAST entry of the block;
-        cp = (u8*)(last_entry - removed_rec_len);
-        last_entry = (DIR*)cp;
-        last_entry->rec_len += removed_rec_len;
-    printf("DEBUGM4\n");
-
-        put_block(device, block_num, block);
-    printf("DEBUGM6\n");
+        put_block(device, parent_ip->i_block[block_num], block);
     }
-
-
-    print_inode(device, parent_mip->ino);
-    printf("DEBUG7\n");
 
     parent_mip->dirty = true;
 
     // Write the parent's data block back to disk;
     iput(parent_mip);
 
-    print_inode(device, parent_mip->ino);
-    print_file_blocks(device, parent_mip->ino);
-    list_dir(parent_mip);
-
+    print_dir(device, parent_mip->ino);
     return SUCCESS;
 }
 
@@ -179,6 +161,7 @@ DIR* get_last_dir_entry(u8* block_start, int block_size)
         dp = (DIR*)cp;     // pull dp along to the next record
     }
 
+    printf("Last Dir Entry: '%s'\n", dp->name);
     return dp;
 }
 
@@ -189,15 +172,23 @@ bool isEmptyDir(MINODE *mip)
     const int block_size = get_block_size(device);
     INODE* ip = &mip->inode;
 
+    if(!mip)
+    {
+        fprintf(stderr, "isEmptyDir: No such file or directory\n");
+        return false;
+    }
     //Check that dir is a directory
-    if (!S_ISDIR(ip->i_mode))
+    else if (!S_ISDIR(ip->i_mode))
     {
         fprintf(stderr, "Not a directory\n");
         return false;
     }
 
     if(ip->i_links_count > 2)
+    {
+        printf("Not empty: link count = %d\n", ip->i_links_count);
         return false;
+    }
 
     // For DIR inodes, assume that (the number of entries is small so that) only has
     // 12 DIRECT data blocks. Therefore, search only the direct blocks for name[0].
@@ -218,6 +209,8 @@ bool isEmptyDir(MINODE *mip)
 
             if (strcmp(name, ".") != 0 && strcmp(name, "..") != 0)
             {
+                printf("Not empty: Contains '%s'\n", name);
+                printf("rec_len = %d\n", dp->rec_len);
                 free(block);
                 return false;
             }

@@ -19,13 +19,13 @@ int my_rmdir(int argc, char* argv[])
         bool error = false;
         char* path = argv[i];
 
-        int parent_ino = 0;
-        MINODE* parent_mip = NULL; 
-        INODE*   parent_ip = NULL;
-
         int ino = getino(device, path);
         MINODE* mip = iget(device, ino);
         INODE*   ip = &mip->inode;
+
+        int parent_ino = 0;
+        MINODE* parent_mip = NULL; 
+        INODE*   parent_ip = NULL;
 
         // Verify file exists
         if(!mip)
@@ -68,6 +68,7 @@ int my_rmdir(int argc, char* argv[])
         {
             if(mip)
                 iput(mip);
+
             continue;
         }
 
@@ -105,5 +106,3 @@ int my_rmdir(int argc, char* argv[])
 
     return SUCCESS;
 }
-
-

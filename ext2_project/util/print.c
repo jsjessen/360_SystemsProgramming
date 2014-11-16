@@ -114,7 +114,7 @@ void print_dir(int device, int inode_number)
 
         printf("i_block[%d]\n", i);
         print_divider('-');
-        printf(" inode  rec_len  name_len  name\n");
+        printf(" inode        rec_len      name_len     name\n");
         print_divider('-');
 
         while (cp < block + block_size)
@@ -292,6 +292,12 @@ int print_indirect_block(int device, int block_size, int* buf, int level)
 // permissions link  gid  uid  size  date  name
 void list_file(MINODE* mip, char* name)
 {
+    if(!mip)
+    {
+        fprintf(stderr, "list_file: Null pointer to memory inode\n");
+        return;
+    }
+
     int i = 0; 
     INODE *ip = &mip->inode;
 
@@ -340,10 +346,14 @@ void list_dir(MINODE* mip)
     INODE* ip = &mip->inode;
     MINODE* cip = NULL;
 
-    //Check that dir is a directory
-    if (!S_ISDIR(ip->i_mode))
+    if(!mip)
     {
-        fprintf(stderr, "Not a directory\n");
+        fprintf(stderr, "list_dir: Null pointer to memory inode\n");
+        return;
+    }
+    else if(!S_ISDIR(ip->i_mode))
+    {
+        fprintf(stderr, "list_dir: Not a directory\n");
         return;
     }
 
