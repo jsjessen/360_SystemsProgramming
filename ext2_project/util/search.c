@@ -47,7 +47,7 @@ int findmyname(MINODE *parent, int myino, char **my_name)
     //Check that parent is a directory
     if (!S_ISDIR(ip->i_mode))
     {
-        fprintf(stderr, "Not a directory\n");
+        fprintf(stderr, "findmyname: Not a directory\n");
         return FAILURE;
     }
 
@@ -97,7 +97,7 @@ int findino(MINODE *mip, int *myino, int *parent)
     //Check that mip is a directory
     if (!S_ISDIR(ip->i_mode))
     {
-        fprintf(stderr, "Not a directory\n");
+        fprintf(stderr, "findino: Not a directory\n");
         return FAILURE;
     }
 
@@ -141,7 +141,7 @@ int getino(int device, char* pathname)
         if((ino = search(iget(device, ino), name[i])) <= 0)
         {
             free_array(name);
-            return -1;
+            return FAILURE;
         }
     }
 
@@ -160,8 +160,8 @@ int search(MINODE *mip, char* target)
     //Check that dir is a directory
     if (!S_ISDIR(ip->i_mode))
     {
-        fprintf(stderr, "Not a directory\n");
-        return -1;
+        fprintf(stderr, "search: Not a directory\n");
+        return FAILURE;
     }
 
     // For DIR inodes, assume that (the number of entries is small so that) only has

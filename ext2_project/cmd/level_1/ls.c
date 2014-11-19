@@ -28,9 +28,9 @@ int my_ls(int argc, char* argv[])
 
         if(!mip)
         {
-            goto clean_up;
             printf("ls: cannot access '%s':"
                     " No such file or directory\n", argv[i]);
+            goto clean_up;
         }
 
         // If printing multiple lists label each one

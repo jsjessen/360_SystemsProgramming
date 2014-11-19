@@ -32,23 +32,23 @@ int my_creat(int argc, char* argv[])
         // Verify that parent exists
         if(!parent_mip)
         {
-            goto clean_up;
             fprintf(stderr, "creat: cannot create file '%s':"
                     " No such file or directory\n", path);
+            goto clean_up;
         }
         // Verify that parent is a directory
         else if(!S_ISDIR(parent_mip->inode.i_mode))
         {
-            goto clean_up;
             fprintf(stderr, "creat: cannot create file '%s':"
                     " Not a directory\n", path);
+            goto clean_up;
         }
         // Verify that child does not yet exist
         else if(getino(device, path) > 0)
         {
-            goto clean_up;
             fprintf(stderr, "creat: cannot create file '%s':"
                     " File exists\n", path);
+            goto clean_up;
         }
 
         // If creating multiple files

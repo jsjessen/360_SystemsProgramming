@@ -1,6 +1,5 @@
 #include <cmd.h>
 
-
 int my_rmdir(int argc, char* argv[])
 {
     const int uid = running->uid;
@@ -23,37 +22,37 @@ int my_rmdir(int argc, char* argv[])
         // Verify file exists
         if(!mip)
         {
-            goto clean_up;
             fprintf(stderr, "rmdir: failed to remove '%s':"
                     " No such file or directory\n", path);
+            goto clean_up;
         }
         // Verify user has permission to remove the directory
         else if(uid != SUPER_USER && uid != mip->inode.i_uid)
         {
-            goto clean_up;
             fprintf(stderr, "rmdir: failed to remove '%s':"
                     " Permission denied\n", path);
+            goto clean_up;
         }
         // Verify that it is a directory
         else if(!S_ISDIR(mip->inode.i_mode))
         {
-            goto clean_up;
-            fprintf(stderr, "mkdir: failed to remove '%s':"
+            fprintf(stderr, "rmdir: failed to remove '%s':"
                     " Not a directory\n", path);
+            goto clean_up;
         }
         // Verify that it is not busy
         else if(mip->refCount > 1)
         {
-            goto clean_up;
             fprintf(stderr, "rmdir: failed to remove directory '%s':"
                     " Directory busy\n", path);
+            goto clean_up;
         }
         // Verify that it is empty
         else if(!isEmptyDir(mip))
         {
-            goto clean_up;
             fprintf(stderr, "rmdir: failed to remove directory '%s':"
                     " Directory not empty\n", path);
+            goto clean_up;
         }
 
         // If removing multiple directories, display
@@ -75,7 +74,7 @@ int my_rmdir(int argc, char* argv[])
         // Deallocate its inode
         ifree(device, ino);
 
-        // Remove child's entry from parent directory
+        // Remove entry from parent directory
         rm_child(parent_mip, ino); 
 
         // Update parent's info
