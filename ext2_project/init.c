@@ -3,7 +3,6 @@
 #include <global.h>
 #include <transfer.h>
 
-
 MINODE *root;
 PROC *running; // Points at the PROC structure of the current running process
 // Every file operation is performed by the current running process

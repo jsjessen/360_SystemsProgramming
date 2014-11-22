@@ -22,6 +22,7 @@
 #include <util.h>
 #include <transfer.h>
 
+
 // Input an array of pointers like char* argv[]
 // Goes through and frees each element
 // and then frees the array

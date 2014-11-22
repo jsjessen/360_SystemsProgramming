@@ -14,6 +14,7 @@
 #include <init.c>
 
 
+
 int main(int argc, char* argv[])
 {
     char* device = "disk/mydisk"; //default

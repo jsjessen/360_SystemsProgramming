@@ -16,6 +16,7 @@
 #include <string.h>
 #include <ctype.h>
 
+
 // Gets input from user
 // Returns a string with no leading whitespace
 // and a single space between words

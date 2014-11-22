@@ -8,6 +8,7 @@
 
 u8* get_block(int device, int block)
 {
+
     int bytes_read;
     int block_size = get_block_size(device); 
     u8* buf = (u8*)malloc(block_size);
