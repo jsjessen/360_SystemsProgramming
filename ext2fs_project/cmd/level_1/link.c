@@ -1,9 +1,9 @@
 #include <cmd.h>
 
-// link oldFileName newFileName
+// link targetFileName linkFileName
 //
-// creates a file newFileName which has 
-// the same inode(number) as that of oldfileName
+// creates a file linkFileName which has 
+// the same inode(number) as that of targetfileName
 int my_link(int argc, char* argv[])
 {
     const int device = running->cwd->device;
@@ -14,70 +14,70 @@ int my_link(int argc, char* argv[])
         return FAILURE;
     }
 
-    char* old_path = argv[1];
-    char* new_path = argv[2];
+    char* target_pathname = argv[1];
+    char* link_pathname = argv[2];
 
     // Get the inode into memory
-    int ino = getino(device, old_path);
+    int ino = getino(device, target_pathname);
     MINODE* mip = iget(device, ino);
 
     // Verify that inode exists
     if(!mip)
     {
         fprintf(stderr, "link: failed to access '%s':"
-                " No such file or directory\n", old_path);
+                " No such file or directory\n", target_pathname);
         goto clean_up;
     }
-    // Verify that oldFile is not a directory
+    // Verify that targetFile is not a directory
     else if(S_ISDIR(mip->inode.i_mode))
     {
         fprintf(stderr, "link: '%s':"
-                " hard link not allowed for directory\n", old_path);
+                " hard link not allowed for directory\n", target_pathname);
         goto clean_up;
     }
 
-    // From new_path, get path to parent and name of child
-    char* new_parent_name = NULL;
-    char* new_child_name  = NULL;
-    parse_path(new_path, &new_parent_name, &new_child_name);
+    // From link_pathname, get path to parent and name of child
+    char* link_parent_name = NULL;
+    char* link_child_name  = NULL;
+    parse_path(link_pathname, &link_parent_name, &link_child_name);
 
     // Get parent in memory
-    int new_parent_ino = getino(device, new_parent_name);
-    MINODE* new_parent_mip = iget(device, new_parent_ino);
+    int link_parent_ino = getino(device, link_parent_name);
+    MINODE* link_parent_mip = iget(device, link_parent_ino);
 
-    // Verify that newParent exists
-    if(!new_parent_mip)
+    // Verify that linkParent exists
+    if(!link_parent_mip)
     {
         fprintf(stderr, "link: failed to create hard link '%s' => '%s':"
-                " No such file or directory\n", new_path, old_path);
+                " No such file or directory\n", link_pathname, target_pathname);
         goto clean_up_more;
     }
-    // Verify that newParent is a directory
-    else if(!S_ISDIR(new_parent_mip->inode.i_mode))
+    // Verify that linkParent is a directory
+    else if(!S_ISDIR(link_parent_mip->inode.i_mode))
     {
         fprintf(stderr, "link: failed to access '%s':"
-                " Not a directory\n", new_path);
+                " Not a directory\n", link_pathname);
         goto clean_up_more;
     }
-    // Verify that newChild does not yet exist
-    else if(getino(device, new_path) > 0)
+    // Verify that linkChild does not yet exist
+    else if(getino(device, link_pathname) > 0)
     {
         fprintf(stderr, "link: failed to create hard link '%s':"
-                " File exists\n", new_path);
+                " File exists\n", link_pathname);
         goto clean_up_more;
     }
 
     // Verify that link is not being made across devices
-    if(mip->device != new_parent_mip->device)
+    if(mip->device != link_parent_mip->device)
     {
         fprintf(stderr, "link: failed to create hard link '%s' => '%s':"
-                " Invalid cross-device link\n", new_path, old_path);
+                " Invalid cross-device link\n", link_pathname, target_pathname);
         goto clean_up_more;
     }
 
-    // Make entry for newFile in newParent directory
-    // with the same inode number as oldFile
-    enter_name(new_parent_mip, ino, new_child_name);
+    // Make entry for linkFile in linkParent directory
+    // with the same inode number as targetFile
+    enter_name(link_parent_mip, ino, link_child_name);
 
     INODE* ip = &mip->inode;
 
@@ -86,17 +86,17 @@ int my_link(int argc, char* argv[])
     ip->i_links_count++;
     mip->dirty = true;
     
-    INODE* new_parent_ip  = &new_parent_mip->inode;
+    INODE* link_parent_ip  = &link_parent_mip->inode;
 
     // Set parent's last time of access to current time
-    new_parent_ip->i_atime = time(0L);
-    new_parent_mip->dirty = true;
+    link_parent_ip->i_atime = time(0L);
+    link_parent_mip->dirty = true;
 
 clean_up_more:
-    iput(new_parent_mip); 
+    iput(link_parent_mip); 
 
-    free(new_parent_name);
-    free(new_child_name);
+    free(link_parent_name);
+    free(link_child_name);
 
 clean_up:
     // Move parent inode from memory to disk
