@@ -35,6 +35,7 @@
 // Default dir and regular file modes
 #define DIR_MODE    0040775 
 #define FILE_MODE   0100664
+#define LINK_MODE   0120777
 #define SUPER_MAGIC  0xEF53
 #define SUPER_USER        0
 

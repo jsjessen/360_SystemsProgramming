@@ -115,5 +115,5 @@ int creat_file(MINODE* parent_mip, char* child_name)
     // Make entry for me in parent directory
     enter_name(parent_mip, ino, child_name);
 
-    return SUCCESS;
+    return ino;
 }

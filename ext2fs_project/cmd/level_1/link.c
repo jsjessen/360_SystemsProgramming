@@ -79,18 +79,17 @@ int my_link(int argc, char* argv[])
     // with the same inode number as oldFile
     enter_name(new_parent_mip, ino, new_child_name);
 
+    INODE* ip = &mip->inode;
+
+    // Now there is another file linked to the inode
+    // so increment number of links
+    ip->i_links_count++;
+    mip->dirty = true;
+    
     INODE* new_parent_ip  = &new_parent_mip->inode;
-
-    new_parent_ip->i_links_count++;
-
-    // Make a file with the child's name in the parent directory
-    //creat_file(parent_mip, child_name);
 
     // Set parent's last time of access to current time
     new_parent_ip->i_atime = time(0L);
-
-    // Parent memory-inode now has child in its directory
-    // but the disk-inode does not, hence parent is dirty.
     new_parent_mip->dirty = true;
 
 clean_up_more:

@@ -1,6 +1,6 @@
 #!/bin/sh
 
-DISK="disk/mydisk"
+DISK="disk/make_disk"
 
 if [ $# -gt 0 ]
 then
@@ -12,6 +12,7 @@ echo "ls $DISK"
 echo
 
 sudo mount -o loop $DISK /mnt
+sudo ln -s /mnt/dir /mnt/dirlinuxLink
 sudo ls -laiUR /mnt
 sudo umount /mnt
 
