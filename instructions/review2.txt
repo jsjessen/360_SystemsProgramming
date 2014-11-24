@@ -3,43 +3,106 @@
 Mailman's algorithm:
 Given: int buf[1024];
 
-    How many bits are in buf[ ]?  1024 * 32
+    How many bits are in buf[ ]?  
+    
+        1024 * 32
 
 Assume: bits are counted from 0.
 For BIT=12345, 
 
-    which buf[i] contains this BIT?  12345 / 32
-    which bit in buf[i] is the BIT?  12345 % 32 
+    which buf[i] contains this BIT?  
+    
+        i = 12345 / 32
+
+    which bit in buf[i] is the BIT?  
+    
+        bit = 12345 % 32 
+
+        Verify by checking with simple test case, like 70:
+
+            70 / 32 = 2
+            70 % 32 = 6
+                        ===> buf[2] bit 6 (there is a 0th bit)
 
 Assume: bits are counted from 100, i.e. 100, 101, 102,...., etc.
 
-    which buf[i] contains this BIT?  (12345 - 100) / 32 
-    which bit in buf[i] is the BIT?  (12345 - 100) % 32
+    which buf[i] contains this BIT?  
+    
+        i = (12345 - 100) / 32 
+
+    which bit in buf[i] is the BIT?  
+    
+        bit = (12345 - 100) % 32
+
+        Verify by checking with simple test case, like 102:
+
+            (102 - 100) / 32 = 0 
+            (102 - 100) % 32 = 2 
+                                ===> buf[0] bit 2 (there is a 0th bit)
+
 
 An INODE's indirect block, i_block[12] = 1234;
 Write C code to print all the indirect data blocks.
 
     char buf[BLK_SIZE]; 
-    int* ptr;
+    int* int_ptr;
 
-    lseek(device, (long)(1234 * BLK_SIZE), 0);
-    read(device, buf, BLK_SIZE);
+    // i_block[12]'s value is the block number of the block
+    // containing the block numbers of the inode's
+    // 13th to 268th data blocks 
 
-    for(i = 0; i < BLK_SIZE / sizeof(int); i++)
-        printf("%d", ptr[i]);
+    lseek(device, (long)(1234 * BLK_SIZE), 0); // seek to block
+    read(device, buf, BLK_SIZE);               // read block into buf
+
+    for(int i = 0; i < BLK_SIZE / sizeof(int); i++)
+        printf("%d ", int_ptr[i]);
 
 
 List the steps of mkdir /a/b/c
 
-    check that /a/b exist and is a dir
-    alloc inode and data block
-    data block = DIR block add . and ..
-    add entry to parent DIR
-
+    get dirname  = "/a/b"
+    get basename = "c"
+    get parent dir's inode in memory
+    verify that parent exists and is a dir
+    verify that in parent dir, c does not exist
+    Make a dir named "c" in the parent dir
+        alloc an inode 
+        alloc a data block
+        set i_block[0] to that data block
+        get the inode in memory
+        set all of the inode's properties
+        set all of the other data blocks to 0 
+        add . and .. entries to i_block[0]
+        write inode to disk
+        make a DIR entry for "c" in parent dir 
+    increment parent's links_count because of ".."
+    update parent's time of last access
+    mark parent as dirty
+    write parent inode to disk
 
 Write algorithm to enter "c" into the parent DIR's data block
 
-   ... 
+    get c's need_len = (4 * ((8 + name_len + 3) / 4));
+
+    loop through parent dir's data blocks
+        find the last entry in the block
+            do this by looping while dp + rec_len < block_start + block_size
+        compute it's ideal_len = 4 * ((8 + name_len + 3) / 4);
+        we are looking for a last entry with rec_len - ideal_len >= need_len
+        if we find such an entry
+            just trim it's rec_len down to ideal_len
+            add "c" entry at the end
+                with rec_len = block_size - (dp - bock_start)
+            write this data block to disk
+
+        if we don't find such an entry
+            we need alloc a new data block for the parent dir
+                set the first i_block[i] equal to 0 to this new block
+            increase parent dir's size by block_size
+            mark parent as dirty
+            add "c" entry as first and only on this block
+                so it's rec_len = block_size
+            write this block to disk
 
 
 Assume: char buf[1024] contains the data block of the parent DIR
@@ -59,39 +122,40 @@ Assume: LAST DIR entry = [ino, rlen=1000, nlen=6, 'olddir'];
 What's its IDEAL length?
 
     4 * ((8 + 6 + 3) / 4) = 16
-    name_length + 8 -> next multiple of 4
+    name_length + 8 --> round up to next multiple of 4
 
 
 name="testnewdir", its inode number=123
 What's the NEED length?
 
-    4 * ((8 + 10 + 3) / 4) = 20 
-    name_length + 8 -> next multiple of 4
+    name_len = 10
+
+    4 * ((8 + name_len + 3) / 4) = 20 
+    name_length + 8 -> round up to next multiple of 4
 
 
-HOW TO enter the entry for "testnewdir"?
-
-    if the last entry rec_len - its ideal length is >=
-        the ideal length of testnewdir then 
-
-
-Great FS surgeon:
+Great File System surgeon:
 How to convert an (empty) DIR to a FILE?
 
-    get inode in memory
-    change i_mode to FILE_MODE
-    dealloc data block
+    get its inode and its parent's inode in memory
+    change its i_mode from DIR_MODE to FILE_MODE 
+    dealloc all data blocks, if it has any
     set its size to 0
-    decrement parent links count by 1
-    put the inode back to disk
+    decrement parent dir's links_count by 1 (if removing ..)
+    write the inode back to disk
+    write parent back to disk
 
 
 How to convert a FILE to an (empty) DIR?
 
-    iget its inode //alloc a data block
-    change i_mode to DIR_MODE
-    refcount = 2
-    input the inode back to disk
+    get its inode and its parent's inode in memory
+    change its i_mode from FILE_MODE to DIR_MODE 
+    alloc a data block, if it doesn't have any
+    set its size to block_size 
+    creat . and ..
+    increment parent dir's links_count by 1
+    write the inode back to disk
+    write parent back to disk
 
 
 How to remove an entry from a parent DIR?
