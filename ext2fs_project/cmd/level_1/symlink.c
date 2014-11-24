@@ -70,10 +70,15 @@ int my_symlink(int argc, char* argv[])
         goto clean_up_more;
     }
 
+
     // Make a file with the child's name in the parent directory
     int link_ino = creat_file(link_parent_mip, link_child_pathname);
     MINODE* link_mip = iget(device, link_ino);
     INODE* link_ip = &link_mip->inode; 
+
+    print_inode(device, 2);// DEBUG
+    print_inode(device, 15);// DEBUG
+    print_inode(device, link_ino);// DEBUG
 
     // Change the file's type to link
     // The leading 4 bits of type indicate type
@@ -82,9 +87,14 @@ int my_symlink(int argc, char* argv[])
     //link_ip->i_mode = (link_ip->i_mode & 0x0FFF) | 0xA000;
     link_ip->i_mode = LINK_MODE;
     
+
+    // READLINK: INPUT/OUTPUT ERROR
+    
     // write the string target_name into the link's i_block[]
-    strcpy((char*)(link_ip->i_block), target_pathname);
-    link_ip->i_size = strlen(target_pathname);
+    strcpy((char*)(link_ip->i_block), "/mnt/fox");
+    //link_ip->i_block[0] = 'a';
+    //link_ip->i_size = strlen(target_pathname);
+    link_ip->i_size = 10; 
 
     link_mip->dirty = true;
     iput(link_mip);
@@ -97,6 +107,8 @@ int my_symlink(int argc, char* argv[])
 
 clean_up_more:
     iput(link_parent_mip); 
+
+    print_inode(device, link_ino);// DEBUG
 
     free(link_parent_pathname);
     free(link_child_pathname);

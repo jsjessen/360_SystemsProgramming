@@ -82,12 +82,13 @@ void print_inode(int device, int inode_number)
         print_title("Inode", '=');
 
     printf("inode                   =                    %4d\n", inode_number);
-    printf("mode                    =                    %4x\n", ip->i_mode);
+    printf("mode                    =                    %4o\n", ip->i_mode);
     printf("uid                     =                    %4u\n", ip->i_uid);
     printf("gid                     =                    %4u\n", ip->i_gid);
     printf("size                    =                    %4u\n", ip->i_size);
     printf("links_count             =                    %4u\n", ip->i_links_count);
     printf("i_block[0]              =                    %4u\n", ip->i_block[0]);
+    printf("i_block                 =                    %s\n", (char*)ip->i_block);
     print_divider('-');
 
     free(ip);

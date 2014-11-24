@@ -26,7 +26,7 @@ int my_rm(int argc, char* argv[])
                     " No such file or directory\n", path);
             goto clean_up;
         }
-        // Verify user has permission to remove the directory
+        // Verify user has permission to remove the file 
         else if(uid != SUPER_USER && uid != mip->inode.i_uid)
         {
             fprintf(stderr, "rm: failed to remove '%s':"
@@ -43,14 +43,14 @@ int my_rm(int argc, char* argv[])
         // Verify that it is not busy
         else if(mip->refCount > 1)
         {
-            fprintf(stderr, "rm: failed to remove directory '%s':"
-                    " Directory busy\n", path);
+            fprintf(stderr, "rm: failed to remove file '%s':"
+                    " File busy\n", path);
             goto clean_up;
         }
 
         // If removing multiple files, display
         if(argc > 2)
-            printf("rm: removing directory '%s'\n", path);
+            printf("rm: removing file '%s'\n", path);
 
         INODE* ip = &mip->inode;
 
