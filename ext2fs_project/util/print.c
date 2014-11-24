@@ -82,13 +82,23 @@ void print_inode(int device, int inode_number)
         print_title("Inode", '=');
 
     printf("inode                   =                    %4d\n", inode_number);
-    printf("mode                    =                    %4o\n", ip->i_mode);
-    printf("uid                     =                    %4u\n", ip->i_uid);
-    printf("gid                     =                    %4u\n", ip->i_gid);
-    printf("size                    =                    %4u\n", ip->i_size);
-    printf("links_count             =                    %4u\n", ip->i_links_count);
+
+    printf("i_mode                  =                    %4o\n", ip->i_mode);
+    printf("i_uid                   =                    %4u\n", ip->i_uid);
+    printf("i_size                  =                    %4u\n", ip->i_size);
+    //printf("i_atime                 =                    %s\n" , ctime((time_t*)&ip->i_atime));
+    //printf("i_ctime                 =                    %s\n" , ctime((time_t*)&ip->i_ctime));
+    //printf("i_mtime                 =                    %s\n" , ctime((time_t*)&ip->i_mtime));
+    //printf("i_dtime                 =                    %s\n" , ctime((time_t*)&ip->i_dtime));
+    printf("i_gid                   =                    %4u\n", ip->i_gid);
+    printf("i_links_count           =                    %4u\n", ip->i_links_count);
+    printf("i_blocks                =                    %4u\n", ip->i_blocks);
+    printf("i_flags                 =                    %4x\n", ip->i_flags);
     printf("i_block[0]              =                    %4u\n", ip->i_block[0]);
-    printf("i_block                 =                    %s\n", (char*)ip->i_block);
+    printf("i_block                 =                    %s\n" , (char*)ip->i_block);
+    printf("i_generation            =                    %4u\n", ip->i_generation);
+    printf("i_file_acl              =                    %4u\n", ip->i_file_acl);
+    printf("i_faddr                 =                    %4u\n", ip->i_faddr);
     print_divider('-');
 
     free(ip);
