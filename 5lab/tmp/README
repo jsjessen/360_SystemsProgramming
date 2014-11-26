@@ -1,0 +1,23 @@
+Simply create a virtual disk:
+
+	touch mydisk          # create a file named mydisk
+    	mke2fs mydisk 1440    # format mydisk as an EXT2 FS
+
+
+You can add content by mounting:
+
+	mount -o loop mydisk /mnt
+	mkdir /mnt/newDir
+	touch /mnt/newDir/newFile
+
+Then unmount:
+
+	unmount /mnt
+
+Now what was added is saved within mydisk.
+
+Run showblock.bin in the form:
+	
+	./showblock.bin mydisk newDir
+	
+	

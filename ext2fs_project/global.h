@@ -72,7 +72,7 @@ typedef struct minode
     int           refCount;  // # of processes using me
     int           dirty;     // Has my inode been modified? (eventually write to disk)
     bool          mounted;   // Have I been mounted? (I should be a DIR)
-    struct mount *mount_ptr; // If mounted, points to the MountTable entry
+    struct mount* mount_ptr; // If mounted, points to the MountTable entry
 }MINODE;
 
 // Entry for MountTable
@@ -85,7 +85,7 @@ typedef struct mount
     int     bmap;           // Block bitmap block #    |--> Convenient quick ref
     int     imap;           // Inode bitmap block #    |     
     int     inode_block;    // Inode block # ----------|
-    MINODE *minode_ptr;     // Points to the DIR I'm mounted on
+    MINODE* mip;            // Points to the DIR I'm mounted on
     char    name[64];       // What's the difference?
     char    mount_name[64]; // What's the difference?
 }MOUNT;
@@ -97,7 +97,7 @@ typedef struct open_file
     int     mode;
     int     refCount;
     int     offset;
-    MINODE *minode_ptr; // Whenever a file is ref, its inode must be brought into memory
+    MINODE* mip; // Whenever a file is ref, its inode must be brought into memory
 }OPEN_FILE;
 
 // A Process
@@ -107,15 +107,15 @@ typedef struct proc
     int          uid;      // User ID (0 for superuser, non-zero for ordinary user)
     int          gid;      // Group ID
     int          status;   // Free, ready, or running
-    MINODE      *cwd;      // -> CurrentWorkingDirectory in memory (initialized to root)
-    OPEN_FILE   *fd[NFD];
-    struct proc *next;     // Added so processes can form a circular linked list
+    MINODE*      cwd;      // -> CurrentWorkingDirectory in memory (initialized to root)
+    OPEN_FILE*   fd[NFD];
+    struct proc* next;     // Added so processes can form a circular linked list
 }PROC;
 
 
 // Global Variables
-extern MINODE *root;
-extern PROC *running; // Points at the PROC structure of the current running process
+extern MINODE* root;
+extern PROC* running; // Points at the PROC structure of the current running process
                       // Every file operation is performed by the current running process
 
 extern MINODE    MemoryInodeTable[];

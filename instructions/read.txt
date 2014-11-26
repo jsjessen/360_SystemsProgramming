@@ -1,10 +1,4 @@
-<Title>360 File System HELP</Title>
-<Body bgcolor="#ffffca" text="#000000">
-
-<H1>360 Project HELP</H1>
-
-<Pre>
-                      HOW TO read
+                     HOW TO read
 
 int read_file()
 {

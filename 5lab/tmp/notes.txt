@@ -1,0 +1,84 @@
+Find file = find inode
+
+include "util_ext2.h"
+
+open device for READ
+fd = open(device, O_RDONLY);
+
+check that it is ext2 file system
+
+figure out the block where inodes begin
+gp -> bg_inode_table
+
+tokenize input pathname into a char* array
+
+reference print_dir() in print_ext2.h
+strcmp(name[i], dp->name);
+return dp->ino;
+
+get_inode(dev, ino);
+
+write search(INODE* ip, char* name)
+
+need to make sure get_inode() works flawlessly
+
+for(i=0, i<12; i++)
+    if(ip->i_block[i] ==0)
+        return 0;
+
+
+        ...
+
+        while(cp < sbuf + blksize)
+            c = dp->name[dp->name_len]
+            print
+            if(strcmp
+                print
+                return
+            }
+
+
+get_block(fd, inodes_start, buf)
+ip = (INODE*) buf + 1
+
+for (i = 0; i < n ...)
+    printf
+    ino = search(ip, name[i]);
+
+    if(ino == 0)
+        exit
+
+    blk = (ino-1)/8 + inodes_start
+    get_block blk
+    ip = (INODE*)buf + (ino-1)%8
+}
+print
+
+int print(INODE *ip)
+direct blocks 0-11
+u8 buf[blksize];
+int i, *up;
+
+if(ip->i_block[12)
+    print indirect
+    get_block ip->i_block[12], buf
+    up = (int *)buf //blk numbers up to 256
+
+    while(*up && (u8*)up < buf + blksize)
+        printf("%d ", *up);
+        up++;
+    }
+    printf("\n");
+
+print double indirect
+need 2 buffers 
+
+put block in u8 buf
+but use int* to get integer data
+
+get_block
+tokenize
+search
+main
+print
+

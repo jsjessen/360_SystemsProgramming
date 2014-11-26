@@ -1,0 +1,9 @@
+#! /bin/bash
+
+make 
+
+prog="showblock"
+disk="fdimage"
+file="/Z/hugefile"
+
+$prog $disk $file

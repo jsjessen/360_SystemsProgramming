@@ -95,7 +95,7 @@ void print_inode(int device, int inode_number)
     printf("i_blocks                =                    %4u\n", ip->i_blocks);
     printf("i_flags                 =                    %4x\n", ip->i_flags);
     printf("i_block[0]              =                    %4u\n", ip->i_block[0]);
-    printf("i_block                 =                    %s\n" , (char*)ip->i_block);
+    printf("i_block                 =                   '%s'\n", (char*)ip->i_block);
     printf("i_generation            =                    %4u\n", ip->i_generation);
     printf("i_file_acl              =                    %4u\n", ip->i_file_acl);
     printf("i_faddr                 =                    %4u\n", ip->i_faddr);

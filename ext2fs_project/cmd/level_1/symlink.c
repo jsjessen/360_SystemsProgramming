@@ -91,10 +91,9 @@ int my_symlink(int argc, char* argv[])
     // READLINK: INPUT/OUTPUT ERROR
     
     // write the string target_name into the link's i_block[]
-    strcpy((char*)(link_ip->i_block), "/mnt/fox");
-    //link_ip->i_block[0] = 'a';
+    //strcpy((char*)(link_ip->i_block), "ab");
     //link_ip->i_size = strlen(target_pathname);
-    link_ip->i_size = 10; 
+    link_ip->i_size = 2; 
 
     link_mip->dirty = true;
     iput(link_mip);
