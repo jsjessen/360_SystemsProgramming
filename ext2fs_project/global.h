@@ -53,7 +53,7 @@ typedef enum { FAILURE, SUCCESS } result;
 
 typedef enum { FREE, READY, RUNNING} process_status;
 
-typedef enum { NONE, R, W, RW, X} file_flag; 
+typedef enum { RD, WR, RW, APPEND } permission; 
 
 typedef unsigned char  u8;
 typedef unsigned short u16; 
