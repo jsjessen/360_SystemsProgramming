@@ -6,6 +6,99 @@
 #include "transfer.h"
 
 
+u8* get_real_block(int device, int logic_block)
+{
+    const int block_num_per_single = block_size / sizeof(int); 
+    const int block_num_per_double = block_num_per_single * block_num_per_single;;
+    const int block_num_per_triple = block_num_per_double * block_num_per_single;
+
+    printf("logic block = %d\n", logic_block);
+
+    if(logic_block < 0)
+    {
+        fprintf(stderr, "transfer.c: get_real_block: negative logic block\n");
+        return NULL;
+    }
+
+    // Direct blocks
+    if(logic_block < NUM_DIRECT_BLOCKS)                     
+    {
+        real_block = ip->i_block[logic_block]; 
+        goto no_clean;
+    }
+
+    // Indirect blocks 
+    if(logic_block < NUM_DIRECT_BLOCKS + block_num_per_single) 
+    {
+        int base = NUM_DIRECT_BLOCKS;
+
+        int* single_buf[block_num_per_single];
+        get_block(device, ip->i_block[NUM_DIRECT_BLOCKS], single_buf);
+
+        real_block = single_buf[logic_block - base];
+
+        goto single_clean;
+    }
+
+    // Double indirect blocks
+    if(logic_block < NUM_DIRECT_BLOCKS + block_num_per_double)
+    { 
+        int base = NUM_DIRECT_BLOCKS + block_num_per_single;
+
+        int* double_buf[block_num_per_single];
+        get_block(device, ip->i_block[NUM_DIRECT_BLOCKS + 1], double_buf);
+
+        int double_block = (logic_block - base) / block_num_per_single;
+        int single_block = (logic_block - base) % block_num_per_single;
+
+        int* single_buf[block_num_per_single];
+        get_block(device, double_buf[double_block], single_buf);
+
+        real_block = single_buf[single_block];
+
+        goto double_clean;
+    } 
+
+    // Triple indirect blocks
+    if(logic_block < NUM_DIRECT_BLOCKS + block_num_per_triple)
+    {
+        int base = NUM_DIRECT_BLOCKS + block_num_per_single + block_num_per_double;;
+
+        int* triple_buf[block_num_per_single];
+        get_block(device, ip->i_block[NUM_DIRECT_BLOCKS + 2], triple_buf);
+
+        int triple_block = (logic_block - base) / block_num_per_double;
+
+        int* double_buf[block_num_per_single];
+        get_block(device, triple_buf[triple_block], double_buf);
+
+        base += triple_block * block_num_per_double;
+
+        int double_block = (logic_block - base) / block_num_per_single;
+        int single_block = (logic_block - base) % block_num_per_single;
+
+        int* single_buf[block_num_per_single];
+        get_block(device, double_buf[double_block], single_buf);
+
+        real_block = single_buf[single_block];
+
+        goto triple_clean;
+    }
+
+        fprintf(stderr, "transfer.c: get_real_block: logic block too large\n");
+        return NULL;
+
+triple_clean:
+    free(triple_buf);
+double_clean:
+    free(double_buf);
+single_clean:
+    free(single_buf);
+no_clean:
+    printf("real  block = %d\n", real_block);
+    return get_block(device, real_block);
+}
+
 u8* get_block(int device, int block)
 {
 

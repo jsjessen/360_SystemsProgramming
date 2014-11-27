@@ -25,9 +25,9 @@
 //                        |
 //                        |<------- avail ------->|
 //     -------------------|-----------------------
-//     |    |    | ...  |lbk  |   |  ...| .......|
+//     |    |    | ...  |logic_block  |   |  ...| .......|
 //     -------------------|---|------------------|-
-// lbk   0    1 .....     |rem|                   |
+// logic_block   0    1 .....     |rem|                   |
 //                      start                   fsize  
 //                         
 // ------------------------------------------------------------------------------
@@ -38,8 +38,8 @@
 //      where we wish to read nbytes. 
 // (3). To the kernel, a file is just a sequence of contiguous bytes, numbered from
 //      0 to file_size - 1. As the figure shows, the current byte position, offset
-//      falls in a LOGICAL block (lbk), which is 
-//                lbk = offset / block_size 
+//      falls in a LOGICAL block (logic_block), which is 
+//                logic_block = offset / block_size 
 // 
 //      the byte to start read in that logical block is 
 //              start = offset % block_size 
@@ -51,112 +51,63 @@
 //                avail = file_size-offset 
 // 
 //      bytes available for read. 
-// 
-//      These numbers are used in the read algorithm.
 
 // It tries to read nbytes from fd to buf[ ], and returns the 
 // actual number of bytes read.
 int my_read(int fd, char* buf, int nbytes)
 {
     OPEN_FILE* fp = running->fd[fd]; // Open file table pointer
+
+    if(fp->mode != R && fp->mode != RW)
+    {
+        fprintf(stderr, "read: failed: file descriptor %d is not open for read\n", fd);
+        return 0;
+    }
+
     MINODE* mip = fp->mip;
     INODE* ip = &mip->inode;
 
     const int device = mip->device;
     const int block_size = get_block_size(device);
     const int file_size = ip->i_size;
-    
-    const int block_num_per_single = block_num_per_single;
-    const int block_num_per_double = block_num_per_double;
-    const int block_num_per_triple = block_num_per_double * block_num_per_single;
 
     int count = 0;
     int avail = file_size - fp->offset; // number of bytes still available in file.
     char *cq = buf;   // cq points at buf[ ]
 
-    while (nbytes && avail)
+    while(nbytes && avail)
     {
-        //Compute LOGICAL BLOCK number lbk and startByte in that block from offset;
-        int lbk       = fp->offset / block_size;
-        int startByte = fp->offset % block_size;
+        //Compute LOGICAL BLOCK number logic_block and startByte in that block from offset;
+        int logic_block = fp->offset / block_size;
+        int startByte   = fp->offset % block_size;
 
-
-        if (lbk < NUM_DIRECT_BLOCKS)                     
-        {
-            // direct blocks
-            blk = ip->i_block[lbk]; // map lbk to blk
-        }
-        else if (lbk >= NUM_DIRECT_BLOCKS && lbk < NUM_DIRECT_BLOCKS + block_num_per_single) 
-        {
-            int passed = NUM_DIRECT_BLOCKS;
-
-            // indirect blocks 
-            int* single_buf[block_num_per_single];
-            get_block(device, ip->i_block[NUM_DIRECT_BLOCKS], single_buf);
-
-            blk = single_buf[lbk - passed];
-        }
-        else if (lbk >= NUM_DIRECT_BLOCKS && lbk < NUM_DIRECT_BLOCKS + block_num_per_double)
-        { 
-            int passed = NUM_DIRECT_BLOCKS + block_num_per_single;
-
-            // double indirect blocks
-            int* double_buf[block_num_per_single];
-            get_block(device, ip->i_block[NUM_DIRECT_BLOCKS + 1], double_buf);
-
-            int double_block = (lbk - passed) / block_num_per_single;
-            int single_block = (lbk - passed) % block_num_per_single;
-
-            int* single_buf[block_num_per_single];
-            get_block(device, double_buf[double_block], single_buf);
-
-            blk = single_buf[single_block];
-        } 
-        else
-        {
-            //  triple indirect blocks
-            int passed = NUM_DIRECT_BLOCKS + block_num_per_single + block_num_per_double;;
-
-            // double indirect blocks
-            int* double_buf[block_num_per_single];
-            get_block(device, ip->i_block[NUM_DIRECT_BLOCKS + 1], double_buf);
-
-            int double_block = (lbk - passed) / block_num_per_single;
-            int single_block = (lbk - passed) % block_num_per_single;
-
-            int* single_buf[block_num_per_single];
-            get_block(device, double_buf[double_block], single_buf);
-
-            blk = single_buf[single_block];
-        }
-
-        // get the data block into readbuf[block_size]
-        get_block(device, blk, readbuf);
-
-        // Instead of reading one byte at a time and updating the counters on each byte,
-        // try to calculate the maximum number of bytes available in a data block and
-        // the number of bytes still needed to read. Take the minimum of the two, and read
-        // that many bytes in one operation. Then adjust the counters accordingly. This 
-        // would make the read loops more efficient. 
+        // get the data block into read_buf[block_size]
+        u8* read_buf = get_real_block(device, logic_block);
 
         /* copy from startByte to buf[ ], at most remain bytes in this block */
-        char *cp = readbuf + startByte;   
-        remain = block_size - startByte;   // number of bytes remain in readbuf[]
+        u8* bp = read_buf + startByte;   
+        int remain = block_size - startByte;   // number of bytes remain in read_buf[]
 
-        while (remain > 0)
-        {
-            *cq++ = *cp++;   // copy byte from readbuf[] into buf[]
-            fp->offset++;    // advance offset 
-            count++;         // inc count as number of bytes read
-            avail--; 
-            nbytes--;  
-            remain--;
+        if(avail < remain)
+            remain = avail;
 
-            if (nbytes <= 0 || avail <= 0) 
-                break;
-        }
-        // if one data block is not enough, loop back to OUTER while for more ...
+        int num_bytes_copy = 0;
+        if(nbytes < remain)  
+            num_bytes_copy = nbytes 
+        else
+            num_bytes_copy = remain;
+
+        int bytes_copied = memcpy(buf, bp, num_bytes_copy);
+
+        if(bytes_copied < num_bytes_copy)
+            fprintf(stderr, "read: partial memcpy\n");
+
+        count      += bytes_copied;
+        fp->offset += bytes_copied;
+        avail      -= bytes_copied;
+        nbytes     -= bytes_copied;
     }
-    printf("myread: read %d char from file descriptor %d\n", count, fd);  
+    printf("read %d bytes from file descriptor %d\n", count, fd);  
+
     return count;   // count is the actual number of bytes read
 }

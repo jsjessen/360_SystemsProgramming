@@ -20,6 +20,8 @@
 
 #include <global.h>
 
+u8* get_real_block(int device, int logic_block);
+
 u8*     get_block(int device, int block);
 SUPER*  get_super(int device); 
 GD*     get_gd   (int device);

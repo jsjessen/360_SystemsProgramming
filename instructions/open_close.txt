@@ -1,11 +1,4 @@
-<Title>360 PROJECT HELP</Title>
-<Body bgcolor="#ffffca" text="#000000">
-
-<H1>360 Project HELP</H1>
-
-<Pre>
                     HOW TO open_close_lseek
-
 
 Open File Data Structures:
 
@@ -150,4 +143,3 @@ dup2(int fd, int gd):
 }
 
 As you already know, these are needed for I/O redirections
-
