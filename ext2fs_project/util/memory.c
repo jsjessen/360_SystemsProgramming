@@ -113,6 +113,9 @@ int balloc(int dev)
 
 void ifree(int dev, int inode)
 {
+    if(inode <= 0)
+        return;
+
     u8* imap = get_imap(dev);
 
     clear_bit(&imap, inode - 1);
@@ -123,6 +126,9 @@ void ifree(int dev, int inode)
 
 void bfree(int dev, int block)
 {
+    if(block <= 0)
+        return;
+
     u8* bmap = get_bmap(dev);
 
     clear_bit(&bmap, block);

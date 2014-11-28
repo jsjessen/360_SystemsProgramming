@@ -49,7 +49,7 @@
 
 typedef enum { false, true } bool;
 
-typedef enum { FAILURE, SUCCESS } result;
+typedef enum { FAILURE = -1, SUCCESS } result;
 
 typedef enum { FREE, READY, RUNNING} process_status;
 

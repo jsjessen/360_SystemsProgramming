@@ -20,7 +20,7 @@
 
 #include <global.h>
 
-u8* get_real_block(int device, int logic_block);
+long get_real_block(int device, INODE* ip, int logical_block);
 
 u8*     get_block(int device, int block);
 SUPER*  get_super(int device); 
