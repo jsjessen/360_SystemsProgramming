@@ -6,7 +6,7 @@
 #include "transfer.h"
 
 
-long get_real_block(int device, INODE* ip, int logical_block)
+long get_logical_block(int device, INODE* ip, int logical_block)
 {
     const int block_size = get_block_size(device);
 
