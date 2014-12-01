@@ -5,6 +5,78 @@
 
 #include "util.h"
 
+simple_pow(int base, int power)
+{
+    int result = base; 
+
+    if(power <= 0) return 0;
+    if(power == 1) return result;
+
+    for(int i = power; i > 0; --i)
+        result *= base; 
+
+    return result;
+}
+
+int reduc_pow_sum(int base, int power)
+{
+    int result = base; 
+
+    if(power <= 0) return 0;
+    if(power == 1) return result;
+
+    for(int i = power; i > 0; --i)
+        result *= base; 
+
+    return result + reduc_pow_sum(base, power - 1);
+}
+
+// Returns the index for the current block, on the path to the logical block
+// Use: Initially call this function with indirection less than or equal to zero
+//      and it will return the index for i_block[?] and update the parameter values
+//      Continue calling this function with the same variables until indirection equals zero
+
+// Use: Call this function in a loop until indirection is zero
+// Returns pointer to block number on the path to the block 
+int get_logic_path_index(int block_size, int* logical_block, int* indirection)
+{
+    int int_per_block = block_size / sizeof(int);
+
+    // Initial case: determine i_block[?]
+    if(*indirection <= 0)
+    {
+        // Direct blocks
+        if(*logical_block < NUM_DIRECT_BLOCKS)
+        {
+            *indirection = 0;
+            *logical_block = 0;
+
+            return *logical_block; 
+        }
+
+        for(*indirection = 1; *indirection <= 3; *indirection++)
+        {
+            // Indirect blocks 
+            if(*logical_block < NUM_DIRECT_BLOCKS + reduc_pow_sum(int_per_block, *indirection))
+            {
+                *logical_block -= NUM_DIRECT_BLOCKS + reduc_pow_sum(int_per_block, *indirection - 1); 
+                return (NUM_DIRECT_BLOCKS + *indirection) - 1;
+            }
+        }
+    }
+    // Within some indirect block
+    *indirection--;
+
+    int index = *logical_block / simple_pow(int_per_block, *indirection);
+    *logical_block -= index * simple_pow(int_per_block, *indirection);
+
+    return index;
+}
+
+int get_num_blocks(int block_size, INODE* ip)
+{
+    return ip->i_blocks / (block_size / 512);
+}
 
 int rm_child(MINODE *parent_mip, int child_ino)
 {
