@@ -22,6 +22,10 @@
 #include <transfer.h>
 #include <memory.h>
 
+int get_logic_path_index(int block_size, int* logical_block, int* indirection);
+
+int get_num_blocks(int block_size, INODE* ip);
+
 int rm_child(MINODE *parent_mip, int child_ino);
 
 DIR* get_last_dir_entry(u8* block_start, int block_size);

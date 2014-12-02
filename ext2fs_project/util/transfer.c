@@ -6,96 +6,114 @@
 #include "transfer.h"
 
 
-long get_logical_block(int device, INODE* ip, int logical_block)
+u8* get_logical_block(int device, INODE* ip, int logical_block)
 {
     const int block_size = get_block_size(device);
 
-    const int block_num_per_single = block_size / sizeof(int); 
-    const int block_num_per_double = block_num_per_single * block_num_per_single;;
-    const int block_num_per_triple = block_num_per_double * block_num_per_single;
+    int indirection = 0;
 
-    int real_block = 0;
-
-    printf("logical block = %d\n", logical_block);
-
-    if(logical_block < 0)
+    int* buf = ip->i_block;
+    do
     {
-        fprintf(stderr, "transfer.c: get_real_block: negative logical block\n");
-        return FAILURE;
+        int index = get_logic_path_index(block_size, &logical_block, &indirection);
+
+        int* tmp = buf;
+        buf = (int*)get_block(device, buf[index]);
+
+        if(tmp != (int*)ip->i_block)
+            free(tmp);
     }
+    while(indirection > 0);
 
-    int* single_buf = NULL;
-    int* double_buf = NULL;
-    int* triple_buf = NULL;
+    return buf;
 
-    // Direct blocks
-    if(logical_block < NUM_DIRECT_BLOCKS)                     
-    {
-        real_block = ip->i_block[logical_block]; 
-        goto clean_up;
-    }
-
-    // Indirect blocks 
-    if(logical_block < NUM_DIRECT_BLOCKS + block_num_per_single) 
-    {
-        int base = NUM_DIRECT_BLOCKS;
-
-        single_buf = (int*)get_block(device, ip->i_block[NUM_DIRECT_BLOCKS]);
-        real_block = single_buf[logical_block - base];
-
-        goto clean_up;
-    }
-
-    // Double indirect blocks
-    if(logical_block < NUM_DIRECT_BLOCKS + block_num_per_double)
-    { 
-        int base = NUM_DIRECT_BLOCKS + block_num_per_single;
-
-        double_buf = (int*)get_block(device, ip->i_block[NUM_DIRECT_BLOCKS + 1]);
-
-        int double_block = (logical_block - base) / block_num_per_single;
-        int single_block = (logical_block - base) % block_num_per_single;
-
-        single_buf = (int*)get_block(device, double_buf[double_block]);
-
-        real_block = single_buf[single_block];
-
-        goto clean_up;
-    } 
-
-    // Triple indirect blocks
-    if(logical_block < NUM_DIRECT_BLOCKS + block_num_per_triple)
-    {
-        int base = NUM_DIRECT_BLOCKS + block_num_per_single + block_num_per_double;;
-
-        triple_buf = (int*)get_block(device, ip->i_block[NUM_DIRECT_BLOCKS + 2]);
-
-        int triple_block = (logical_block - base) / block_num_per_double;
-
-        double_buf = (int*)get_block(device, triple_buf[triple_block]);
-
-        base += triple_block * block_num_per_double;
-
-        int double_block = (logical_block - base) / block_num_per_single;
-        int single_block = (logical_block - base) % block_num_per_single;
-
-        single_buf = (int*)get_block(device, double_buf[double_block]);
-
-        real_block = single_buf[single_block];
-
-        goto clean_up;
-    }
-
-    fprintf(stderr, "transfer.c: get_real_block: logical block too large\n");
-    return FAILURE;
-
-clean_up:
-    free(triple_buf);
-    free(double_buf);
-    free(single_buf);
-
-    printf("real  block = %d\n", real_block);
-    return real_block;
+    //
+    //    const int block_num_per_single = block_size / sizeof(int); 
+    //    const int block_num_per_double = block_num_per_single * block_num_per_single;;
+    //    const int block_num_per_triple = block_num_per_double * block_num_per_single;
+    //
+    //    int real_block = 0;
+    //
+    //    printf("logical block = %d\n", logical_block);
+    //
+    //    if(logical_block < 0)
+    //    {
+    //        fprintf(stderr, "transfer.c: get_real_block: negative logical block\n");
+    //        return FAILURE;
+    //    }
+    //
+    //    int* single_buf = NULL;
+    //    int* double_buf = NULL;
+    //    int* triple_buf = NULL;
+    //
+    //    // Direct blocks
+    //    if(logical_block < NUM_DIRECT_BLOCKS)                     
+    //    {
+    //        real_block = ip->i_block[logical_block]; 
+    //        goto clean_up;
+    //    }
+    //
+    //    // Indirect blocks 
+    //    if(logical_block < NUM_DIRECT_BLOCKS + block_num_per_single) 
+    //    {
+    //        int base = NUM_DIRECT_BLOCKS;
+    //
+    //        single_buf = (int*)get_block(device, ip->i_block[NUM_DIRECT_BLOCKS]);
+    //        real_block = single_buf[logical_block - base];
+    //
+    //        goto clean_up;
+    //    }
+    //
+    //    // Double indirect blocks
+    //    if(logical_block < NUM_DIRECT_BLOCKS + block_num_per_double)
+    //    { 
+    //        int base = NUM_DIRECT_BLOCKS + block_num_per_single;
+    //
+    //        double_buf = (int*)get_block(device, ip->i_block[NUM_DIRECT_BLOCKS + 1]);
+    //
+    //        int double_block = (logical_block - base) / block_num_per_single;
+    //        int single_block = (logical_block - base) % block_num_per_single;
+    //
+    //        single_buf = (int*)get_block(device, double_buf[double_block]);
+    //
+    //        real_block = single_buf[single_block];
+    //
+    //        goto clean_up;
+    //    } 
+    //
+    //    // Triple indirect blocks
+    //    if(logical_block < NUM_DIRECT_BLOCKS + block_num_per_triple)
+    //    {
+    //        int base = NUM_DIRECT_BLOCKS + block_num_per_single + block_num_per_double;;
+    //
+    //        triple_buf = (int*)get_block(device, ip->i_block[NUM_DIRECT_BLOCKS + 2]);
+    //
+    //        int triple_block = (logical_block - base) / block_num_per_double;
+    //
+    //        double_buf = (int*)get_block(device, triple_buf[triple_block]);
+    //
+    //        base += triple_block * block_num_per_double;
+    //
+    //        int double_block = (logical_block - base) / block_num_per_single;
+    //        int single_block = (logical_block - base) % block_num_per_single;
+    //
+    //        single_buf = (int*)get_block(device, double_buf[double_block]);
+    //
+    //        real_block = single_buf[single_block];
+    //
+    //        goto clean_up;
+    //    }
+    //
+    //    fprintf(stderr, "transfer.c: get_real_block: logical block too large\n");
+    //    return FAILURE;
+    //
+    //clean_up:
+    //    free(triple_buf);
+    //    free(double_buf);
+    //    free(single_buf);
+    //
+    //    printf("real  block = %d\n", real_block);
+    //    return real_block;
 }
 
 u8* get_block(int device, int block)

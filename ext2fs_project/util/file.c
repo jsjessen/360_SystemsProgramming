@@ -134,7 +134,7 @@ denied:
 
             // WR: truncate file to 0 size
         case WR: 
-            my_truncate(mip); 
+            truncate_file(mip); 
             fp->offset = 0;
             break;
 
@@ -225,7 +225,7 @@ int close_file(int fd)
 
 // It tries to read nbytes from fd to buf[ ], and returns the 
 // actual number of bytes read.
-int my_read(int fd, char* buf, int nbytes)
+int read_file(int fd, char* buf, int nbytes)
 {
     OPEN_FILE* fp = running->fd[fd]; // Open file table pointer
 
@@ -306,7 +306,7 @@ int my_read(int fd, char* buf, int nbytes)
 //mywrite behaves exactly the same as Unix's write(fd, buf, nbytes) syscall.
 //It writes nbytes from buf[ ] to the file descriptor fd, extending the file 
 //size as needed.
-int my_write(int fd, char buf[], int nbytes) 
+int write_file(int fd, char buf[], int nbytes) 
 {
     OPEN_FILE* fp = running->fd[fd]; // Open file table pointer
 
@@ -333,11 +333,11 @@ int my_write(int fd, char buf[], int nbytes)
 
         ip->i_block[logical_block] = balloc(device);// MUST ALLOCATE a block
 
-       // IDEA
-       // Create a level of abstraction such that
-       // On a high level, anything refering to a block is the logical block
-       // but on a low level, functions deal with direct/indirect/...
-        
+        // IDEA
+        // Create a level of abstraction such that
+        // On a high level, anything refering to a block is the logical block
+        // but on a low level, functions deal with direct/indirect/...
+
         // direct block
         if (logical_block < 12)
         {
@@ -349,7 +349,7 @@ int my_write(int fd, char buf[], int nbytes)
                 // write a block of 0's to blk on disk: OPTIONAL for data block 
                 //                                      but MUST for I or D blocks
             }
-            blk = ip->i_block[logical_block];      // blk should be a disk block now
+        //    blk = ip->i_block[logical_block];      // blk should be a disk block now
         }
         else if (logical_block >= 12 && logical_block < 256 + 12)
         { 
@@ -437,7 +437,7 @@ OPEN_FILE* get_file(int fd)
     }
 }
 
-int my_lseek(int fd, int position)
+int seek_file(int fd, int position)
 {
     OPEN_FILE* fp = get_file(fd);
 
@@ -460,7 +460,7 @@ int my_lseek(int fd, int position)
     return fp->offset = position;
 }
 
-int my_truncate(MINODE *mip)
+int truncate_file(MINODE *mip)
 {
     INODE* ip = &mip->inode;
 

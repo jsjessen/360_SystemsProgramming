@@ -23,12 +23,13 @@
 int open_file(char* pathname, int mode);
 int close_file(int fd);
 
-int my_read(int fd, char* buf, int nbytes);
+int read_file(int fd, char* buf, int nbytes);
+int write_file(int fd, char buf[], int nbytes);
 
 OPEN_FILE* get_file(int fd);
 
-int my_lseek(int fd, int position);
-int my_truncate(MINODE *mip);
+int seek_file(int fd, int position);
+int truncate_file(MINODE *mip);
 
 int dup(int fd);
 int dup2(int fd, int gd);

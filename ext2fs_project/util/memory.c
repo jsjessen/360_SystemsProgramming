@@ -142,27 +142,29 @@ int logical_balloc(int device, INODE* ip)
 {
     const int block_size = get_block_size(device);
 
-    int num_blocks = get_num_blocks(block_size, ip);
-    int* next_block = &num_blocks; 
+    int next_block = get_num_blocks(block_size, ip);
+    int indirection = 0;
+    int bno = 0;
 
-    int initial_indir = 0;
-    int* indirection = &initial_indir;
-
-    int* buf = ip->i_block;
+    int* buf = (int*)ip->i_block;
     do 
     {
-        int index = (block_size, next_block, indirection);
+        int index = get_logic_path_index(block_size, &next_block, &indirection);
 
-        if(buf[index] == 0)
-            buf[index] = balloc(device);
+        bno = buf[index];
+
+        if(bno == 0)
+            bno = balloc(device);
 
         int* tmp = buf;
-        buf = (int*)get_block(device, buf[index]);
+        buf = (int*)get_block(device, bno);
 
         if(tmp != (int*)ip->i_block)
-            free(buf);
+            free(tmp);
     }
     while(indirection > 0);
+
+    return bno;
 }
 
 // Frees the last-most allocated block
@@ -175,14 +177,13 @@ void logical_bfree(int device, INODE* ip)
 
     const int block_size = get_block_size(device);
 
-    int num = get_num_blocks(block_size, ip) - 1;
-    int* last_block = &num; 
-    int* indirection = 0;
+    int last_block = get_num_blocks(block_size, ip) - 1;
+    int indirection = 0;
 
-    int* buf = ip->i_block;
+    int* buf = (int*)ip->i_block;
     do 
     {
-        int index = rlogic(block_size, last_block, indirection);
+        int index = get_logic_path_index(block_size, &last_block, &indirection);
 
         if(index == 0)
         {
@@ -195,7 +196,7 @@ void logical_bfree(int device, INODE* ip)
         buf = (int*)get_block(device, buf[index]);
 
         if(tmp != (int*)ip->i_block)
-            free(buf);
+            free(tmp);
     }
     while(indirection > 0);
 
@@ -209,5 +210,3 @@ void logical_bfree(int device, INODE* ip)
         num_index--;
     }
 }
-
-

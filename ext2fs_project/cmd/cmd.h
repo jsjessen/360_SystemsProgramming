@@ -11,6 +11,7 @@
 #include <print.h>
 #include <util.h>
 #include <search.h>
+#include <file.h>
 
 
 int (*get_cmd(char* cmd_name))(int, char**);

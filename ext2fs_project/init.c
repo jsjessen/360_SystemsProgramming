@@ -73,7 +73,7 @@ void initialize_fs()
         ofp->mode       = 0;
         ofp->refCount   = 0;
         ofp->offset     = 0;
-        ofp->minode_ptr = NULL;
+        ofp->mip        = NULL;
     }
 
     // Initialize all memory-inodes
@@ -100,7 +100,7 @@ void initialize_fs()
         mp->bmap        = 0;
         mp->imap        = 0;
         mp->inode_block = 0;
-        mp->minode_ptr  = NULL;
+        mp->mip         = NULL;
         strcpy(mp->name, "\0");
         strcpy(mp->mount_name, "\0");
     }
@@ -155,7 +155,7 @@ void mount_root(char* device_name)
     mp->bmap        = gp->bg_block_bitmap;
     mp->imap        = gp->bg_inode_bitmap;
     mp->inode_block = gp->bg_inode_table;
-    mp->minode_ptr  = root;          // Think about!
+    mp->mip         = root;          // Think about!
     strcpy(mp->name, "root");               //CHANGE
     strcpy(mp->mount_name, "sir mounty");   //CHANGE
 

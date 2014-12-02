@@ -18,7 +18,7 @@ int my_cat(int argc, char* argv[])
         char* pathname = argv[i];
         u8* end_marker = 0;  // a null char at end of buf[ ]
 
-        int fd = my_open(pathname, R);
+        int fd = open_file(pathname, RD);
 
         char* buf = NULL;
         while(int n = read(fd, buf, block_size))
