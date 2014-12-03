@@ -154,7 +154,10 @@ int logical_balloc(int device, INODE* ip)
         bno = buf[index];
 
         if(bno == 0)
+        {
             bno = balloc(device);
+            buf[index] = bno;
+        }
 
         int* tmp = buf;
         buf = (int*)get_block(device, bno);

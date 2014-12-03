@@ -1,4 +1,5 @@
 #include <cmd.h>
+#include <file.h>
 
 int my_cat(int argc, char* argv[])
 {
@@ -16,14 +17,14 @@ int my_cat(int argc, char* argv[])
     while(i < argc)
     {
         char* pathname = argv[i];
-        u8* end_marker = 0;  // a null char at end of buf[ ]
 
         int fd = open_file(pathname, RD);
 
-        char* buf = NULL;
-        while(int n = read(fd, buf, block_size))
+        int n = 0;
+        char buf[block_size + 1];
+        while((n = read_file(fd, buf, block_size)))
         {
-            //buf[n] = '\0'; // as a null terminated string
+            buf[n] = '\0'; // null terminated string
 
             int j = 0;
             while(buf[j])
@@ -33,13 +34,14 @@ int my_cat(int argc, char* argv[])
                 if(buf[j] == '\n')
                     putchar('\r');
 
-                j++
+                j++;
             }
-            free(buf);
         } 
         printf("\n\r");
 
-        close(fd);
+        close_file(fd);
         i++;
     }
+
+    return SUCCESS;
 }

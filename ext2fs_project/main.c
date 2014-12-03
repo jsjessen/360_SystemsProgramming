@@ -13,6 +13,7 @@
 
 #include <init.c>
 
+#include "FileUnitTest.c"
 
 
 int main(int argc, char* argv[])
@@ -42,6 +43,8 @@ int main(int argc, char* argv[])
     printf("root refCount = %d\n", root->refCount);
 
     // Create Process1 with uid = 1 for non-super user
+
+    FileUnitTest();
 
     while(true)
     {

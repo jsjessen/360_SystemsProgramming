@@ -5,7 +5,7 @@
 
 #include "util.h"
 
-simple_pow(int base, int power)
+int simple_pow(int base, int power)
 {
     int result = base; 
 
@@ -54,7 +54,7 @@ int get_logic_path_index(int block_size, int* logical_block, int* indirection)
             return *logical_block; 
         }
 
-        for(*indirection = 1; *indirection <= 3; *indirection++)
+        for(*indirection = 1; *indirection <= 3; (*indirection)++)
         {
             // Indirect blocks 
             if(*logical_block < NUM_DIRECT_BLOCKS + reduc_pow_sum(int_per_block, *indirection))
@@ -65,7 +65,7 @@ int get_logic_path_index(int block_size, int* logical_block, int* indirection)
         }
     }
     // Within some indirect block
-    *indirection--;
+    (*indirection)--;
 
     int index = *logical_block / simple_pow(int_per_block, *indirection);
     *logical_block -= index * simple_pow(int_per_block, *indirection);

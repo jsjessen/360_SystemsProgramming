@@ -4,7 +4,7 @@ NAME = my_ext2fs
 
 LAB  = LAB8
 
-DISK = $(DISK_DIR)/make_disk 
+DISK = $(DISK_DIR)/fdimage
 NUM_BLOCKS = 1440
 
 VALGRIND_MODE = --leak-check=full
@@ -64,7 +64,7 @@ CFLAGS = -std=c99 $(INCLUDES) $(DEBUG)
 # i.e, for(int i = 0; ...)
 # Making for must cleaner and easier to understand code.
 
-OBJECTS = main.o input.o memory.o print.o search.o transfer.o util.o cmd.o
+OBJECTS = main.o input.o memory.o print.o search.o transfer.o util.o file.o cmd.o
 
 
 #################### DEPENDENCIES #################### 
@@ -74,7 +74,7 @@ all: $(OBJ_DIR) $(NAME)
 $(NAME): $(addprefix $(OBJ_DIR)/, $(OBJECTS))
 	$(CC) $(CFLAGS) $^ -o $@
 
-$(OBJ_DIR)/main.o     : main.c init.c input.h transfer.h memory.h search.h print.h cmd.h global.h
+$(OBJ_DIR)/main.o     : main.c init.c input.h transfer.h memory.h search.h print.h cmd.h global.h FileUnitTest.c
 	$(CC) -c $(CFLAGS) $< -o $@
 
 $(OBJ_DIR)/input.o    : input.c input.h
@@ -95,7 +95,11 @@ $(OBJ_DIR)/transfer.o : transfer.c transfer.h global.h
 $(OBJ_DIR)/util.o     : util.c util.h transfer.h memory.h global.h
 	$(CC) -c $(CFLAGS) $< -o $@
 
-$(OBJ_DIR)/cmd.o      : cmd.c cmd.h $(CMD1_DIR)/*.c $(CMD2_DIR)/*.c $(CMD3_DIR)/*.c global.h
+$(OBJ_DIR)/file.o     : file.c file.h transfer.h search.h global.h
+	$(CC) -c $(CFLAGS) $< -o $@
+
+$(OBJ_DIR)/cmd.o      : cmd.c cmd.h $(CMD1_DIR)/*.c $(CMD2_DIR)/*.c $(CMD3_DIR)/*.c \
+						print.h util.h search.h file.h global.h
 	$(CC) -c $(CFLAGS) -I $(CMD1_DIR) -I $(CMD2_DIR) -I $(CMD3_DIR) $< -o $@
 		   
 $(OBJ_DIR):

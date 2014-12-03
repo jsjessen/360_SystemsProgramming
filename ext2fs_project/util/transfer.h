@@ -19,8 +19,9 @@
 #include <ext2fs/ext2_fs.h>
 
 #include <global.h>
+#include <util.h>
 
-long get_real_block(int device, INODE* ip, int logical_block);
+long get_logical_bno(int device, INODE* ip, int logical_block);
 
 u8*     get_block(int device, int block);
 SUPER*  get_super(int device); 

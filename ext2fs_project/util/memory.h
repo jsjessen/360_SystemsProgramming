@@ -39,5 +39,8 @@ int balloc(int device);
 void ifree (int device, int inode); 
 void bfree (int device, int block); 
 
+int logical_balloc(int device, INODE* ip);
+void logical_bfree(int device, INODE* ip);
+
 
 #endif

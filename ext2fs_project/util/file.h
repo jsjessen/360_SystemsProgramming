@@ -5,8 +5,6 @@
 // CptS 360
 
 // ------------------------------
-// Functions for transfering data
-// to and from an ext2 filesystem
 // ------------------------------
 
 #ifndef __FILE_H_
@@ -18,6 +16,7 @@
 #include <global.h>
 #include <transfer.h>
 #include <search.h>
+#include <util.h>
 
 
 int open_file(char* pathname, int mode);

@@ -41,7 +41,7 @@ char* get_input()
         }
 
         // Accept input or if no input, allow user to cycle
-        if (c == '\n')
+        if(c == '\n')
         {
             if (buf[0] == 0)
                 return NULL;
@@ -50,7 +50,7 @@ char* get_input()
         }
 
         // Replace block of whitespace with single space
-        if (isspace(c))
+        if(isspace(c))
         {
             // Ignore leading whitespace
             if (buf[0] == 0)
@@ -69,7 +69,7 @@ char* get_input()
 
         buf[i++] = c;
     }
-    buf[i] = 0; // Append with null char
+    buf[i] = '\0'; // Append with null char
 
     return buf;
 }

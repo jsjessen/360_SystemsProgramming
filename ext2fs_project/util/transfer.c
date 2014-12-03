@@ -6,26 +6,30 @@
 #include "transfer.h"
 
 
-u8* get_logical_block(int device, INODE* ip, int logical_block)
+long get_logical_bno(int device, INODE* ip, int logical_block)
 {
     const int block_size = get_block_size(device);
 
+    int bno = 0;
     int indirection = 0;
 
-    int* buf = ip->i_block;
+    u32* buf = ip->i_block;
     do
     {
         int index = get_logic_path_index(block_size, &logical_block, &indirection);
+        //printf("logic index = %d\n", index);
 
-        int* tmp = buf;
-        buf = (int*)get_block(device, buf[index]);
+        bno = buf[index];
+        
+        u32* tmp = buf;
+        buf = (u32*)get_block(device, bno);
 
-        if(tmp != (int*)ip->i_block)
+        if(tmp != ip->i_block)
             free(tmp);
     }
     while(indirection > 0);
 
-    return buf;
+    return bno;
 
     //
     //    const int block_num_per_single = block_size / sizeof(int); 
