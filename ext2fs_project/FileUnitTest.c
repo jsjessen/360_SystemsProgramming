@@ -6,9 +6,9 @@
 #include <file.h>
 
 #define VERBOSE
-#define MAX_TEST_SIZE   1000
+#define MAX_TEST_SIZE   2000
 #define MIN_TEST_SIZE   1
-#define TRIALS          3 
+#define TRIALS          1
 
 static u8* SAMPLE_DATA;
 static long SAMPLE_SIZE;
@@ -40,11 +40,6 @@ int GetUncommonSize(void)
 
 void GenerateSampleData(void)
 {
-    //SAMPLE_SIZE = 10; 
-    //SAMPLE_DATA = (u8*)malloc(SAMPLE_SIZE);
-
-    //strcpy((char*)SAMPLE_DATA, "Hello James");
-    
     SAMPLE_SIZE = GetRandomSize();
     SAMPLE_DATA = (u8*)malloc(SAMPLE_SIZE);
 

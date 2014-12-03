@@ -10,6 +10,9 @@ long get_logical_bno(int device, INODE* ip, int logical_block)
 {
     const int block_size = get_block_size(device);
 
+    //printf("get_logical_bno\n");
+    //printf("LOGICAL BLOCK= %d\n", logical_block);
+
     int bno = 0;
     int indirection = 0;
 
@@ -17,10 +20,13 @@ long get_logical_bno(int device, INODE* ip, int logical_block)
     do
     {
         int index = get_logic_path_index(block_size, &logical_block, &indirection);
-        //printf("logic index = %d\n", index);
+        //printf("Index = %d\n", index);
+        //printf("Logical Block = %d\n", logical_block);
+        //printf("Indirection = %d\n", indirection);
 
         bno = buf[index];
-        
+        //printf("inbetween bno = %d\n", bno);
+
         u32* tmp = buf;
         buf = (u32*)get_block(device, bno);
 
@@ -29,9 +35,9 @@ long get_logical_bno(int device, INODE* ip, int logical_block)
     }
     while(indirection > 0);
 
+    //printf("BNO = %d\n", bno);
     return bno;
 
-    //
     //    const int block_num_per_single = block_size / sizeof(int); 
     //    const int block_num_per_double = block_num_per_single * block_num_per_single;;
     //    const int block_num_per_triple = block_num_per_double * block_num_per_single;

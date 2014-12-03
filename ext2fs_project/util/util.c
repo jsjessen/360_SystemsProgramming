@@ -9,7 +9,7 @@ int simple_pow(int base, int power)
 {
     int result = base; 
 
-    if(power <= 0) return 0;
+    if(power <= 0) return 1;
     if(power == 1) return result;
 
     for(int i = power; i > 0; --i)
@@ -40,18 +40,26 @@ int reduc_pow_sum(int base, int power)
 // Returns pointer to block number on the path to the block 
 int get_logic_path_index(int block_size, int* logical_block, int* indirection)
 {
+    //printf("get_logic_path_index\n");
+    //printf("block size = %d\n", block_size);
+    //printf("logical block = %d\n", *logical_block);
+    //printf("indirection = %d\n", *indirection);
+
     int int_per_block = block_size / sizeof(int);
 
     // Initial case: determine i_block[?]
     if(*indirection <= 0)
     {
+        //printf("INITIAL\n");
         // Direct blocks
         if(*logical_block < NUM_DIRECT_BLOCKS)
         {
+            //printf("DIRECT\n");
+            int index = *logical_block;
             *indirection = 0;
             *logical_block = 0;
 
-            return *logical_block; 
+            return index; 
         }
 
         for(*indirection = 1; *indirection <= 3; (*indirection)++)
@@ -59,6 +67,7 @@ int get_logic_path_index(int block_size, int* logical_block, int* indirection)
             // Indirect blocks 
             if(*logical_block < NUM_DIRECT_BLOCKS + reduc_pow_sum(int_per_block, *indirection))
             {
+                //printf("INDIRECTION = %d\n", *indirection);
                 *logical_block -= NUM_DIRECT_BLOCKS + reduc_pow_sum(int_per_block, *indirection - 1); 
                 return (NUM_DIRECT_BLOCKS + *indirection) - 1;
             }
@@ -69,6 +78,9 @@ int get_logic_path_index(int block_size, int* logical_block, int* indirection)
 
     int index = *logical_block / simple_pow(int_per_block, *indirection);
     *logical_block -= index * simple_pow(int_per_block, *indirection);
+
+    //printf("logical block = %d\n", *logical_block);
+    //printf("indirection = %d\n", *indirection);
 
     return index;
 }

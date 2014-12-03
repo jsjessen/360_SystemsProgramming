@@ -270,8 +270,6 @@ int read_file(int fd, char* buf, int nbytes)
 
         // get the data block into read_buf[block_size]
         int real_block = get_logical_bno(device, ip, logical_block);
-        if(real_block == 0)
-            real_block = logical_balloc(device, ip);
 
         //printf("READ REAL = %d\n", real_block);
         //printf("i_block[0] = %d\n", ip->i_block[0]);
@@ -291,7 +289,6 @@ int read_file(int fd, char* buf, int nbytes)
             copy_size = remain;
 
         memcpy(buf, bp, copy_size);
-        //puts(buf);
 
         count      += copy_size;
         fp->offset += copy_size;
@@ -327,13 +324,21 @@ int write_file(int fd, char buf[], int nbytes)
 
     while(nbytes)
     {
-        // get the data block into read_buf[block_size]
-        int real_block = logical_balloc(device, ip);
-        //printf("WRITE REAL = %d\n", real_block);
-        //printf("i_block[0] = %d\n", ip->i_block[0]);
-        u8* write_buf = get_block(device, real_block);
+        //Compute LOGICAL BLOCK number logical_block and start_byte in that block from offset;
+        int logical_block = fp->offset / block_size;
+        int start_byte    = fp->offset % block_size;
 
-        int start_byte = fp->offset % block_size;
+        // get the data block into read_buf[block_size]
+        int real_block = get_logical_bno(device, ip, logical_block);
+        if(real_block == 0)
+            real_block = logical_balloc(device, ip);
+
+        printf("WRITE REAL = %d\n", real_block);
+        for(int i = 0; i < 15; i++)
+            printf("i_block[%d] = %d\n", i, ip->i_block[i]);
+        print_divider('-');
+
+        u8* write_buf = get_block(device, real_block);
 
         u8* bp = write_buf + start_byte;      // cp points at start_byte in write_buf[]
         int remain = block_size - start_byte;     // number of BYTEs remain in this block

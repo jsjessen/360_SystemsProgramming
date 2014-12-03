@@ -142,6 +142,7 @@ int logical_balloc(int device, INODE* ip)
 {
     const int block_size = get_block_size(device);
 
+    printf("logical_balloc\n");
     int next_block = get_num_blocks(block_size, ip);
     int indirection = 0;
     int bno = 0;
@@ -151,6 +152,8 @@ int logical_balloc(int device, INODE* ip)
     {
         int index = get_logic_path_index(block_size, &next_block, &indirection);
 
+        printf("index = %d\n", index);
+
         bno = buf[index];
 
         if(bno == 0)
@@ -158,6 +161,8 @@ int logical_balloc(int device, INODE* ip)
             bno = balloc(device);
             buf[index] = bno;
         }
+
+        printf("bno = %d\n", bno);
 
         int* tmp = buf;
         buf = (int*)get_block(device, bno);
