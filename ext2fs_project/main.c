@@ -28,14 +28,14 @@ int main(int argc, char* argv[])
 
     initialize_fs(); 
     mount_root(device);
-    printf("root refCount = %d\n", root->refCount);
+    //printf("root refCount = %d\n", root->refCount);
 
-    printf("creating P0 as running process\n");
+    //printf("creating P0 as running process\n");
     running = &ProcessTable[0];
     running->status = READY;
     running->cwd = root; root->refCount++;
     running->uid = SUPER_USER;
-    printf("root refCount = %d\n", root->refCount);
+    //printf("root refCount = %d\n", root->refCount);
 
     // Create Process1 with uid = 1 for non-super user
 

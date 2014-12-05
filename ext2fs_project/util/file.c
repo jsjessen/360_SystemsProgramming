@@ -35,14 +35,14 @@ int open_file(const char* pathname, int mode)
     // Verify it exists
     if(!mip)
     {
-        fprintf(stderr, "open: failed to open'%s':"
+        fprintf(stderr, "open: failed to open '%s':"
                 " Does not exist\n", pathname);
         return FAILURE;
     }
     // Verify it is a regular file
     else if(!S_ISREG(ip->i_mode))
     {
-        fprintf(stderr, "open: failed to open'%s':"
+        fprintf(stderr, "open: failed to open '%s':"
                 " Not a regular file\n", pathname);
         iput(mip);
         return FAILURE;

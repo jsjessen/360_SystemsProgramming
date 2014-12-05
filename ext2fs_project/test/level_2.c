@@ -50,7 +50,7 @@ void LinuxRead()
 {
     u8 buf[SAMPLE_SIZE];
 
-    int fd = open(filename, O_RDONLY);
+    int fd = open(filename, O_RDONLY, 0666);
     int bytes_read = read(fd, buf, SAMPLE_SIZE);
     close(fd);
 
@@ -65,7 +65,13 @@ void LinuxRead()
 
 void LinuxWrite()
 {
-    int fd = open(filename, O_TRUNC | O_WRONLY);
+    int fd = open(filename, O_WRONLY | O_TRUNC | O_CREAT, 0666);
+    if(fd < 0)
+    {
+        fprintf(stderr, "Linux: Unable to open file\n");
+        exit(1);
+    }
+
     int bytes_wrote = write(fd, SAMPLE_DATA, SAMPLE_SIZE);
     close(fd);
 
@@ -82,9 +88,9 @@ void SequentialWrite(int fd, int buf_size)
     {
         int bytes_write;
         if((i + buf_size) > SAMPLE_SIZE)
-            bytes_write = write_file(fd, (char*)(SAMPLE_DATA + i), SAMPLE_SIZE - i);
+            bytes_write = write_file(fd, (SAMPLE_DATA + i), SAMPLE_SIZE - i);
         else
-            bytes_write = write_file(fd, (char*)(SAMPLE_DATA + i), buf_size);
+            bytes_write = write_file(fd, (SAMPLE_DATA + i), buf_size);
 
         position += bytes_write;
 
@@ -104,7 +110,7 @@ void SequentialRead(int fd, int buf_size)
     u8 buf[SAMPLE_SIZE];
 
     for (int i = 0; i < SAMPLE_SIZE; i += buf_size)
-        read_file(fd, (char*)(buf + i), buf_size);
+        read_file(fd, (buf + i), buf_size);
 
     if (memcmp(SAMPLE_DATA, buf, SAMPLE_SIZE) == 0)
         printf("PASS\n");
@@ -112,15 +118,12 @@ void SequentialRead(int fd, int buf_size)
         printf("FAIL\n");
 }
 
-
-
 void VerifyContents(int fd)
 {
-    putchar('\n');
-    printf("\tRead: Linux...");
-    LinuxRead();
+    //printf("\n\tRead: Linux...");
+    //LinuxRead();
 
-    printf("\tRead: all at once...");
+    printf("\n\tRead: all at once...");
     SequentialRead(fd, SAMPLE_SIZE);
 
     int buf_size = GetCommonSize();
@@ -137,8 +140,13 @@ void TestWriteValidation(int fd)
     printf("Write Validation\n");
     print_divider('-');
 
+    //printf("\nWrite: Linux...");
+    //LinuxWrite();
+    //VerifyContents(fd);
+    
     printf("\nWrite: all at once...");
     SequentialWrite(fd, SAMPLE_SIZE);
+
     VerifyContents(fd);
 
     int buf_size = GetCommonSize();
@@ -163,7 +171,7 @@ u8* SequentialRead2(int fd, int buf_size, int low_bound, int high_bound)
     u8* buf = (u8*)malloc(SAMPLE_SIZE);
 
     for (int i = low_bound; i < high_bound; i += buf_size)
-        read_file(fd, (char*)(buf + i), buf_size);
+        read_file(fd, (buf + i), buf_size);
 
     return buf;
 }
@@ -186,7 +194,7 @@ u8* BackwardsRead2(int fd, int buf_size, int low_bound, int high_bound)
             position = high_bound - i;
 
         seek_file(fd, position);
-        read_file(fd, (char*)buf + position, buf_size);
+        read_file(fd, buf + position, buf_size);
     }
 
     return buf;
@@ -210,7 +218,7 @@ u8* RandomRead2(int fd, int low_bound, int high_bound)
         int buf_size = GetRandomSize();
 
         seek_file(fd, position);
-        read_file(fd, (char*)(buf + position), buf_size);
+        read_file(fd, (buf + position), buf_size);
 
         for (int i = position; i < (position + buf_size); i++)
         {
@@ -240,7 +248,7 @@ void TestDataConsistency(int fd)
     print_divider('-');
 
     seek_file(fd, 0);
-    write_file(fd, (char*)SAMPLE_DATA, SAMPLE_SIZE);
+    write_file(fd, SAMPLE_DATA, SAMPLE_SIZE);
 
     int low_bound = rand() % running->fd[fd]->mip->inode.i_size;
     int high_bound = 0;
@@ -271,6 +279,11 @@ void level_2()
     srand(time(NULL));
 
     int fd = open_file(filename, RW);
+    if(fd < 0)
+    {
+        fprintf(stderr, "Open_File: Unable to open file\n");
+        return;
+    }
 
     int trial = 0;
     while(trial < TRIALS)

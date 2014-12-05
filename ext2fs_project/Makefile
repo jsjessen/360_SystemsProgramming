@@ -139,7 +139,7 @@ mem_run: all
 	valgrind $(VALGRIND_MODE) $(NAME) $(DISK)
 
 test: all
-	$(NAME) $(DISK) test
+	-$(NAME) $(DISK) test > test.out 2>&1
 
 mem_test: all
 	valgrind $(VALGRIND_MODE) $(NAME) $(DISK) test
@@ -149,10 +149,10 @@ disk:
 	sudo mkfs.ext2 -F $(DISK) $(NUM_BLOCKS) 
 
 clean:
-	@$(RM) *~ $(NAME) $(OBJ_DIR)/*.o 
+	@$(RM) $(NAME) $(OBJ_DIR)/*.o *~
 
-tar: all
-	tar -zcf $(NAME).tar.gz *.c *.h $(UTIL_DIR) $(CMD_DIR) README.md makefile 
+tar: all clean
+	tar -zcf $(NAME).tar.gz *.c *.h $(CMD_DIR) $(TEST_DIR) $(UTIL_DIR) README.md makefile 
 
 submit: tar 
 	script/upload.sh $(LAB) $(NAME).tar.gz

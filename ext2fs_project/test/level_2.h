@@ -20,7 +20,7 @@
 #include <file.h>
 
 #define VERBOSE
-#define MAX_TEST_SIZE   2000
+#define MAX_TEST_SIZE   1000
 #define MIN_TEST_SIZE   1
 #define TRIALS          1
 
