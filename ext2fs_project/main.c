@@ -12,24 +12,19 @@
 #include <cmd.h>
 
 #include <init.c>
-
-#include "FileUnitTest.c"
-
+#include <test.c>
 
 int main(int argc, char* argv[])
 {
-    char* device = "disk/mydisk"; //default
-
-    if (argc > 2)
+    if (argc < 2)
     {
-        printf("Usage:\n");
-        printf("         myext2   DEVICE\n");
-        printf("  e.g.   myext2   mydisk\n\n");
-        exit(1);
+        printf("\nUsage:\n");
+        printf("         my_ext2fs [device] \n");
+        printf("  e.g.   my_ext2fs  mydisk \n\n");
+        return 1;
     }
 
-    if(argc > 1)
-        device = argv[1];
+    char* device = argv[1];
 
     initialize_fs(); 
     mount_root(device);
@@ -44,7 +39,11 @@ int main(int argc, char* argv[])
 
     // Create Process1 with uid = 1 for non-super user
 
-    FileUnitTest();
+    if(argc > 2 && strcmp(argv[2], "test") == 0)
+    {
+        test();
+        return 0;
+    }
 
     while(true)
     {

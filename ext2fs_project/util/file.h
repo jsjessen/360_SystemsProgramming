@@ -19,11 +19,11 @@
 #include <util.h>
 
 
-int open_file(char* pathname, int mode);
+int open_file(const char* pathname, int mode);
 int close_file(int fd);
 
-int read_file(int fd, char* buf, int nbytes);
-int write_file(int fd, char buf[], int nbytes);
+int read_file(int fd, void* buf, int nbyte);
+int write_file(int fd, void* buf, int nbyte);
 
 OPEN_FILE* get_file(int fd);
 

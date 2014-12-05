@@ -238,9 +238,9 @@ int close_file(int fd)
 // lbk   0    1 .....     |rem|            |
 //                      start           fileSize (in INODE)  
 
-// It tries to read nbyte from fd to buf[ ], and returns the 
+// It tries to read nbytes from fd to buf[ ], and returns the 
 // actual number of bytes read.
-int read_file(int fd, void* buf, int nbyte)
+int read_file(int fd, void* buf, int nbytes)
 {
     OPEN_FILE* fp = running->fd[fd]; // Open file table pointer
 
@@ -262,7 +262,7 @@ int read_file(int fd, void* buf, int nbyte)
     int count = 0;
     int available = file_size - fp->offset; // number of bytes still available in file
 
-    while(nbyte && available)
+    while(nbytes && available)
     {
         //Compute LOGICAL BLOCK number logical_block and start_byte in that block from offset;
         int logical_block = fp->offset / block_size;
@@ -283,8 +283,8 @@ int read_file(int fd, void* buf, int nbyte)
             remain = available;
 
         int copy_size;
-        if(nbyte < remain)  
-            copy_size = nbyte;
+        if(nbytes < remain)  
+            copy_size = nbytes;
         else
             copy_size = remain;
 
@@ -293,16 +293,16 @@ int read_file(int fd, void* buf, int nbyte)
         count      += copy_size;
         fp->offset += copy_size;
         available  -= copy_size;
-        nbyte      -= copy_size;
+        nbytes     -= copy_size;
     }
 
     return count;   // count is the actual number of bytes read
 }
 
-//mywrite behaves exactly the same as Unix's write(fd, buf, nbyte) syscall.
-//It writes nbyte from buf[ ] to the file descriptor fd, extending the file 
+//mywrite behaves exactly the same as Unix's write(fd, buf, nbytes) syscall.
+//It writes nbytes from buf[ ] to the file descriptor fd, extending the file 
 //size as needed.
-int write_file(int fd, void* buf, int nbyte) 
+int write_file(int fd, char buf[], int nbytes) 
 {
     OPEN_FILE* fp = running->fd[fd]; // Open file table pointer
 
@@ -322,7 +322,7 @@ int write_file(int fd, void* buf, int nbyte)
 
     int count = 0;
 
-    while(nbyte)
+    while(nbytes)
     {
         //Compute LOGICAL BLOCK number logical_block and start_byte in that block from offset;
         int logical_block = fp->offset / block_size;
@@ -344,8 +344,8 @@ int write_file(int fd, void* buf, int nbyte)
         int remain = block_size - start_byte;     // number of BYTEs remain in this block
 
         int copy_size;
-        if(nbyte < remain)  
-            copy_size = nbyte;
+        if(nbytes < remain)  
+            copy_size = nbytes;
         else
             copy_size = remain;
 
@@ -355,7 +355,7 @@ int write_file(int fd, void* buf, int nbyte)
 
         count      += copy_size;
         fp->offset += copy_size;
-        nbyte      -= copy_size;
+        nbytes     -= copy_size;
 
         // increase file size if offset is greater
         if (fp->offset > ip->i_size)

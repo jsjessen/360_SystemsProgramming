@@ -64,6 +64,8 @@ flags = [
 '-I',
 'util',
 '-I',
+'test',
+'-I',
 'cmd',
 '-I',
 'cmd/level_1',

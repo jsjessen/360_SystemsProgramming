@@ -1,19 +1,10 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <time.h>
-
-#include <global.h>
-#include <file.h>
-
-#define VERBOSE
-#define MAX_TEST_SIZE   2000
-#define MIN_TEST_SIZE   1
-#define TRIALS          1
+#include <level_2.h>
 
 static u8* SAMPLE_DATA;
 static long SAMPLE_SIZE;
+static char* filename = "test";
 
-int GetRandomSize(void)
+int GetRandomSize()
 {
     if (SAMPLE_SIZE > 0)
         return  rand() % (SAMPLE_SIZE - MIN_TEST_SIZE) + MIN_TEST_SIZE;
@@ -23,23 +14,24 @@ int GetRandomSize(void)
 
 int GetCommonSize(void)
 {
-    // 8,16,...,1024,2048
-    //return (int)pow(2, rand() % 11 + 3); 
-    return 1024;
+    // 8,16,32,...,1024,2048,4096
+    return (int)pow(2, rand() % 12 + 3); 
 }
 
-int GetUncommonSize(void)
+int GetUncommonSize()
 {
     int size = 0;
 
+    // Must be odd
     while (size % 2 == 0)
         size = GetRandomSize();
 
     return size;
 }
 
-void GenerateSampleData(void)
+void GenerateSampleData()
 {
+    SAMPLE_SIZE = 0;
     SAMPLE_SIZE = GetRandomSize();
     SAMPLE_DATA = (u8*)malloc(SAMPLE_SIZE);
 
@@ -47,11 +39,38 @@ void GenerateSampleData(void)
         SAMPLE_DATA[i] = rand() % 256;
 }
 
-void DeleteSampleData(void)
+void DeleteSampleData()
 {
     free(SAMPLE_DATA);
     SAMPLE_DATA = NULL;
     SAMPLE_SIZE = 0;
+}
+
+void LinuxRead()
+{
+    u8 buf[SAMPLE_SIZE];
+
+    int fd = open(filename, O_RDONLY);
+    int bytes_read = read(fd, buf, SAMPLE_SIZE);
+    close(fd);
+
+    if (memcmp(SAMPLE_DATA, buf, bytes_read) == 0)
+        printf("PASS\n");
+    else
+        printf("FAIL\n");
+
+    if(bytes_read != SAMPLE_SIZE)
+        printf("\tWARNING: Linux was unable to read the entire sample!\n");
+}
+
+void LinuxWrite()
+{
+    int fd = open(filename, O_TRUNC | O_WRONLY);
+    int bytes_wrote = write(fd, SAMPLE_DATA, SAMPLE_SIZE);
+    close(fd);
+
+    if(bytes_wrote != SAMPLE_SIZE)
+        printf("\tWARNING: Linux was unable to write the entire sample!\n");
 }
 
 void SequentialWrite(int fd, int buf_size)
@@ -93,9 +112,14 @@ void SequentialRead(int fd, int buf_size)
         printf("FAIL\n");
 }
 
+
+
 void VerifyContents(int fd)
 {
     putchar('\n');
+    printf("\tRead: Linux...");
+    LinuxRead();
+
     printf("\tRead: all at once...");
     SequentialRead(fd, SAMPLE_SIZE);
 
@@ -209,6 +233,7 @@ u8* RandomRead2(int fd, int low_bound, int high_bound)
 
     return buf;
 }
+
 void TestDataConsistency(int fd)
 {
     printf("\nData Consistency\n");
@@ -241,18 +266,15 @@ void TestDataConsistency(int fd)
     free(random);
 }
 
-void FileUnitTest(void)
+void level_2()
 {
-    char* test_filename = "test";
-
     srand(time(NULL));
 
-    int fd = open_file(test_filename, 2);
+    int fd = open_file(filename, RW);
 
     int trial = 0;
     while(trial < TRIALS)
     {
-
         GenerateSampleData();
         printf("Sample Size = %ld\n\n", SAMPLE_SIZE);
 
@@ -262,11 +284,8 @@ void FileUnitTest(void)
         print_divider('*');
 
         DeleteSampleData();
-        close(fd);
-
         trial++;
     }
 
-    printf(" *** TESTING COMPLETE *** \n");
-    exit(0);
+    close_file(fd);
 }

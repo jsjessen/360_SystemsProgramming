@@ -38,13 +38,13 @@ int findino(MINODE *mip, int *myino, int *parent);
 // Assumes the device uses the ext2 filesystem 
 // Given the file descriptor of an open device and target file's pathname
 // Searches through the device along pathname for target file 
-int getino(int device, char* pathname);
+int getino(int device, const char* pathname);
 // Returns the inode number of target file if it exists
 // Returns -1 if the target file does not exist
 
 // Given a the inode number of a directory
 // Searches through the directory for the target file
-int search(MINODE *mip, char* target);
+int search(MINODE *mip, const char* target);
 // Returns the target file's inode number if it exists
 // Returns -1 if the target file does not exist
 

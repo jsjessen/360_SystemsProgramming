@@ -118,7 +118,7 @@ int findino(MINODE *mip, int *myino, int *parent)
 
 // Searches through the device along pathname for target file 
 // Returns the target file's inode number if found
-int getino(int device, char* pathname)
+int getino(int device, const char* pathname)
 {
     int ino = 0;
     char** name = NULL; 
@@ -150,7 +150,7 @@ int getino(int device, char* pathname)
 }
 
 // Searches through the directory for the target file
-int search(MINODE *mip, char* target)
+int search(MINODE *mip, const char* target)
 {
     int device = mip->device;
     int target_ino= 0;
