@@ -83,6 +83,8 @@ static const COMMAND lookup[] =
     { "sync"    , &my_sync    },
 
     { "quit"    , &quit       },
+    { "q"       , &quit       },
+    { "logout"  , &quit       },
     { "exit"    , &quit       }
 };
 

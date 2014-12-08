@@ -56,8 +56,8 @@ int get_logic_path_index(int block_size, int* logical_block, int* indirection)
         {
             //printf("DIRECT\n");
             int index = *logical_block;
-            *indirection = 0;
             *logical_block = 0;
+            *indirection = 0;
 
             return index; 
         }

@@ -123,7 +123,7 @@ $(OBJ_DIR)/level1_test.o : $(TEST_DIR)/level_1.c $(TEST_DIR)/level_1.h
 	$(CC) -c $(CFLAGS) -I $(TEST_DIR) $< -o $@
 
 $(OBJ_DIR)/level2_test.o : $(TEST_DIR)/level_2.c $(TEST_DIR)/level_2.h \
-						   file.h print.h global.h
+						   file.h print.h cmd.h global.h
 	$(CC) -c $(CFLAGS) -I $(TEST_DIR) $< -o $@
 
 $(OBJ_DIR)/level3_test.o : $(TEST_DIR)/level_3.c $(TEST_DIR)/level_3.h
@@ -140,6 +140,7 @@ mem_run: all
 
 test: all
 	-$(NAME) $(DISK) test > test.out 2>&1
+	vim test.out
 
 mem_test: all
 	valgrind $(VALGRIND_MODE) $(NAME) $(DISK) test

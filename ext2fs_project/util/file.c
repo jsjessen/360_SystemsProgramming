@@ -242,7 +242,7 @@ int close_file(int fd)
 // actual number of bytes read.
 int read_file(int fd, void* buf, int nbyte)
 {
-    OPEN_FILE* fp = running->fd[fd]; // Open file table pointer
+    OPEN_FILE* fp = get_file(fd); // Open file table pointer
 
     // Verify fd is open for read
     if(!fp || (fp->mode != RD && fp->mode != RW))
@@ -262,18 +262,26 @@ int read_file(int fd, void* buf, int nbyte)
     int count = 0;
     int available = file_size - fp->offset; // number of bytes still available in file
 
+    int real_block = -1;
+    int prev_logical_block = -1;
+    u8* read_buf = NULL;
+
     while(nbyte && available)
     {
         //Compute LOGICAL BLOCK number logical_block and start_byte in that block from offset;
         int logical_block = fp->offset / block_size;
         int start_byte    = fp->offset % block_size;
 
-        // get the data block into read_buf[block_size]
-        int real_block = get_logical_bno(device, ip, logical_block);
+        if(logical_block != prev_logical_block)
+        {
+            // get the data block into read_buf[block_size]
+            real_block = get_logical_bno(device, ip, logical_block);
 
-        //printf("READ REAL = %d\n", real_block);
-        //printf("i_block[0] = %d\n", ip->i_block[0]);
-        u8* read_buf = get_block(device, real_block);
+            //printf("READ REAL = %d\n", real_block);
+            //printf("i_block[0] = %d\n", ip->i_block[0]);
+            read_buf = get_block(device, real_block);
+        }
+        prev_logical_block = logical_block;
 
         // copy from start_byte to buf[ ], at most remain bytes in this block
         u8* bp = read_buf + start_byte;   
@@ -304,7 +312,7 @@ int read_file(int fd, void* buf, int nbyte)
 //size as needed.
 int write_file(int fd, void* buf, int nbyte) 
 {
-    OPEN_FILE* fp = running->fd[fd]; // Open file table pointer
+    OPEN_FILE* fp = get_file(fd); // Open file table pointer
 
     // Verify fd is open for read
     if(!fp || (fp->mode != WR && fp->mode != RW && fp->mode != APPEND))
@@ -322,6 +330,10 @@ int write_file(int fd, void* buf, int nbyte)
 
     int count = 0;
 
+    int real_block = -1;
+    int prev_logical_block = -1;;
+    u8* write_buf = NULL;
+
     while(nbyte)
     {
         //Compute LOGICAL BLOCK number logical_block and start_byte in that block from offset;
@@ -329,16 +341,23 @@ int write_file(int fd, void* buf, int nbyte)
         int start_byte    = fp->offset % block_size;
 
         // get the data block into read_buf[block_size]
-        int real_block = get_logical_bno(device, ip, logical_block);
-        if(real_block == 0)
-            real_block = logical_balloc(device, ip);
+        if(logical_block != prev_logical_block)
+        {
+            if(prev_logical_block >= 0)
+                put_block(device, real_block, write_buf);   // write write_buf[ ] to disk
 
-        printf("WRITE REAL = %d\n", real_block);
-        for(int i = 0; i < 15; i++)
-            printf("i_block[%d] = %d\n", i, ip->i_block[i]);
-        print_divider('-');
+            real_block = get_logical_bno(device, ip, logical_block);
+            if(real_block == 0)
+                real_block = logical_balloc(device, ip);
 
-        u8* write_buf = get_block(device, real_block);
+                //printf("WRITE REAL = %d\n", real_block);
+                //for(int i = 0; i < 15; i++)
+                //    printf("i_block[%d] = %d\n", i, ip->i_block[i]);
+                //print_divider('-');
+
+            write_buf = get_block(device, real_block);
+        }
+        prev_logical_block = logical_block;
 
         u8* bp = write_buf + start_byte;      // cp points at start_byte in write_buf[]
         int remain = block_size - start_byte;     // number of BYTEs remain in this block
@@ -350,7 +369,6 @@ int write_file(int fd, void* buf, int nbyte)
             copy_size = remain;
 
         memcpy(bp, buf, copy_size);
-        put_block(device, real_block, write_buf);   // write write_buf[ ] to disk
         //puts(buf);
 
         count      += copy_size;
@@ -364,7 +382,10 @@ int write_file(int fd, void* buf, int nbyte)
     //printf("\nWrote %d bytes to file descriptor %d\n", count, fd);  
 
     if(count > 0)
+    {
+        put_block(device, real_block, write_buf);   // write write_buf[ ] to disk
         mip->dirty = true;
+    }
 
     return count;
 }
@@ -414,17 +435,23 @@ int seek_file(int fd, int position)
 
 int truncate_file(MINODE *mip)
 {
+    printf("\nTruncating\n");
+
     INODE* ip = &mip->inode;
 
     const int device = running->cwd->device;
     const int block_size = get_block_size(device);
-    const int block_count = ip->i_size / block_size;
+    const int block_count = get_num_blocks(block_size, ip);
+
+    printf("block_count = %d\n", block_count);
 
     for(int i = 0; i < block_count; i++)
-        bfree(device, get_logical_bno(device, ip, i));
+        logical_bfree(device, ip);
+        //bfree(device, get_logical_bno(device, ip, i));
 
     ip->i_atime = time(0L);
     ip->i_mtime = time(0L);
+    ip->i_blocks = 0;
     ip->i_size = 0;
 
     mip->dirty = true;
@@ -443,7 +470,7 @@ int dup(int fd)
         return FAILURE;
     }
 
-    for(int i; i < NFD; i++)
+    for(int i = 0; i < NFD; i++)
     {
         if(running->fd[i] == NULL)
         {
@@ -451,14 +478,10 @@ int dup(int fd)
             fp->refCount++;
             return i;
         }
-
-        if(i == NFD - 1)
-        {
-            fprintf(stderr, "dup: failed to duplicate '%d':"
-                    " Process has reached file limit\n", fd);
-        }
     }
 
+    fprintf(stderr, "dup: failed to duplicate '%d':"
+            " Process has reached file limit\n", fd);
     return FAILURE;
 }
 

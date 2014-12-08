@@ -141,25 +141,33 @@ void bfree(int dev, int block)
 int logical_balloc(int device, INODE* ip)
 {
     const int block_size = get_block_size(device);
-
-    printf("logical_balloc\n");
+#ifdef DEBUG
+    printf("\nlogical_balloc\n");
+#endif
     int next_block = get_num_blocks(block_size, ip);
     int indirection = 0;
     int bno = 0;
+
+#ifdef DEBUG
+    printf("allocating logical block %d\n", next_block);
+#endif
 
     int* buf = (int*)ip->i_block;
     do 
     {
         int index = get_logic_path_index(block_size, &next_block, &indirection);
 
+#ifdef DEBUG
         printf("index = %d\n", index);
+#endif
 
         bno = buf[index];
-
         if(bno == 0)
         {
             bno = balloc(device);
             buf[index] = bno;
+
+            ip->i_blocks += block_size / 512;
         }
 
         printf("bno = %d\n", bno);
@@ -172,49 +180,49 @@ int logical_balloc(int device, INODE* ip)
     }
     while(indirection > 0);
 
+    free(buf);
     return bno;
 }
 
 // Frees the last-most allocated block
 void logical_bfree(int device, INODE* ip)
 {
-    // parallel
-    int free_index[4];
-    int free_bno[4];
-    int num_index = 0;
+#ifdef DEBUG
+    printf("\nlogical_bfree\n");
+#endif
 
     const int block_size = get_block_size(device);
 
     int last_block = get_num_blocks(block_size, ip) - 1;
     int indirection = 0;
 
+#ifdef DEBUG
+    printf("freeing logical block %d\n", last_block);
+#endif
+
     int* buf = (int*)ip->i_block;
     do 
     {
         int index = get_logic_path_index(block_size, &last_block, &indirection);
+#ifdef DEBUG
+        printf("index = %d\n", index);
+#endif
 
-        if(index == 0)
-        {
-            free_index[num_index] = index;
-            free_bno[num_index] = buf[index];
-            num_index++;
-        }
+        int bno = buf[index];
 
-        int* tmp = buf;
-        buf = (int*)get_block(device, buf[index]);
+        int* prev = buf;
+        buf = (int*)get_block(device, bno);
 
-        if(tmp != (int*)ip->i_block)
-            free(tmp);
+        prev[index] = 0;
+        bfree(device, bno);
+#ifdef DEBUG
+        printf("freeing block %d\n", bno);
+#endif
+        ip->i_blocks -= block_size / 512;
+
+        if(prev != (int*)ip->i_block)
+            free(prev);
     }
     while(indirection > 0);
-
-    while(num_index >= 0)
-    {
-        if(free_index[num_index] == 0)
-            bfree(device, free_bno[num_index]);
-        else
-            break;
-
-        num_index--;
-    }
+    free(buf);
 }

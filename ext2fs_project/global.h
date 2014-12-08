@@ -18,6 +18,8 @@
 #include <string.h>
 #include <sys/stat.h>
 
+#define DEBUG
+
 #define EMPTY 0
 #define MAX_FILE_NAME_LENGTH 256
 #define NUM_DIRECT_BLOCKS 12

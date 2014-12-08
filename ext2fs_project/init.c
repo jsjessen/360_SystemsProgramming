@@ -136,7 +136,6 @@ void mount_root(char* device_name)
         fprintf(stderr, "%s does not use the ext2 filesystem\n", device_name);
         exit(1);
     }
-    printf("OK\n");
 
     //print_super(dev);
     //print_gd(dev);

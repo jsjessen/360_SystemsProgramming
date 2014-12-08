@@ -19,6 +19,12 @@ int (*get_cmd(char* cmd_name))(int, char**);
 int menu       (int argc, char* argv[]);
 int quit       (int argc, char* argv[]);
 
+void list_file(MINODE* mip, char* name);
+void list_dir(MINODE* mip);
+int make_dir(MINODE* parent_mip, char* child_name);
+int creat_file(MINODE* parent_mip, char* child_name);
+char* readlink(char* pathname);
+
 int my_ls      (int argc, char* argv[]);
 int my_cd      (int argc, char* argv[]);
 int my_pwd     (int argc, char* argv[]);

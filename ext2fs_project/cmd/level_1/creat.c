@@ -85,7 +85,6 @@ clean_up:
 int creat_file(MINODE* parent_mip, char* child_name)
 {
     const int device = running->cwd->device;
-    const int block_size = get_block_size(device);
 
     // Allocate an inode for the new file 
     int ino = ialloc(device);
@@ -102,7 +101,7 @@ int creat_file(MINODE* parent_mip, char* child_name)
     ip->i_atime = time(0L);          // Set last access to current time
     ip->i_ctime = time(0L);          // Set creation to current time
     ip->i_mtime = time(0L);          // Set last modified to current time
-    ip->i_blocks = block_size / 512; // # of 512-byte blocks reserved for this inode 
+    ip->i_blocks = 0; // # of 512-byte blocks reserved for this inode 
 
     // Set all of the data blocks to 0
     for(int i = 0; i < NUM_DATA_BLOCKS; i++)

@@ -46,41 +46,9 @@ void DeleteSampleData()
     SAMPLE_SIZE = 0;
 }
 
-void LinuxRead()
+void SequentialWrite(int buf_size)
 {
-    u8 buf[SAMPLE_SIZE];
-
-    int fd = open(filename, O_RDONLY, 0666);
-    int bytes_read = read(fd, buf, SAMPLE_SIZE);
-    close(fd);
-
-    if (memcmp(SAMPLE_DATA, buf, bytes_read) == 0)
-        printf("PASS\n");
-    else
-        printf("FAIL\n");
-
-    if(bytes_read != SAMPLE_SIZE)
-        printf("\tWARNING: Linux was unable to read the entire sample!\n");
-}
-
-void LinuxWrite()
-{
-    int fd = open(filename, O_WRONLY | O_TRUNC | O_CREAT, 0666);
-    if(fd < 0)
-    {
-        fprintf(stderr, "Linux: Unable to open file\n");
-        exit(1);
-    }
-
-    int bytes_wrote = write(fd, SAMPLE_DATA, SAMPLE_SIZE);
-    close(fd);
-
-    if(bytes_wrote != SAMPLE_SIZE)
-        printf("\tWARNING: Linux was unable to write the entire sample!\n");
-}
-
-void SequentialWrite(int fd, int buf_size)
-{
+    int fd = open_file(filename, WR);
     long position = 0;
     seek_file(fd, position);
 
@@ -97,20 +65,23 @@ void SequentialWrite(int fd, int buf_size)
         // Validate the stream position after each write.
         if (running->fd[fd]->offset != position)
         {
+            close_file(fd);
             printf("Failed: Incorrect position\n");
             return;
         }
     }
+    close_file(fd);
 }
 
-void SequentialRead(int fd, int buf_size)
+void SequentialRead(int buf_size)
 {
-    seek_file(fd, 0);
-
+    int fd = open_file(filename, RD);
     u8 buf[SAMPLE_SIZE];
 
     for (int i = 0; i < SAMPLE_SIZE; i += buf_size)
         read_file(fd, (buf + i), buf_size);
+
+    close_file(fd);
 
     if (memcmp(SAMPLE_DATA, buf, SAMPLE_SIZE) == 0)
         printf("PASS\n");
@@ -118,51 +89,45 @@ void SequentialRead(int fd, int buf_size)
         printf("FAIL\n");
 }
 
-void VerifyContents(int fd)
+void VerifyContents()
 {
-    //printf("\n\tRead: Linux...");
-    //LinuxRead();
-
-    printf("\n\tRead: all at once...");
-    SequentialRead(fd, SAMPLE_SIZE);
+    int fd = open_file(filename, RD);
+    putchar('\n');
+    printf("\t\tRead: all at once...");
+    SequentialRead(SAMPLE_SIZE);
 
     int buf_size = GetCommonSize();
-    printf("\tRead: sequentially with %d byte buffer...", buf_size);
-    SequentialRead(fd, buf_size);
+    printf("\t\tRead: sequentially with %d byte buffer...", buf_size);
+    SequentialRead(buf_size);
 
     buf_size = GetUncommonSize();
-    printf("\tRead: sequentially with %d byte buffer...", buf_size);
-    SequentialRead(fd, buf_size);
+    printf("\t\tRead: sequentially with %d byte buffer...", buf_size);
+    SequentialRead(buf_size);
+    close_file(fd);
 }
 
-void TestWriteValidation(int fd)
+void TestWriteValidation()
 {
     printf("Write Validation\n");
-    print_divider('-');
 
-    //printf("\nWrite: Linux...");
-    //LinuxWrite();
-    //VerifyContents(fd);
-    
-    printf("\nWrite: all at once...");
-    SequentialWrite(fd, SAMPLE_SIZE);
-
-    VerifyContents(fd);
+    printf("\n\tWrite: all at once...");
+    SequentialWrite(SAMPLE_SIZE);
+    VerifyContents();
 
     int buf_size = GetCommonSize();
-    printf("\nWrite: sequentially with %d byte buffer...", buf_size);
-    SequentialWrite(fd, buf_size);
-    VerifyContents(fd);
+    printf("\n\tWrite: sequentially with %d byte buffer...", buf_size);
+    SequentialWrite(buf_size);
+    VerifyContents();
 
     buf_size = GetUncommonSize();
-    printf("\nWrite: sequentially with %d byte buffer...", buf_size);
-    SequentialWrite(fd, buf_size);
-    VerifyContents(fd);
+    printf("\n\tWrite: sequentially with %d byte buffer...", buf_size);
+    SequentialWrite(buf_size);
+    VerifyContents();
 }
 
 u8* SequentialRead2(int fd, int buf_size, int low_bound, int high_bound)
 {
-    printf("Reading in sequential order...\n");
+    printf("\tReading in sequential order...\n");
 
     //int size = high_bound - low_bound;
 
@@ -178,7 +143,7 @@ u8* SequentialRead2(int fd, int buf_size, int low_bound, int high_bound)
 
 u8* BackwardsRead2(int fd, int buf_size, int low_bound, int high_bound)
 {
-    printf("Reading in backwards order...\n");
+    printf("\tReading in backwards order...\n");
 
     //int size = high_bound - low_bound;
 
@@ -202,7 +167,7 @@ u8* BackwardsRead2(int fd, int buf_size, int low_bound, int high_bound)
 
 u8* RandomRead2(int fd, int low_bound, int high_bound)
 {
-    printf("Reading in random order...\n");
+    printf("\tReading in random order...\n");
 
     int size = high_bound - low_bound;
 
@@ -242,32 +207,35 @@ u8* RandomRead2(int fd, int low_bound, int high_bound)
     return buf;
 }
 
-void TestDataConsistency(int fd)
+void TestDataConsistency()
 {
-    printf("\nData Consistency\n");
-    print_divider('-');
+    printf("\nData Consistency\n\n");
 
-    seek_file(fd, 0);
+    int fd = open_file(filename, WR);
     write_file(fd, SAMPLE_DATA, SAMPLE_SIZE);
+    int size = running->fd[fd]->mip->inode.i_size;
+    close_file(fd);
 
-    int low_bound = rand() % running->fd[fd]->mip->inode.i_size;
+    int low_bound = rand() % size;
     int high_bound = 0;
 
     while (high_bound <= low_bound)
-        high_bound = rand() % running->fd[fd]->mip->inode.i_size;
+        high_bound = rand() % size; 
 
     int region_size = high_bound - low_bound;
 
+    fd = open_file(filename, RD);
     u8* sequential = SequentialRead2(fd, GetRandomSize(), low_bound, high_bound);
     u8* backwards = BackwardsRead2(fd, GetRandomSize(), low_bound, high_bound);
     u8* random = RandomRead2(fd, low_bound, high_bound);
+    close_file(fd);
 
-    // If A=B and B=C, then A=C.  Thus, A=B=C.
+    // If A=B and B=C, then A=C. Thus, A=B=C.
     if (memcmp(sequential + low_bound, backwards + low_bound, region_size) == 0
             && memcmp(backwards + low_bound, random + low_bound, region_size) == 0)
-        printf("Result: PASS\n");
+        printf("\tResult: PASS\n");
     else
-        printf("Result: FAIL\n");
+        printf("\tResult: FAIL\n");
 
     free(sequential);
     free(backwards);
@@ -278,27 +246,25 @@ void level_2()
 {
     srand(time(NULL));
 
-    int fd = open_file(filename, RW);
+    int fd = open_file(filename, RD);
     if(fd < 0)
-    {
-        fprintf(stderr, "Open_File: Unable to open file\n");
-        return;
-    }
+        creat_file(running->cwd, filename);
+    else
+        close_file(fd);
 
     int trial = 0;
     while(trial < TRIALS)
     {
         GenerateSampleData();
-        printf("Sample Size = %ld\n\n", SAMPLE_SIZE);
+        print_divider('=');
+        printf("Sample Size = %ld\n", SAMPLE_SIZE);
+        print_divider('-');
 
-        TestWriteValidation(fd);
-        TestDataConsistency(fd);
-
-        print_divider('*');
+        TestWriteValidation();
+        TestDataConsistency();
+        putchar('\n');
 
         DeleteSampleData();
         trial++;
     }
-
-    close_file(fd);
 }
