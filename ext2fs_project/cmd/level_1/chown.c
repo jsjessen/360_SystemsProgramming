@@ -7,13 +7,21 @@ int my_chown(int argc, char* argv[])
 
     if(argc < 2)
     {
-        fprintf(stderr, "chmod: missing operand\n");
+        fprintf(stderr, "chmown: missing operand\n");
         return FAILURE;
     }
 
     char* path = argv[1];
 
     int ino = getino(device, path);
+
+    if(ino <= 0)
+    {
+        fprintf(stderr, "chown: missing operand\n");
+        return FAILURE;
+    }
+
+
     MINODE* mip = iget(device, ino);
     INODE*   ip = &mip->inode;
 

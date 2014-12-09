@@ -51,7 +51,13 @@
 
 typedef enum { false, true } bool;
 
-typedef enum { FAILURE = -1, SUCCESS } result;
+typedef enum 
+{ 
+    SUCCESS   =  1, 
+    FAILURE   = -1, 
+    EXISTS    = -2, 
+    NOT_EXIST = -3
+} result_t;
 
 typedef enum { FREE, READY, RUNNING} process_status;
 
@@ -120,7 +126,7 @@ typedef struct proc
 // Global Variables
 extern MINODE* root;
 extern PROC* running; // Points at the PROC structure of the current running process
-                      // Every file operation is performed by the current running process
+// Every file operation is performed by the current running process
 
 extern MINODE    MemoryInodeTable[];
 extern MOUNT     MountTable[];

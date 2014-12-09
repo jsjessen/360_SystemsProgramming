@@ -33,7 +33,7 @@ int main(int argc, char* argv[])
     }
 
     // Check if the user supplied a file to be used as input
-    if(argc > 2)
+    if(argc > 2 && false) // REMOVE FALSE, LATER
     {
         char* input_path = argv[2];
 
@@ -52,19 +52,10 @@ int main(int argc, char* argv[])
     char* device = argv[1];
     initialize_fs(); 
     mount_root(device);
-    //printf("root refCount = %d\n", root->refCount);
+    initialize_proc();
 
-    //printf("creating P0 as running process\n");
-    running = &ProcessTable[0];
-    running->status = READY;
-    running->cwd = root; root->refCount++;
-    running->uid = SUPER_USER;
-    //printf("root refCount = %d\n", root->refCount);
-
-    // Create Process1 with uid = 1 for non-super user
-
-    //if(test_mode)
-        //test();
+    if(test_mode)
+        test();
 
     while(true)
     {
@@ -89,20 +80,35 @@ int main(int argc, char* argv[])
             puts(input);
         }
 
-        cmd_argv = parse(input, " ");    // Parse input into cmd argv[]
+        // Parse input into cmd argv[]
+        cmd_argv = parse(input, " ");    
         free(input);
 
-        while(cmd_argv[++cmd_argc]){}    // Determine cmd argc
+        // Determine cmd argc
+        while(cmd_argv[++cmd_argc]){}   
 
-        cmd_fptr = get_cmd(cmd_argv[0]); // Get the command's function pointer
-        cmd_fptr(cmd_argc, cmd_argv);    // Execute the command with parameters
+        // Get the command's function pointer
+        cmd_fptr = get_cmd(cmd_argv[0]); 
+
+        // Execute the command
+        result_t actual_result = cmd_fptr(cmd_argc, cmd_argv);    
         free_array(cmd_argv);
 
+        // If testing, compare result with what was expected
         if(test_mode)
         {
-            char* result = get_input(input_stream);
-            puts(result);
-            free(result);
+            char* expected_str = get_input(input_stream);
+            result_t expected_result = get_result(expected_str);
+
+            if(actual_result != expected_result)
+            {
+                char* actual_str = get_result_str(actual_result);
+                printf("--------------------\n");
+                printf("EXPECTED : %s\n", expected_str);
+                printf("ACTUAL   : %s\n", actual_str);
+                printf("====================\n");
+            }
+            free(expected_str);
         }
     }
 

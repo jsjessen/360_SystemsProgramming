@@ -168,3 +168,15 @@ void mount_root(char* device_name)
     free(gp);
 }
 
+void initialize_proc()
+{
+    //printf("creating P0 as running process\n");
+    running = &ProcessTable[0];
+    running->status = READY;
+    running->cwd = root; root->refCount++;
+    running->uid = SUPER_USER;
+    //printf("root refCount = %d\n", root->refCount);
+
+    // Create Process1 with uid = 1 for non-super user
+}
+

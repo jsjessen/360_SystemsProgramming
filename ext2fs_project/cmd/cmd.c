@@ -45,7 +45,7 @@ typedef struct command
     int (*cmd)(int, char**);
 } COMMAND;
 
-static const COMMAND lookup[] = 
+static const COMMAND cmd_lookup[] = 
 {
     { "?"	    , &menu       },
     { "help"    , &menu       },
@@ -96,13 +96,12 @@ int invalid(int argc, char* argv[])
 
 int (*get_cmd(char* cmd_name))(int, char**)
 {
-    int i = 0;
-    static int cmd_count = sizeof(lookup) / sizeof(lookup[0]);
+    static int cmd_count = sizeof(cmd_lookup) / sizeof(cmd_lookup[0]);
 
-    for(i = 0; i < cmd_count; i++)
+    for(int i = 0; i < cmd_count; i++)
     {
-        if(strcmp(cmd_name, lookup[i].name) == 0)
-            return lookup[i].cmd;
+        if(strcmp(cmd_name, cmd_lookup[i].name) == 0)
+            return cmd_lookup[i].cmd;
     }
 
     return &invalid;
