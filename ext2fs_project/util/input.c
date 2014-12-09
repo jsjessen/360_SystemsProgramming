@@ -9,7 +9,7 @@ static const int INITIAL_BUF_SIZE = 64;
 
 
 // Get input from user in a controlled manner
-char* get_input()
+char* get_input(FILE* stream)
 {
     int i = 0;
     int size = INITIAL_BUF_SIZE;
@@ -25,7 +25,7 @@ char* get_input()
     // Loop through input 1 char at a time
     while(1)
     {
-        int c = getchar();
+        int c = getc(stream);
 
         // Increase buffer size as needed
         if((i + 1) == size) 
@@ -40,9 +40,18 @@ char* get_input()
             }
         }
 
-        // Accept input or if no input, allow user to cycle
-        if(c == '\n')
+        // \n marks the end of the input
+        //  # marks the start of a comment
+        //    and also the end of useful input
+        if(c == '\n' || c == '#' || c == EOF)
         {
+            if(c == '#')
+            {
+                // Burn the rest of the line
+                while(c != '\n' && c != EOF)
+                    c = getc(stream);
+            }
+
             if (buf[0] == 0)
                 return NULL;
             else
@@ -56,10 +65,10 @@ char* get_input()
             if (buf[0] == 0)
                 continue;
 
-            while (isspace(c) && c != '\n')  
-                c = getchar();
+            while (isspace(c) && c != '\n' && c != '#')  
+                c = getc(stream);
 
-            ungetc(c, stdin);
+            ungetc(c, stream);
 
             if(c != '\n')
                 buf[i++] = ' ';

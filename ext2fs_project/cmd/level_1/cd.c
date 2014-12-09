@@ -17,11 +17,19 @@ int my_cd(int argc, char* argv[])
         return SUCCESS;
     }
 
-    // Get dir inode in memory
     int ino = getino(device, argv[1]);
+
+    // Verify that the file exists
+    if(ino < ROOT_INODE)
+    {
+        fprintf(stderr, "cd: %s: No such file or directory\n", argv[1]);
+        return FAILURE;
+    }
+
+    // Get dir inode in memory
     MINODE* new_cwd = iget(device, ino);
 
-    // Check that arg is a dir
+    // Check that the file is a directory 
     if(!S_ISDIR(new_cwd->inode.i_mode))
     {
         iput(new_cwd);

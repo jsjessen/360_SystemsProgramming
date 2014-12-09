@@ -10,7 +10,7 @@
 #ifndef __INPUT_H__
 #define __INPUT_H__
 
-
+#define _GNU_SOURCE
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -21,7 +21,7 @@
 // Returns a string with no leading whitespace
 // and a single space between words
 // Returns NULL if it receives no meaningful input
-char* get_input();
+char* get_input(FILE* stream);
 
 // Example:
 //          input  = "cmd   arg1  \t  arg2\n"

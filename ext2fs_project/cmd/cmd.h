@@ -23,7 +23,7 @@ void list_file(MINODE* mip, char* name);
 void list_dir(MINODE* mip);
 int make_dir(MINODE* parent_mip, char* child_name);
 int creat_file(MINODE* parent_mip, char* child_name);
-char* readlink(char* pathname);
+char* my_readlink(char* pathname);
 
 int my_ls      (int argc, char* argv[]);
 int my_cd      (int argc, char* argv[]);

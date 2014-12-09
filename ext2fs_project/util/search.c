@@ -134,6 +134,12 @@ int getino(int device, const char* pathname)
     else
         ino = search(running->cwd, name[0]);// Relative: start at cwd
 
+    if(ino <= 0)
+    {
+        free_array(name);
+        return FAILURE;
+    }
+
     // Continue search
     int i = 0;
     while(name[++i])
@@ -177,12 +183,15 @@ int search(MINODE *mip, const char* target)
 
         while (cp < block + block_size)
         {
-            char name[MAX_FILE_NAME_LENGTH];
+            char name[block_size];
             strncpy(name, dp->name, dp->name_len);
             name[dp->name_len] = 0;
 
             if (strcmp(name, target) == 0)
+            {
                 target_ino = dp->inode;
+                break;
+            }
 
             cp += dp->rec_len;       // advance cp by rec_len BYTEs
             dp = (DIR*)cp;           // pull dp along to the next record

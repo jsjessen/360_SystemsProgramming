@@ -1,6 +1,6 @@
 #include <cmd.h>
 
-char* readlink(char* pathname);
+char* my_readlink(char* pathname);
 
 
 // symlink targetFileName linkFileName
@@ -88,7 +88,7 @@ int my_symlink(int argc, char* argv[])
     link_ip->i_mode = LINK_MODE;
     
 
-    // READLINK: INPUT/OUTPUT ERROR
+    // my_readlink: INPUT/OUTPUT ERROR
     
     // write the string target_name into the link's i_block[]
     //strcpy((char*)(link_ip->i_block), "ab");
@@ -116,7 +116,7 @@ clean_up:
     // Move parent inode from memory to disk
     iput(target_mip); 
 
-    char* contents = readlink(link_pathname);
+    char* contents = my_readlink(link_pathname);
     printf("READ LINK: '%s'\n", contents);
     free(contents);
 
@@ -124,7 +124,7 @@ clean_up:
 }
 
 // returns the contents of a symlink file 
-char* readlink(char* pathname)
+char* my_readlink(char* pathname)
 {
     const int device = running->cwd->device;
 
@@ -137,7 +137,7 @@ char* readlink(char* pathname)
 
     if(!S_ISLNK(ip->i_mode))
     {
-        fprintf(stderr, "readlink: '%s' is not a symlink", pathname);
+        fprintf(stderr, "my_readlink: '%s' is not a symlink", pathname);
         goto clean_up;
     }
     

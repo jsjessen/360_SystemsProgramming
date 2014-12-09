@@ -2,8 +2,11 @@
 
 NAME = my_ext2fs
 
-DISK = $(DISK_DIR)/fdimage
-NUM_BLOCKS = 1440
+DISK 	    = $(DISK_DIR)/test_disk
+NUM_BLOCKS  = 1440
+
+INPUT_FILE  = $(TEST_DIR)/test.in
+OUTPUT_FILE = $(TEST_DIR)/test.out
 
 VALGRIND_MODE = --leak-check=full
 
@@ -136,14 +139,14 @@ run: all
 	$(NAME) $(DISK)
 
 mem_run: all
-	valgrind $(VALGRIND_MODE) $(NAME) $(DISK)
+	valgrind $(VALGRIND_MODE) $(NAME) $(DISK) 
 
-test: all
-	-$(NAME) $(DISK) test > test.out 2>&1
-	vim test.out
+test: all disk
+	-$(NAME) $(DISK) $(INPUT_FILE) > $(OUTPUT_FILE); 2>&1
+	vim -O $(OUTPUT_FILE) $(INPUT_FILE) 
 
-mem_test: all
-	valgrind $(VALGRIND_MODE) $(NAME) $(DISK) test
+mem_test: all disk
+	valgrind $(VALGRIND_MODE) $(NAME) $(DISK) $(INPUT_FILE) 
 
 disk:
 	touch $(DISK)
