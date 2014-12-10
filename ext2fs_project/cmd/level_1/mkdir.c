@@ -6,12 +6,13 @@ int make_dir(MINODE* parent_mip, char* child_name);
 // Command accessed via main, big picture
 int my_mkdir(int argc, char* argv[])
 {
+    result_t result = NONE;
     const int device = running->cwd->device;
 
     if(argc < 2)
     {
         fprintf(stderr, "mkdir: missing operand\n");
-        return FAILURE;
+        return MISSING_OPERAND;
     }
 
     // mkdir each path given by user
@@ -33,6 +34,7 @@ int my_mkdir(int argc, char* argv[])
         // Verify that parent exists
         if(!parent_mip)
         {
+            result = NO_PARENT;
             fprintf(stderr, "mkdir: cannot create directory '%s':"
                     " No such file or directory\n", path);
             goto clean_up;
@@ -40,6 +42,7 @@ int my_mkdir(int argc, char* argv[])
         // Verify that parent is a directory
         else if(!S_ISDIR(parent_ip->i_mode))
         {
+            result = PARENT_NOT_DIR;
             fprintf(stderr, "mkdir: cannot create directory '%s':"
                     " Not a directory\n", path);
             goto clean_up;
@@ -47,6 +50,7 @@ int my_mkdir(int argc, char* argv[])
         // Verify that child does not yet exist
         else if(getino(device, path) > 0)
         {
+            result = ALREADY_EXISTS;
             fprintf(stderr, "mkdir: cannot create directory '%s':"
                     " File exists\n", path);
             goto clean_up;
@@ -75,6 +79,9 @@ clean_up:
 
         free(parent_name);
         free(child_name);
+
+        if(result != NONE)
+            return result;
 
         i++;
     }

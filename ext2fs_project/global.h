@@ -18,7 +18,7 @@
 #include <string.h>
 #include <sys/stat.h>
 
-#define DEBUG
+//#define DEBUG
 
 #define EMPTY 0
 #define MAX_FILE_NAME_LENGTH 256
@@ -53,10 +53,27 @@ typedef enum { false, true } bool;
 
 typedef enum 
 { 
-    SUCCESS   =  1, 
-    FAILURE   = -1, 
-    EXISTS    = -2, 
-    NOT_EXIST = -3
+    SUCCESS         =  1, 
+    NONE            =  0,
+    MISSING_OPERAND = -1,
+    ALREADY_EXISTS  = -2,
+    DOES_NOT_EXIST  = -3,
+    NO_PARENT       = -4,
+    PARENT_NOT_DIR  = -5,
+    IS_DIR          = -6,
+    NOT_DIR         = -7,
+    IS_REG          = -8,
+    NOT_REG         = -9,
+    PERM_DENIED     = -10,
+    BUSY            = -11,
+    NOT_EMPTY       = -12,
+    NAME_TOO_LONG   = -13,
+    CROSS_DEVICE    = -14,
+    MEM_ALLOC_FAIL  = -15,
+    BAD_MODE        = -16,
+    BAD_FD          = -17,
+    FILE_LIMIT      = -18,
+    NOT_OPEN        = -19
 } result_t;
 
 typedef enum { FREE, READY, RUNNING} process_status;

@@ -1,42 +1,27 @@
-# a comment
-mkdir a/b # more comment
-SUCCESS # comment
-#comment
-
-rm idontexist # test file that does not exist
-NOT_EXIST
-
-creat a/b
-EXISTS
-
-creat file
+mkdir dir 
 SUCCESS
 
-cd file
-FILE
+# comment
+rm idontexist 
+DOES_NOT_EXIST
 
-cd a/b
+creat dir/file
 SUCCESS
 
-fork    # you are now process 1
+mkdir dir 
+ALREADY_EXISTS
+
+touch fox
 SUCCESS
 
-creat file2
+cd fox 
+NOT_DIR
+
+creat bad
+FAIL
+
+cd dir 
 SUCCESS
-
-rm file2
-SUCCESS
-
-...
-result
-
-# may need to add some commands
-# that can only be executed ifdef TEST
-
-Command like you would enter normally
-RESULT CODE
-
-...
-result
 
 quit
+SUCCESS

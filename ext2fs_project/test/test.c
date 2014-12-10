@@ -10,23 +10,30 @@ typedef struct result_struct
 
 static const RESULT result_lookup[] =
 {
-    { "SUCCESS"   , SUCCESS   },
-    { "FAILURE"   , FAILURE   },
-    { "EXISTS"    , EXISTS    },
-    { "NOT_EXIST" , NOT_EXIST }
+    { "SUCCESS"        , SUCCESS         },
+    { "NONE"           , NONE            },
+    { "MISSING_OPERAND", MISSING_OPERAND },
+    { "ALREADY_EXISTS" , ALREADY_EXISTS  },
+    { "DOES_NOT_EXIST" , DOES_NOT_EXIST  },
+    { "NO_PARENT"      , NO_PARENT       },
+    { "PARENT_NOT_DIR" , PARENT_NOT_DIR  },
+    { "IS_DIR"         , IS_DIR          },
+    { "NOT_DIR"        , NOT_DIR         },
+    { "IS_REG"         , IS_REG          },
+    { "NOT_REG"        , NOT_REG         },
+    { "PERM_DENIED"    , PERM_DENIED     },
+    { "BUSY"           , BUSY            },
+    { "NOT_EMPTY"      , NOT_EMPTY       },
+    { "NAME_TOO_LONG"  , NAME_TOO_LONG   },
+    { "CROSS_DEVICE"   , CROSS_DEVICE    },
+    { "MEM_ALLOC_FAIL" , MEM_ALLOC_FAIL  },
+    { "BAD_MODE"       , BAD_MODE        },
+    { "BAD_FD"         , BAD_FD          },
+    { "FILE_LIMIT"     , FILE_LIMIT      },
+    { "NOT_OPEN"       , NOT_OPEN        }
 };
 
 static int result_count = sizeof(result_lookup) / sizeof(result_lookup[0]);
-
-result_t get_result(char* result_str)
-{
-    for(int i = 0; i < result_count; i++)
-    {
-        if(strcmp(result_str, result_lookup[i].str) == 0)
-            return result_lookup[i].res;
-    }
-    return 0; 
-}
 
 char* get_result_str(result_t result)
 {
@@ -43,7 +50,9 @@ void test()
     //    printf("Level 1 Testing\n");
     //    level_1();
     //
-    printf("Level 2 Testing\n");
+    printf("***************************\n");
+    printf("* Testing File Operations *\n");
+    printf("***************************\n\n");
     level_2();
     //
     //    printf("Level 3 Testing\n");

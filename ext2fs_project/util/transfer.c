@@ -412,7 +412,7 @@ int get_inodes_per_block(int device)
     if(inode_size <= 0)
     {
         fprintf(stderr, "transfer.c: get_inodes_per_block(): inode_size = %d\n", inode_size);
-        return FAILURE;
+        return DOES_NOT_EXIST;
     }
     inodes_per_block = block_size / inode_size;
 

@@ -9,7 +9,7 @@ int my_cat(int argc, char* argv[])
     if(argc < 2)
     {
         fprintf(stderr, "cat: missing operand\n");
-        return FAILURE;
+        return MISSING_OPERAND;
     }
 
     // cat each file given by user

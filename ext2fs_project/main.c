@@ -33,7 +33,7 @@ int main(int argc, char* argv[])
     }
 
     // Check if the user supplied a file to be used as input
-    if(argc > 2 && false) // REMOVE FALSE, LATER
+    if(argc > 2)
     {
         char* input_path = argv[2];
 
@@ -57,6 +57,13 @@ int main(int argc, char* argv[])
     if(test_mode)
         test();
 
+    if(input_stream != stdin)
+    {
+        printf("**************************************\n");
+        printf("* Executing Commands from Input File *\n");
+        printf("**************************************\n\n");
+    }
+
     while(true)
     {
         char*  input    = NULL;
@@ -64,21 +71,17 @@ int main(int argc, char* argv[])
         int    cmd_argc = 0;
         int  (*cmd_fptr)(int, char**) = NULL; 
 
-        char* dir = find_name(running->cwd);
-
+        char* cwd = find_name(running->cwd);
         do // Prompt user for input
         { 
             if(input_stream == stdin)
-                printf("[%d %s]$ ", running->uid, dir); 
+                printf("[%d %s]$ ", running->uid, cwd); 
         }     
         while(!(input = get_input(input_stream))); // Get user input
-        free(dir);
+        free(cwd);
 
         if(input_stream != stdin)
-        {
-            putchar('\n');
-            puts(input);
-        }
+            printf("%s\n", input);
 
         // Parse input into cmd argv[]
         cmd_argv = parse(input, " ");    
@@ -97,20 +100,23 @@ int main(int argc, char* argv[])
         // If testing, compare result with what was expected
         if(test_mode)
         {
+            char* actual_str   = get_result_str(actual_result);
             char* expected_str = get_input(input_stream);
-            result_t expected_result = get_result(expected_str);
 
-            if(actual_result != expected_result)
+            if(strcmp(actual_str, expected_str) != 0)
             {
-                char* actual_str = get_result_str(actual_result);
-                printf("--------------------\n");
+                printf("--------------------------\n");
                 printf("EXPECTED : %s\n", expected_str);
-                printf("ACTUAL   : %s\n", actual_str);
-                printf("====================\n");
+                printf("ACTUALLY : %s\n", actual_str);
+                printf("==========================\n\n");
             }
+            else
+                printf("PASS\n\n");
+
             free(expected_str);
         }
-    }
+
+    } // While Loop
 
     return 0;
 }

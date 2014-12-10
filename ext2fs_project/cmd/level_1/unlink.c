@@ -2,13 +2,14 @@
 
 int my_unlink(int argc, char* argv[])
 {
+    result_t result = NONE;
     const int uid = running->uid;
     const int device = running->cwd->device;
 
     if(argc < 2)
     {
         fprintf(stderr, "unlink: missing operand\n");
-        return FAILURE;
+        return MISSING_OPERAND;
     }
 
     // unlink each path given by user
@@ -22,6 +23,7 @@ int my_unlink(int argc, char* argv[])
         // Verify file exists
         if(!mip)
         {
+            result = DOES_NOT_EXIST;
             fprintf(stderr, "unlink: failed to unlink '%s':"
                     " No such file or directory\n", path);
             goto clean_up;
@@ -29,6 +31,7 @@ int my_unlink(int argc, char* argv[])
         // Verify user has permission to unlink the file 
         else if(uid != SUPER_USER && uid != mip->inode.i_uid)
         {
+            result = PERM_DENIED;
             fprintf(stderr, "unlink: failed to unlink '%s':"
                     " Peunlinkission denied\n", path);
             goto clean_up;
@@ -36,6 +39,7 @@ int my_unlink(int argc, char* argv[])
         // Verify that it is not a directory
         else if(S_ISDIR(mip->inode.i_mode))
         {
+            result = IS_DIR;
             fprintf(stderr, "unlink: failed to unlink '%s':"
                     " Is a directory\n", path);
             goto clean_up;
@@ -43,6 +47,7 @@ int my_unlink(int argc, char* argv[])
         // Verify that it is not busy
         else if(mip->refCount > 1)
         {
+            result = BUSY;
             fprintf(stderr, "unlink: failed to unlink file '%s':"
                     " File busy\n", path);
             goto clean_up;
@@ -88,6 +93,9 @@ clean_up:
         // Write changes to deleted file to disk and clear refCount
         iput(mip); 
         
+        if(result != NONE)
+            return result;
+
         i++;
     }
 

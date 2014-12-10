@@ -13,7 +13,7 @@ int my_pwd(int argc, char* argv[])
     if((path = (char*)malloc(initial_size * sizeof(char*))) == NULL)
     {
         perror("pwd: path initial malloc");
-        return FAILURE;
+        return MEM_ALLOC_FAIL;
     } 
 
     // set first char to null for strcat (null = where to start cat)
@@ -54,7 +54,7 @@ int rpwd(MINODE* mip, char** path, int size)
     if(!rpwd(parent_mip, path, size))
     {
         iput(mip);
-        return FAILURE;
+        return -1;
     }
     // path = /a/b/.../<need to add my name here>
 
@@ -73,7 +73,7 @@ int rpwd(MINODE* mip, char** path, int size)
             iput(mip);
             free(my_name);
             perror("pwd: path realloc");
-            return FAILURE;
+            return MEM_ALLOC_FAIL;
         }
     }
 

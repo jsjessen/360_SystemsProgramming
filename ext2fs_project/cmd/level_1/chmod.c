@@ -10,7 +10,7 @@ int my_chmod(int argc, char* argv[])
     if(argc < 2)
     {
         fprintf(stderr, "chmod: missing operand\n");
-        return FAILURE;
+        return MISSING_OPERAND;
     }
 
     char* path = argv[1];

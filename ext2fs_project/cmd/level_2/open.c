@@ -13,7 +13,7 @@ int my_open(int argc, char* argv[])
         printf("\nOptions:\n");
         printf("        RD WR RW APPEND\n\n");
 
-        return FAILURE;
+        return MISSING_OPERAND;
     }
 
     char* pathname = argv[1];
@@ -31,7 +31,7 @@ int my_open(int argc, char* argv[])
     else
     {
         fprintf(stderr, "open: unknown mode '%s'\n", mode_str);
-        return FAILURE;
+        return BAD_MODE;
     }
 
     return open_file(pathname, mode);

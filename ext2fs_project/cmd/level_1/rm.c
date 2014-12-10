@@ -2,13 +2,14 @@
 
 int my_rm(int argc, char* argv[])
 {
+    result_t result = NONE;
     const int uid = running->uid;
     const int device = running->cwd->device;
 
     if(argc < 2)
     {
         fprintf(stderr, "rm: missing operand\n");
-        return FAILURE;
+        return MISSING_OPERAND;
     }
 
     // rm each path given by user
@@ -22,6 +23,7 @@ int my_rm(int argc, char* argv[])
         // Verify file exists
         if(!mip)
         {
+            result = DOES_NOT_EXIST;
             fprintf(stderr, "rm: failed to remove '%s':"
                     " No such file or directory\n", path);
             goto clean_up;
@@ -29,6 +31,7 @@ int my_rm(int argc, char* argv[])
         // Verify user has permission to remove the file 
         else if(uid != SUPER_USER && uid != mip->inode.i_uid)
         {
+            result = PERM_DENIED;
             fprintf(stderr, "rm: failed to remove '%s':"
                     " Permission denied\n", path);
             goto clean_up;
@@ -36,6 +39,7 @@ int my_rm(int argc, char* argv[])
         // Verify that it is not a directory
         else if(S_ISDIR(mip->inode.i_mode))
         {
+            result = IS_DIR;
             fprintf(stderr, "rm: failed to remove '%s':"
                     " Is a directory\n", path);
             goto clean_up;
@@ -43,6 +47,7 @@ int my_rm(int argc, char* argv[])
         // Verify that it is not busy
         else if(mip->refCount > 1)
         {
+            result = BUSY;
             fprintf(stderr, "rm: failed to remove file '%s':"
                     " File busy\n", path);
             goto clean_up;
@@ -87,6 +92,9 @@ int my_rm(int argc, char* argv[])
 clean_up:
         // Write changes to deleted file to disk and clear refCount
         iput(mip); 
+
+        if(result != NONE)
+            return result;
         
         i++;
     }

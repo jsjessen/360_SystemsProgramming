@@ -13,7 +13,7 @@ int my_read(int argc, char* argv[])
         // Show open fd 
         my_pfd(0, NULL);
 
-        return FAILURE;
+        return MISSING_OPERAND;
     }
 
     char* fd_str = argv[1];

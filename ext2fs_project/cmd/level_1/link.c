@@ -6,12 +6,13 @@
 // the same inode(number) as that of targetfileName
 int my_link(int argc, char* argv[])
 {
+    result_t result = NONE;
     const int device = running->cwd->device;
 
     if(argc < 3)
     {
         fprintf(stderr, "link: missing operand\n");
-        return FAILURE;
+        return MISSING_OPERAND;
     }
 
     char* target_pathname = argv[1];
@@ -24,6 +25,7 @@ int my_link(int argc, char* argv[])
     // Verify that inode exists
     if(!mip)
     {
+        result = DOES_NOT_EXIST;
         fprintf(stderr, "link: failed to access '%s':"
                 " No such file or directory\n", target_pathname);
         goto clean_up;
@@ -31,6 +33,7 @@ int my_link(int argc, char* argv[])
     // Verify that targetFile is not a directory
     else if(S_ISDIR(mip->inode.i_mode))
     {
+        result = IS_DIR;
         fprintf(stderr, "link: '%s':"
                 " hard link not allowed for directory\n", target_pathname);
         goto clean_up;
@@ -48,6 +51,7 @@ int my_link(int argc, char* argv[])
     // Verify that linkParent exists
     if(!link_parent_mip)
     {
+        result = NO_PARENT;
         fprintf(stderr, "link: failed to create hard link '%s' => '%s':"
                 " No such file or directory\n", link_pathname, target_pathname);
         goto clean_up_more;
@@ -55,6 +59,7 @@ int my_link(int argc, char* argv[])
     // Verify that linkParent is a directory
     else if(!S_ISDIR(link_parent_mip->inode.i_mode))
     {
+        result = PARENT_NOT_DIR;
         fprintf(stderr, "link: failed to access '%s':"
                 " Not a directory\n", link_pathname);
         goto clean_up_more;
@@ -62,6 +67,7 @@ int my_link(int argc, char* argv[])
     // Verify that linkChild does not yet exist
     else if(getino(device, link_pathname) > 0)
     {
+        result = ALREADY_EXISTS;
         fprintf(stderr, "link: failed to create hard link '%s':"
                 " File exists\n", link_pathname);
         goto clean_up_more;
@@ -70,6 +76,7 @@ int my_link(int argc, char* argv[])
     // Verify that link is not being made across devices
     if(mip->device != link_parent_mip->device)
     {
+        result = CROSS_DEVICE;
         fprintf(stderr, "link: failed to create hard link '%s' => '%s':"
                 " Invalid cross-device link\n", link_pathname, target_pathname);
         goto clean_up_more;
@@ -85,7 +92,7 @@ int my_link(int argc, char* argv[])
     // so increment number of links
     ip->i_links_count++;
     mip->dirty = true;
-    
+
     INODE* link_parent_ip  = &link_parent_mip->inode;
 
     // Set parent's last time of access to current time
@@ -101,6 +108,9 @@ clean_up_more:
 clean_up:
     // Move parent inode from memory to disk
     iput(mip); 
+
+    if(result != NONE)
+        return result;
 
     return SUCCESS;
 }

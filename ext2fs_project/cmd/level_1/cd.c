@@ -23,7 +23,7 @@ int my_cd(int argc, char* argv[])
     if(ino < ROOT_INODE)
     {
         fprintf(stderr, "cd: %s: No such file or directory\n", argv[1]);
-        return FAILURE;
+        return DOES_NOT_EXIST;
     }
 
     // Get dir inode in memory
@@ -34,7 +34,7 @@ int my_cd(int argc, char* argv[])
     {
         iput(new_cwd);
         fprintf(stderr, "cd: %s: Not a directory\n", argv[1]);
-        return FAILURE;
+        return NOT_DIR;
     }
 
     iput(cwd);

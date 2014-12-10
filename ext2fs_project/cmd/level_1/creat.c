@@ -6,12 +6,13 @@ int creat_file(MINODE* parent_mip, char* child_name);
 // Create a new file
 int my_creat(int argc, char* argv[])
 {
+    result_t result = NONE;
     const int device = running->cwd->device;
 
     if(argc < 2)
     {
         fprintf(stderr, "creat: missing operand\n");
-        return FAILURE;
+        return MISSING_OPERAND;
     }
 
     // creat each filename given by user
@@ -32,6 +33,7 @@ int my_creat(int argc, char* argv[])
         // Verify that parent exists
         if(!parent_mip)
         {
+            result = NO_PARENT;
             fprintf(stderr, "creat: cannot create file '%s':"
                     " No such file or directory\n", path);
             goto clean_up;
@@ -39,6 +41,7 @@ int my_creat(int argc, char* argv[])
         // Verify that parent is a directory
         else if(!S_ISDIR(parent_mip->inode.i_mode))
         {
+            result = PARENT_NOT_DIR;
             fprintf(stderr, "creat: cannot create file '%s':"
                     " Not a directory\n", path);
             goto clean_up;
@@ -46,6 +49,7 @@ int my_creat(int argc, char* argv[])
         // Verify that child does not yet exist
         else if(getino(device, path) > 0)
         {
+            result = ALREADY_EXISTS;
             fprintf(stderr, "creat: cannot create file '%s':"
                     " File exists\n", path);
             goto clean_up;
@@ -73,6 +77,9 @@ clean_up:
 
         free(parent_name);
         free(child_name);
+
+        if(result != NONE)
+            return result;
 
         i++;
     }

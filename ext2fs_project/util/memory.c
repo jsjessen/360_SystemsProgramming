@@ -170,7 +170,9 @@ int logical_balloc(int device, INODE* ip)
             ip->i_blocks += block_size / 512;
         }
 
+#ifdef DEBUG
         printf("bno = %d\n", bno);
+#endif
 
         int* tmp = buf;
         buf = (int*)get_block(device, bno);

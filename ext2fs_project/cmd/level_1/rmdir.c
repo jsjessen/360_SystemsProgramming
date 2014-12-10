@@ -2,13 +2,14 @@
 
 int my_rmdir(int argc, char* argv[])
 {
+    result_t result = NONE;
     const int uid = running->uid;
     const int device = running->cwd->device;
 
     if(argc < 2)
     {
         fprintf(stderr, "rmdir: missing operand\n");
-        return FAILURE;
+        return MISSING_OPERAND;
     }
 
     // rmdir each path given by user
@@ -22,6 +23,7 @@ int my_rmdir(int argc, char* argv[])
         // Verify file exists
         if(!mip)
         {
+            result = DOES_NOT_EXIST;
             fprintf(stderr, "rmdir: failed to remove '%s':"
                     " No such file or directory\n", path);
             goto clean_up;
@@ -29,6 +31,7 @@ int my_rmdir(int argc, char* argv[])
         // Verify user has permission to remove the directory
         else if(uid != SUPER_USER && uid != mip->inode.i_uid)
         {
+            result = PERM_DENIED;
             fprintf(stderr, "rmdir: failed to remove '%s':"
                     " Permission denied\n", path);
             goto clean_up;
@@ -36,6 +39,7 @@ int my_rmdir(int argc, char* argv[])
         // Verify that it is a directory
         else if(!S_ISDIR(mip->inode.i_mode))
         {
+            result = NOT_DIR;
             fprintf(stderr, "rmdir: failed to remove '%s':"
                     " Not a directory\n", path);
             goto clean_up;
@@ -43,6 +47,7 @@ int my_rmdir(int argc, char* argv[])
         // Verify that it is not busy
         else if(mip->refCount > 1)
         {
+            result = BUSY;
             fprintf(stderr, "rmdir: failed to remove directory '%s':"
                     " Directory busy\n", path);
             goto clean_up;
@@ -50,6 +55,7 @@ int my_rmdir(int argc, char* argv[])
         // Verify that it is empty
         else if(!isEmptyDir(mip))
         {
+            result = NOT_EMPTY;
             fprintf(stderr, "rmdir: failed to remove directory '%s':"
                     " Directory not empty\n", path);
             goto clean_up;
@@ -89,6 +95,9 @@ int my_rmdir(int argc, char* argv[])
 clean_up:
         // Write changes to deleted directory to disk and clear refCount
         iput(mip); 
+
+        if(result != NONE)
+            return result;
 
         i++;
     }

@@ -6,12 +6,13 @@ char* my_readlink(char* pathname);
 // symlink targetFileName linkFileName
 int my_symlink(int argc, char* argv[])
 {
+    result_t result = NONE;
     const int device = running->cwd->device;
 
     if(argc < 3)
     {
         fprintf(stderr, "symlink: missing operand\n");
-        return FAILURE;
+        return MISSING_OPERAND;
     }
 
     char* target_pathname = argv[1];
@@ -25,6 +26,7 @@ int my_symlink(int argc, char* argv[])
     // Linux actually allows you to create broken links
     if(!target_mip)
     {
+        result = DOES_NOT_EXIST;
         fprintf(stderr, "symlink: failed to access '%s':"
                 " No such file or directory\n", target_pathname);
         goto clean_up;
@@ -34,6 +36,7 @@ int my_symlink(int argc, char* argv[])
     // Lets be safe and just cutoff at 60 (don't forget null char)
     else if(strlen(target_pathname) >= 60)
     {
+        result = NAME_TOO_LONG;
         fprintf(stderr, "symlink: failed to create symbolic link '%s' => '%s':"
                 " Name of target too long\n", link_pathname, target_pathname);
         goto clean_up;
@@ -51,6 +54,7 @@ int my_symlink(int argc, char* argv[])
     // Verify that linkParent exists
     if(!link_parent_mip)
     {
+        result = NO_PARENT;
         fprintf(stderr, "symlink: failed to create symbolic link '%s' => '%s':"
                 " No such file or directory\n", link_pathname, target_pathname);
         goto clean_up_more;
@@ -58,6 +62,7 @@ int my_symlink(int argc, char* argv[])
     // Verify that linkParent is a directory
     else if(!S_ISDIR(link_parent_mip->inode.i_mode))
     {
+        result = PARENT_NOT_DIR;
         fprintf(stderr, "symlink: failed to access '%s':"
                 " Not a directory\n", link_pathname);
         goto clean_up_more;
@@ -65,11 +70,11 @@ int my_symlink(int argc, char* argv[])
     // Verify that linkChild does not yet exist
     else if(getino(device, link_pathname) > 0)
     {
+        result = ALREADY_EXISTS;
         fprintf(stderr, "symlink: failed to create symbolic link '%s':"
                 " File exists\n", link_pathname);
         goto clean_up_more;
     }
-
 
     // Make a file with the child's name in the parent directory
     int link_ino = creat_file(link_parent_mip, link_child_pathname);
@@ -86,10 +91,10 @@ int my_symlink(int argc, char* argv[])
     // Then set its type to link by ORing with 0xA000
     //link_ip->i_mode = (link_ip->i_mode & 0x0FFF) | 0xA000;
     link_ip->i_mode = LINK_MODE;
-    
+
 
     // my_readlink: INPUT/OUTPUT ERROR
-    
+
     // write the string target_name into the link's i_block[]
     //strcpy((char*)(link_ip->i_block), "ab");
     //link_ip->i_size = strlen(target_pathname);
@@ -116,9 +121,8 @@ clean_up:
     // Move parent inode from memory to disk
     iput(target_mip); 
 
-    char* contents = my_readlink(link_pathname);
-    printf("READ LINK: '%s'\n", contents);
-    free(contents);
+        if(result != NONE)
+            return result;
 
     return SUCCESS;
 }
@@ -140,7 +144,7 @@ char* my_readlink(char* pathname)
         fprintf(stderr, "my_readlink: '%s' is not a symlink", pathname);
         goto clean_up;
     }
-    
+
     char* contents = (char*)(ip->i_block);
     result = (char*)malloc((strlen(contents) + 1) * sizeof(char));
     strcpy(result, contents);

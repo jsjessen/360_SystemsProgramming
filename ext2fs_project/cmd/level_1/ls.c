@@ -10,6 +10,7 @@ void list_file(MINODE* mip, char* name);
 // ls a/b/c e/f/g /h/i/j
 int my_ls(int argc, char* argv[])
 {
+    result_t result = NONE;
     const int device = running->cwd->device;
 
     // If given no path, ls cwd
@@ -28,6 +29,7 @@ int my_ls(int argc, char* argv[])
 
         if(!mip)
         {
+            result = DOES_NOT_EXIST;
             printf("ls: cannot access '%s':"
                     " No such file or directory\n", argv[i]);
             goto clean_up;
@@ -45,6 +47,9 @@ int my_ls(int argc, char* argv[])
 clean_up:
         // Move parent inode from memory to disk
         iput(mip);
+
+        if(result != NONE)
+            return result;
 
         i++;
     }

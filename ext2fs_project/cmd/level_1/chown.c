@@ -7,8 +7,8 @@ int my_chown(int argc, char* argv[])
 
     if(argc < 2)
     {
-        fprintf(stderr, "chmown: missing operand\n");
-        return FAILURE;
+        fprintf(stderr, "chown: missing operand\n");
+        return MISSING_OPERAND;
     }
 
     char* path = argv[1];
@@ -17,10 +17,10 @@ int my_chown(int argc, char* argv[])
 
     if(ino <= 0)
     {
-        fprintf(stderr, "chown: missing operand\n");
-        return FAILURE;
+        fprintf(stderr, "chown: failed to change owner of '%s':"
+                " No such file or directory\n", path);
+        return DOES_NOT_EXIST;
     }
-
 
     MINODE* mip = iget(device, ino);
     INODE*   ip = &mip->inode;

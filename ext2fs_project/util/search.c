@@ -37,7 +37,7 @@ int findmyname(MINODE *parent, int myino, char **my_name)
     if(!parent)
     {
         fprintf(stderr, "findmyname: null parent\n");
-        return FAILURE;
+        return NO_PARENT;
     }
 
     device = parent->device;
@@ -48,7 +48,7 @@ int findmyname(MINODE *parent, int myino, char **my_name)
     if (!S_ISDIR(ip->i_mode))
     {
         fprintf(stderr, "findmyname: Not a directory\n");
-        return FAILURE;
+        return NOT_DIR;
     }
 
     // For DIR inodes, assume that (the number of entries is small so that) only has
@@ -77,7 +77,7 @@ int findmyname(MINODE *parent, int myino, char **my_name)
         } 
         free(block);
     }
-    return FAILURE;   
+    return DOES_NOT_EXIST;   
 }
 
 int findino(MINODE *mip, int *myino, int *parent)
@@ -88,7 +88,7 @@ int findino(MINODE *mip, int *myino, int *parent)
     if(!mip)
     {
         fprintf(stderr, "findino: null mip\n");
-        return FAILURE;
+        return DOES_NOT_EXIST;
     }
 
     device = mip->device;
@@ -98,7 +98,7 @@ int findino(MINODE *mip, int *myino, int *parent)
     if (!S_ISDIR(ip->i_mode))
     {
         fprintf(stderr, "findino: Not a directory\n");
-        return FAILURE;
+        return NOT_DIR;
     }
 
     u8* block = get_block(device, ip->i_block[0]);
@@ -137,7 +137,7 @@ int getino(int device, const char* pathname)
     if(ino <= 0)
     {
         free_array(name);
-        return FAILURE;
+        return DOES_NOT_EXIST; 
     }
 
     // Continue search
@@ -147,7 +147,7 @@ int getino(int device, const char* pathname)
         if((ino = search(iget(device, ino), name[i])) <= 0)
         {
             free_array(name);
-            return FAILURE;
+            return DOES_NOT_EXIST;
         }
     }
 
@@ -167,7 +167,7 @@ int search(MINODE *mip, const char* target)
     if (!S_ISDIR(ip->i_mode))
     {
         fprintf(stderr, "search: Not a directory\n");
-        return FAILURE;
+        return NOT_DIR;
     }
 
     // For DIR inodes, assume that (the number of entries is small so that) only has

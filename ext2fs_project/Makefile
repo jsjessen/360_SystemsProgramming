@@ -142,8 +142,9 @@ mem_run: all
 	valgrind $(VALGRIND_MODE) $(NAME) $(DISK) 
 
 test: all disk
-	-$(NAME) $(DISK) $(OUTPUT_FILE) #$(INPUT_FILE) > $(OUTPUT_FILE); 2>&1
-	vim -O $(OUTPUT_FILE) #$(INPUT_FILE) 
+	-$(NAME) $(DISK) $(INPUT_FILE) > $(OUTPUT_FILE); 2>&1
+	vim $(OUTPUT_FILE)
+	#vim -O $(OUTPUT_FILE) $(INPUT_FILE) 
 
 mem_test: all disk
 	valgrind $(VALGRIND_MODE) $(NAME) $(DISK) $(INPUT_FILE) 

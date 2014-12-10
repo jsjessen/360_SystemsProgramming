@@ -37,7 +37,7 @@ int open_file(const char* pathname, int mode)
     {
         fprintf(stderr, "open: failed to open '%s':"
                 " Does not exist\n", pathname);
-        return FAILURE;
+        return DOES_NOT_EXIST;
     }
     // Verify it is a regular file
     else if(!S_ISREG(ip->i_mode))
@@ -45,7 +45,7 @@ int open_file(const char* pathname, int mode)
         fprintf(stderr, "open: failed to open '%s':"
                 " Not a regular file\n", pathname);
         iput(mip);
-        return FAILURE;
+        return NOT_REG;
     }
 
     // User has 'all user' permissions
@@ -108,12 +108,12 @@ int open_file(const char* pathname, int mode)
             fprintf(stderr, "open: failed to open '%s':"
                     " Unknown mode\n", pathname);
             iput(mip);
-            return FAILURE;
+            return BAD_MODE;
 
 denied:
             fprintf(stderr, "open: Permission denied\n");
             iput(mip);
-            return FAILURE;
+            return PERM_DENIED;
     }
 
     // Find process's first open fd 
@@ -128,7 +128,7 @@ denied:
             fprintf(stderr, "open: failed to open '%s':"
                     " Process has reached file limit\n", pathname);
             iput(mip);
-            return FAILURE;
+            return FILE_LIMIT;
         }
     }
 
@@ -147,7 +147,7 @@ denied:
             fprintf(stderr, "open: failed to open '%s':"
                     " File in use\n", pathname);
             iput(mip);
-            return FAILURE;
+            return BUSY;
         }
 
         // Make entry in first not in use OpenFileTable entry
@@ -170,7 +170,7 @@ denied:
             fprintf(stderr, "open: failed to open '%s':"
                     " Too many files open\n", pathname);
             iput(mip);
-            return FAILURE;
+            return FILE_LIMIT;
         }
     }
 
@@ -188,7 +188,7 @@ int close_file(int fd)
     {
         fprintf(stderr, "close: failed to close %d:"
                 " File descriptor out of range\n", fd);
-        return FAILURE;
+        return BAD_FD;
     }
 
     OPEN_FILE* fp = NULL;
@@ -205,7 +205,7 @@ int close_file(int fd)
         {
             fprintf(stderr, "close: failed to close %d:"
                     " File not in OpenFileTable\n", fd);
-            return FAILURE;
+            return NOT_OPEN;
         }
     }
 
@@ -249,7 +249,7 @@ int read_file(int fd, void* buf, int nbyte)
     {
         fprintf(stderr, "read: failed to read %d:"
                 " not open for read\n", fd);
-        return FAILURE;
+        return NOT_OPEN;
     }
 
     MINODE* mip = fp->mip;
@@ -319,7 +319,7 @@ int write_file(int fd, void* buf, int nbyte)
     {
         fprintf(stderr, "write: failed to write to %d:"
                 " not open for write\n", fd);
-        return FAILURE;
+        return NOT_OPEN;
     }
 
     MINODE* mip = fp->mip;
@@ -418,7 +418,7 @@ int seek_file(int fd, int position)
     {
         fprintf(stderr, "lseek: failed to seek with %d:"
                 " File not open\n", fd);
-        return FAILURE;
+        return NOT_OPEN;
     }
 
     int start = 0;
@@ -435,7 +435,9 @@ int seek_file(int fd, int position)
 
 int truncate_file(MINODE *mip)
 {
+#ifdef DEBUG
     printf("\nTruncating\n");
+#endif
 
     INODE* ip = &mip->inode;
 
@@ -443,7 +445,9 @@ int truncate_file(MINODE *mip)
     const int block_size = get_block_size(device);
     const int block_count = get_num_blocks(block_size, ip);
 
+#ifdef DEBUG
     printf("block_count = %d\n", block_count);
+#endif
 
     for(int i = 0; i < block_count; i++)
         logical_bfree(device, ip);
@@ -467,7 +471,7 @@ int dup(int fd)
     {
         fprintf(stderr, "dup: failed to duplicate %d:"
                 " File not open\n", fd);
-        return FAILURE;
+        return NOT_OPEN;
     }
 
     for(int i = 0; i < NFD; i++)
@@ -482,16 +486,18 @@ int dup(int fd)
 
     fprintf(stderr, "dup: failed to duplicate '%d':"
             " Process has reached file limit\n", fd);
-    return FAILURE;
+    return FILE_LIMIT;
 }
 
 int dup2(int fd, int gd)
 {
-    if(close_file(gd) == FAILURE)
-        return FAILURE;
+    result_t result = NONE;
 
-    if(dup(fd) == FAILURE)
-        return FAILURE;
+    if((result = close_file(gd)) < 0)
+        return result;
+
+    if((result = dup(fd)) < 0) 
+        return result;
 
     return SUCCESS;
 }

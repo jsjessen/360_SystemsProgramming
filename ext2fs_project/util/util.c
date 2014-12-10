@@ -130,7 +130,7 @@ int rm_child(MINODE *parent_mip, int child_ino)
         free(block);
         block = NULL;
     }
-    return FAILURE;
+    return DOES_NOT_EXIST;
 
 child_found:
 
