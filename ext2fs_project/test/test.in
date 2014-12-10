@@ -17,10 +17,88 @@ SUCCESS
 cd fox 
 NOT_DIR
 
+creat fox/badParent
+PARENT_NOT_DIR 
+
+creat dir/file/notDir
+PARENT_NOT_DIR
+
+mkdir notLink
+SUCCESS
+
+unlink notLink
+NOT_REG
+
+creat head
+SUCCESS
+
+creat 
+MISSING_OPERAND
+
+cd
+SUCCESS
+
+symlink dir/notreal newlink
+NO_PARENT
+
+mkdir secondDir
+SUCCESS
+
+cd secondDIr
+SUCCESS
+
+creat thirdDir
+SUCCESS
+
+cd ..
+SUCCESS
+
+mkdir thirdDir/wontwork
+PARENT_NOT_DIR
+
+cd dir
+SUCCESS
+
+symlink ../head tail
+SUCCESS
+
+creat thisfilenameisgoingtobesobigggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggg
+NAME_TOO_LONG
+
+mkdir ../notLink
+ALREADY_EXISTS
+
+cd tail
+FAIL
+
 creat bad
 FAIL
 
 cd dir 
+SUCCESS
+
+creat readonly
+SUCCESS
+
+open readonly RD
+SUCCESS
+
+write 1 "some textttttttttttttttttttttttttttt"
+PERM_DENIED
+
+close 1
+SUCCESS
+
+creat writeonly
+SUCCESS
+
+open writeonly WR
+SUCCESS
+
+read 1 256
+PERM_DENIED
+
+close 1
 SUCCESS
 
 quit
